@@ -1,0 +1,10 @@
+create table mt_protect (
+    protect_id integer not null auto_increment primary key,
+    protect_entry_id integer not null,
+    protect_blog_id integer not null,
+    protect_type varchar(10) not null,
+    protect_data mediumtext not null,
+    index (protect_entry_id),
+    index (protect_blog_id),
+    index (protect_type)
+);
