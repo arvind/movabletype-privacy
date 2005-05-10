@@ -18,6 +18,7 @@ use MT::ConfigMgr;
 use MT::App::CMS;
 use MT;
 use MT::Permission;
+use Protect::Protect;
 
 sub init
 {
@@ -137,6 +138,44 @@ sub install {
 			$q->param('uninstalled', 1);			 
 		}   
 config_global($app);
+}
+
+sub edit {
+	my $app = shift;
+  my $q = $app->{query};
+	my $param;
+	my $tmpl;
+	my @data;
+	my $blog_id = $q->param('blog_id');
+	my $entry_id = $q->param('id');
+	my $blog = MT::Blog->load($blog_id);
+	my $entry = MT::Entry->load($entry_id);
+	$param->{entry_title} = $entry->title;
+	$param->{entry_id} = $entry_id;
+	my $type = $q->param('_type');
+	if($type eq 'entry') {
+		for (my $i = 1; $i <= 5; $i++) {
+		    push @data, $i;
+		}			
+		$tmpl = 'edit_entry.tmpl';
+		my $data = Protect::Protect->load({entry_id    => $entry_id });
+		if($data){
+			my $data_type = $data->type;
+			if($data_type eq 'Password'){
+				$param->{is_password} = 1; 
+				$param->{password} = $data->data->{password};
+			}
+			elsif($data_type eq 'Typekey'){
+				$param->{typekey} = 1;
+			}
+		}
+	 $param->{typekey_user_loop} = \@data;
+	 $app->add_breadcrumb($blog->name,$app->{mtscript_url}.'?__mode=menu&blog_id='.$blog->id);
+	 $app->add_breadcrumb($app->translate('Entries'), $app->{mtscript_url} . '?__mode=list_entries&blog_id=' . $blog_id);
+   $app->add_breadcrumb($entry->title || $app->translate('(untitled)'), $app->{mtscript_url} . '?__mode=view&_type=entry&id=' . $entry_id . '&blog_id=' . $blog_id);	
+   $app->add_breadcrumb("Password Protect");
+	}
+	$app->build_page($tmpl, $param);	
 }
 
 #####################################################################
