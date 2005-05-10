@@ -16,6 +16,6 @@ MT->add_plugin(new MT::Plugin($about));
 
 MT->add_plugin_action ('entry', 'mt-protect.cgi?__mode=edit&_type=entry', "Protect this entry");
 
-MT->add_plugin_action ('list_entry', 'mt-protect.cgi?__mode=list_entries', "List Protected Entries");
+MT->add_plugin_action ('list_entries', 'mt-protect.cgi?__mode=list_entries', "List Protected Entries");
 
 MT->add_plugin_action ('blog', 'mt-protect.cgi?__mode=edit&_type=blog', 'Edit Protection Options');
