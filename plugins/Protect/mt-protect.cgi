@@ -32,9 +32,9 @@ unshift @INC, $MT_DIR . 'extlib';
 
 eval {
     use lib 'lib';
-    require Protect::Protect;
-    my $app = Protect::Protect->new( Config => $MT_DIR . '/mt.cfg' )
-	|| die "the app couldn't be initialized because " . Protect::Protect->errstr();
+    require Protect::CMS;
+    my $app = Protect::CMS->new( Config => $MT_DIR . '/mt.cfg' )
+	|| die "the app couldn't be initialized because " . Protect::CMS->errstr();
     $app->run();
 }; if ($@) {
     print "An internal error occurred: $@";

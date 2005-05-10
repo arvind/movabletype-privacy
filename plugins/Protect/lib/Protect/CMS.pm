@@ -1,28 +1,11 @@
-# Blogroll Movable Type Plugin
+# Protect Movable Type Plugin
 #
 # $Id: $
 #
 # Copyright (C) 2005 Arvind Satyanarayan
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-#
-# This program was based largely upon the plugin written by Byrne Reese.
-# The original program can be found at the following URL:
-# http://www.majordojo.com/projects/BookQueueToo/
 
-package Protect::Protect;
+package Protect::CMS;
 use strict;
 
 use vars qw( $DEBUG $VERSION @ISA $USE_SEARCH_PATH_HACK );
@@ -44,6 +27,7 @@ sub init
     $app->add_methods(
     'global_config'       => \&config_global,
     'install'             => \&install,
+    'edit'                => \&edit,
     );
     
     
