@@ -1,6 +1,5 @@
 <TMPL_INCLUDE NAME="header.tmpl">
 <div id="cfg-prefs">
-	
 <script type="text/javascript">
 <!--
 function getByID (n) {
@@ -26,30 +25,32 @@ function toggleTKPrefs (c) {
 
 <h2>Password Protect <TMPL_VAR NAME=ENTRY_TITLE></h2>
 
+<TMPL_IF NAME=MESSAGE>
+<p class="message"><TMPL_VAR NAME=MESSAGE></p>
+</TMPL_IF>
+
 <p>You can protect this entry so only certain people can view its contents. You can do this one of two ways. 
 The first is using a simple password that people will have to enter to see the post. 
 The alternative is to use Typekey so access is based on their identity. Using Typekey is the recommended method as
 it ensures that only those allowed can access the post, passwords can always be leaked!</p>
 
 
-<TMPL_IF NAME=MESSAGE>
-<p class="message"><TMPL_VAR NAME=MESSAGE></p>
-</TMPL_IF>
-
 <form method="post" action="<TMPL_VAR NAME=SCRIPT_URL>">
   <input type="hidden" name="__mode" value="save" />
   <input type="hidden" name="_type" value="entry" />
+  <input type="hidden" name="id" value="<TMPL_VAR NAME=ENTRY_ID>" />
+  <input type="hidden" name="blog_id" value="<TMPL_VAR NAME=BLOG_ID>" />
 
-<p><input <TMPL_IF NAME=IS_PASSWORD>selected="selected"</TMPL_IF> type="radio" name="protection" onclick="togglePasswordPrefs(this); return true" value="Password">Password Protection</p>
+<p><input <TMPL_IF NAME=IS_PASSWORD>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="togglePasswordPrefs(this); return true" value="Password">Password Protection</p>
 		
-<div id="password_prefs" class="sub-field"<TMPL_IF NAME=IS_UPDATED> style="display: block;"</TMPL_IF>>
+<div id="password_prefs" class="sub-field"<TMPL_IF NAME=IS_PASSWORD> style="display: block;"</TMPL_IF>>
 <p><label><MT_TRANS phrase="Entry Password"></label></p>
 <input name="password" id="password" value="<TMPL_VAR NAME=PASSWORD>" /></p>
 </div>
 
-<p><input <TMPL_IF NAME=IS_TYPEKEY>selected="selected"</TMPL_IF> type="radio" name="protection" onclick="toggleTKPrefs(this); return true" value="Typekey">Typekey Protection</p>
+<p><input <TMPL_IF NAME=IS_TYPEKEY>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="toggleTKPrefs(this); return true" value="Typekey">Typekey Protection</p>
 		
-<div id="typekey_prefs" class="sub-field"<TMPL_IF NAME=IS_UPDATED> style="display: block;"</TMPL_IF>>
+<div id="typekey_prefs" class="sub-field"<TMPL_IF NAME=IS_TYPEKEY> style="display: block;"</TMPL_IF>>
 <p><label><MT_TRANS phrase="Allow the following Typekey users (enter their Typekey usernames)"></label></p>
 <TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
 <p><input name="typekey_users" id="typekey_users" value="<TMPL_VAR NAME=USER>" /></p>
@@ -57,7 +58,7 @@ it ensures that only those allowed can access the post, passwords can always be 
 
 </div>
 
-<p><input type="submit" name="submit" value="Save" /></p>
+<p><input type="submit" name="submit" value="Save" />&nbsp;<input type="button" onclick="window.location='<TMPL_VAR NAME=MTSCRIPT_URL>?__mode=view&_type=entry&id=<TMPL_VAR NAME=ENTRY_ID>&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="Go Back" />     </p>
 
 </form>
 
