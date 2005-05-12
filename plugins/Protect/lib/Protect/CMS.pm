@@ -97,6 +97,7 @@ sub install {
     my $blog = MT::Blog->load($blog_id);
     my $auth_typekey = $blog->site_path . "/Auth_TypeKey.php";
     my $typekey_lib = $blog->site_path . "/typekey_lib.php";
+    my $mt_pass = $blog->site_path . "/mt-protect.php";
     if($type eq 'install') {
         my $url = 'http://www.movalog.com/archives/plugins/protect/Auth_Typekey.txt';
         my $auth_tk_text = _load_link ( $url );
@@ -117,6 +118,28 @@ sub install {
             } else {
             die;
         }
+        
+        $url = 'http://www.movalog.com/archives/plugins/protect/mt-pass.txt';
+        $auth_tk_text = _load_link ( $url );
+        
+		    require MT::Builder;
+		    require MT::Template::Context;
+		
+		    my $build = MT::Builder->new;
+		    my $ctx = MT::Template::Context->new;
+				$ctx->{__stash}{blog} = $blog;
+		    my $tokens = $build->compile($ctx, $auth_tk_text)
+		        or die $build->errstr;
+		    defined(my $out = $build->build($ctx, $tokens))
+		        or die $build->errstr;
+		        
+        if (open(TARGET, ">$mt_pass")) {
+            print TARGET $out;
+            close TARGET;
+            } else {
+            die;
+        }		    
+                    
         my $data = MT::PluginData->new;
         $data->plugin('Protect');
         $data->key($blog_id);
