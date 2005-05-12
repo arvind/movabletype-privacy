@@ -177,8 +177,8 @@ sub edit {
     my $entry = MT::Entry->load($entry_id);
     $param->{entry_title} = $entry->title;
     $param->{entry_id} = $entry_id;
-    my $type = $q->param('_type');
-    if($type eq 'entry') {
+    my $type = $q->param('_type') || $q->param('from');
+    if($type eq 'entry' || $type eq 'edit_entry') {
         $tmpl = 'edit_entry.tmpl';
         my $data = Protect::Protect->load({entry_id    => $entry_id });
         if($data){
@@ -203,28 +203,34 @@ sub edit {
         for (my $i = 1; $i <= 5; $i++) {
             push @data, $i;
         }
-        $param->{message} = $q->param('message');
+
         $param->{typekey_user_loop} = \@data;
         $app->add_breadcrumb($blog->name,$app->{mtscript_url}.'?__mode=menu&blog_id='.$blog->id);
         $app->add_breadcrumb($app->translate('Entries'), $app->{mtscript_url} . '?__mode=list_entries&blog_id=' . $blog_id);
         $app->add_breadcrumb($entry->title || $app->translate('(untitled)'), $app->{mtscript_url} . '?__mode=view&_type=entry&id=' . $entry_id . '&blog_id=' . $blog_id);
         $app->add_breadcrumb("Password Protect");
+  } elsif($type eq 'blog' || $type eq 'blog_home'){
+  	$tmpl = 'edit_blog.tmpl';
+  	$param->{typekey_token} = $blog->remote_auth_token;
+    $app->add_breadcrumb($blog->name,$app->{mtscript_url}.'?__mode=menu&blog_id='.$blog->id); 
+    $app->add_breadcrumb("Protection Options");	
   }
+    $param->{message} = $q->param('message');
     $app->build_page($tmpl, $param);
 }
 
 sub save {
     my $app = shift;
     my $q = $app->{query};
+    my $blog_id = $q->param('blog_id');    
     my $param;
     my $tmpl;
     my @data;
+    my $data;
     my $type = $q->param('_type');
     if($type eq 'entry') {
-        my $blog_id = $q->param('blog_id');
         my $entry_id = $q->param('id');
         my $protection = $q->param('protection');
-        my $data;
     unless($data = Protect::Protect->load({ entry_id   => $entry_id })){
             $data = Protect::Protect->new;
             $data->blog_id($blog_id);
@@ -250,6 +256,13 @@ sub save {
         }
         $data->save;
         edit($app);
+    } elsif($type eq 'blog') {
+    		$data = MT::Blog->load($blog_id);
+    		my $remote_auth_token = $q->param('remote_auth_token');
+    		$data->remote_auth_token($remote_auth_token);
+    		$data->save;
+				$q->param('message', 'Typekey token saved');    		
+    		edit($app);
     }
     
 }
