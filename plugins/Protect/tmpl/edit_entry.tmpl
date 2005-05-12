@@ -1,3 +1,4 @@
+<TMPL_IF NAME=ENTRY_ID>
 <TMPL_INCLUDE NAME="header.tmpl">
 <div id="cfg-prefs">
 <script type="text/javascript">
@@ -65,3 +66,11 @@ it ensures that only those allowed can access the post, passwords can always be 
 </div>
 
 <TMPL_INCLUDE NAME="footer.tmpl">
+<TMPL_ELSE>
+An error occurred:<p>
+
+<pre>
+No entry_id
+
+</pre>
+</TMPL_IF>

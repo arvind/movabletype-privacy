@@ -30,6 +30,7 @@ sub init
     'install'             => \&install,
     'edit'                => \&edit,
     'save'                => \&save,
+    'list_entries'        => \&list,
     );
     
     
@@ -161,8 +162,8 @@ sub edit {
             my $data_type = $data->type;
             if($data_type eq 'Password'){
                 $param->{is_password} = 1;
-                my $password = $data->data;
-                $param->{password} = $$password;
+                my $password = $data->password;
+                $param->{password} = $password;
             }
             elsif($data_type eq 'Typekey'){
                 $param->{is_typekey} = 1;
@@ -185,7 +186,7 @@ sub edit {
         $app->add_breadcrumb($app->translate('Entries'), $app->{mtscript_url} . '?__mode=list_entries&blog_id=' . $blog_id);
         $app->add_breadcrumb($entry->title || $app->translate('(untitled)'), $app->{mtscript_url} . '?__mode=view&_type=entry&id=' . $entry_id . '&blog_id=' . $blog_id);
         $app->add_breadcrumb("Password Protect");
-    }
+  }
     $app->build_page($tmpl, $param);
 }
 
@@ -210,9 +211,10 @@ sub save {
         if($protection eq 'Password') {
             $data->type($protection);
             my $password = $q->param('password');
-            $data->data(\$password);
+            $data->password($password);
             $q->param('message', 'Entry now password protected');
-            } elsif($protection eq 'Typekey') {
+          } 
+          elsif($protection eq 'Typekey') {
             $q->param('message', 'Entry now Typekey protected');            	
             $data->type($protection);
             my @users;
@@ -227,6 +229,17 @@ sub save {
         edit($app);
     }
     
+}
+
+sub list_entries {
+    my $app = shift;
+    my $q = $app->{query};	
+		my $blog_id = $q->param('blog_id');
+		my $param;
+#		my $iter = Protect::Protect->load_iter({ blog_id = $blog_id });
+#		while (my $ntry = $iter->()) {
+#			my $entry = MT::Entry->load($ntry->id);
+#		} 
 }
 
 #####################################################################
