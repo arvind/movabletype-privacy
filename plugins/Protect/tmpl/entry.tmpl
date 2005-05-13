@@ -52,7 +52,7 @@ it ensures that only those allowed can access the post, passwords can always be 
 <h4><input <TMPL_IF NAME=IS_TYPEKEY>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="toggleTKPrefs(this); return true" value="Typekey">Typekey Protection</h4>
 		
 <div id="typekey_prefs" class="sub-field"<TMPL_IF NAME=IS_TYPEKEY> style="display: block;"</TMPL_IF>>
-<p><label><MT_TRANS phrase="Allow the following Typekey users (enter their Typekey usernames)"></label></p>
+<p><label><MT_TRANS phrase="Allow the following Typekey users, enter their Typekey usernames (case sensitive)"></label></p>
 <TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
 <p><input name="typekey_users" id="typekey_users" value="<TMPL_VAR NAME=USER>" /></p>
 </TMPL_LOOP>

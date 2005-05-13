@@ -179,7 +179,7 @@ sub edit {
     $param->{entry_id} = $entry_id;
     my $type = $q->param('_type') || $q->param('from');
     if($type eq 'entry' || $type eq 'edit_entry') {
-        $tmpl = 'edit_entry.tmpl';
+        $tmpl = 'entry.tmpl';
         my $data = Protect::Protect->load({entry_id    => $entry_id });
         if($data){
             my $data_type = $data->type;
@@ -210,7 +210,7 @@ sub edit {
         $app->add_breadcrumb($entry->title || $app->translate('(untitled)'), $app->{mtscript_url} . '?__mode=view&_type=entry&id=' . $entry_id . '&blog_id=' . $blog_id);
         $app->add_breadcrumb("Password Protect");
   } elsif($type eq 'blog' || $type eq 'blog_home'){
-  	$tmpl = 'edit_blog.tmpl';
+  	$tmpl = 'blog.tmpl';
   	$param->{typekey_token} = $blog->remote_auth_token;
     $app->add_breadcrumb($blog->name,$app->{mtscript_url}.'?__mode=menu&blog_id='.$blog->id); 
     $app->add_breadcrumb("Protection Options");	
@@ -298,6 +298,21 @@ sub debug {
     my $err = shift;
     my $mark = shift || '>';
     print STDERR "$mark $err\n" if $DEBUG;
+}
+
+sub brpath {
+    
+    my $app = shift;
+    return $app->{__brpath} if exists $app->{__brpath};
+    my $brpath = File::Spec->catdir($app->path,'plugins','Protect');
+    $app->{__brpath} = $brpath;
+    
+}
+
+sub uri { File::Spec->catdir($_[0]->brpath,$_[0]->brscript) }
+
+sub brscript {
+    return 'mt-protect.cgi';
 }
 
 1; 
