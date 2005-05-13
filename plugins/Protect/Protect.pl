@@ -34,6 +34,10 @@ sub include {
 	$html .= '$tk_token = \''.$ctx->stash('blog')->remote_auth_token.'\'; ';
 	$html .= 'include "'.$ctx->stash('blog')->site_path.'typekey_lib.php"; ';
 	$html .= '$logged_in = typekey_logged_in();';
+	$html .= '$login_url = typekey_login_url();';
+	$html .= '$name = typekey_name();';
+	$html .= '$nick = typekey_nick();';
+	$html .= '$logout_url = typekey_logout_url();';
 	$html .= 'include(\''.$path.'/php/mt.php\'); ';
 	$html .= '$mt = new MT('.$ctx->stash('blog')->id.', \''.$path.'/mt.cfg\'); ';
 	$html .= '$db = $mt->db(); ';
@@ -72,6 +76,24 @@ sub protected {
         $middle .= '</form>';
 				$bottom = '<?php } ?>';
 				return $start.$out.$middle.$bottom;
+		} elsif($type eq 'Typekey'){
+			$start = "<?php\n";
+			$start .= 'switch($name){';
+      my $users = $protected->data;
+      for my $user (@$users) {	
+      	$start .= "case \"$user\":\n";
+      }
+      $start .= ' ?>';
+      $start .= '<p>Thanks for signing in <?php echo typekey_nick() ?> <font size="1">(<a href="<?php echo typekey_logout_url() ?>">Logout</a>)</font></p>';
+      $middle = "<?php\n";
+      $middle .= 'break;';
+      $middle .= 'default:';
+      $middle .= 'if(!$logged_in) {';
+      $middle .= 'echo "This entry has been Typekey protected so only selected Typekey users can read it. <a href=\"$login_url\">Sign in</a>";';	
+      $middle .= '} elseif($logged_in){';
+      $middle .= 'echo "Hello $nick. You do not have the rights to access this entry. Sorry! (<a href=\"$logout_url\">Sign Out</a>)";';
+      $middle .= '} } ?>';
+      return $start.$out.$middle;
 		}
 	}	 
 }
