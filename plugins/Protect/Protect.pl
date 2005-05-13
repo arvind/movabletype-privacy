@@ -16,7 +16,7 @@ my $about = {
   name => 'MT Protect v'.$VERSION,
   config_link => 'mt-protect.cgi?__mode=global_config',
   description => 'Adds the ability to protect entires either by password or using Typekey authentication.',
-  doc_link => 'http://www.movalog.com/cgi-bin/trac.cgi/wiki/MtProtect'
+  doc_link => 'http://www.movalog.com/plugins/wiki/MtProtect'
 }; 
 MT->add_plugin(new MT::Plugin($about));
 MT->add_plugin_action ('entry', 'mt-protect.cgi?__mode=edit', "Protect this entry");
