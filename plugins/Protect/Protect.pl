@@ -25,6 +25,7 @@ MT->add_plugin_action ('blog', 'mt-protect.cgi?__mode=edit', 'Edit Protection Op
 
 MT::Template::Context->add_tag(ProtectInclude           => \&include);
 MT::Template::Context->add_container_tag(Protected    => \&protected);
+MT::Template::Context->add_conditional_tag(IfProtected    => \&ifprotected);
 
 sub include {
   my($ctx) = @_;	
@@ -43,6 +44,14 @@ sub include {
 	$html .= '$db = $mt->db(); ';
 	$html .= ' ?>';
 	return $html;	
+}
+
+sub ifprotected {
+	my ($ctx, $args) = @_;
+	my $e = $_[0]->stash('entry');
+	my $entry_id = $e->id;	
+	my $protected = Protect::Protect->load({ entry_id   => $entry_id });
+	return $protected;	
 }
 
 
@@ -97,3 +106,4 @@ sub protected {
 		}
 	}	 
 }
+
