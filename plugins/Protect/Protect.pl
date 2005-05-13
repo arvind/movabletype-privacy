@@ -31,9 +31,11 @@ sub include {
   my($ctx) = @_;	
   my $path = MT::instance()->server_path() || "";
   $path =~ s!/*$!!;
+  my $blog_path = $_[0]->stash('blog')->site_path;
+  $blog_path .= '/' unless $blog_path =~ m!/$!;
 	my $html = "<?php ";
 	$html .= '$tk_token = \''.$ctx->stash('blog')->remote_auth_token.'\'; ';
-	$html .= 'include "'.$ctx->stash('blog')->site_path.'typekey_lib.php"; ';
+	$html .= 'include "'.$blog_path.'typekey_lib.php"; ';
 	$html .= '$logged_in = typekey_logged_in();';
 	$html .= '$login_url = typekey_login_url();';
 	$html .= '$name = typekey_name();';
