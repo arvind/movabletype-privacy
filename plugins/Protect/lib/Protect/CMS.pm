@@ -97,7 +97,7 @@ sub install {
     my $blog = MT::Blog->load($blog_id);
     my $auth_typekey = $blog->site_path . "/Auth_TypeKey.php";
     my $typekey_lib = $blog->site_path . "/typekey_lib.php";
-    my $mt_pass = $blog->site_path . "/mt-protect.php";
+    my $mt_pass = $blog->site_path . "/mt-password.php";
     if($type eq 'install') {
         my $url = 'http://www.movalog.com/archives/plugins/protect/Auth_Typekey.txt';
         my $auth_tk_text = _load_link ( $url );
