@@ -3,9 +3,10 @@ package MT::Plugin::Protect;
 use strict;
 use MT;
 use MT::Plugin;
-if (eval { use lib './plugins/Protect/lib'; 1 }) {
-  use lib './plugins/Protect/lib';
-}
+#if (eval { use lib './plugins/Protect/lib'; 1 }) {
+#  use lib './plugins/Protect/lib';
+#}
+use lib File::Spec->catdir('plugins','Protect','lib');
 use Protect::Protect;
 use MT::Template::Context;
 
