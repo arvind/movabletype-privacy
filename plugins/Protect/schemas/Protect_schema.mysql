@@ -10,7 +10,7 @@ create table mt_protect (
     index (protect_type)
 );
 
-create table mt_protect_groups {
+create table mt_protect_groups (
 	protect_groups_id integer not null auto_increment primary key,
 	protect_groups_label varchar(100) not null,
 	protect_groups_data mediumtext,
