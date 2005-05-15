@@ -1,0 +1,34 @@
+<TMPL_INCLUDE NAME="header_global.tmpl">
+
+
+<h2><TMPL_IF NAME=LABEL>Typekey Group: <TMPL_VAR NAME=LABEL><TMPL_ELSE>New Typekey Group</TMPL_IF></h2>
+
+<TMPL_IF NAME=MESSAGE>
+<p class="message"><TMPL_VAR NAME=MESSAGE></p>
+</TMPL_IF>
+
+<p><TMPL_IF NAME=NAME>Use this page to edit the attributes of the group <TMPL_VAR NAME=LABEL>.<TMPL_ELSE>Use this page to create a new typekey group.</TMPL_IF> You can set an optional description for your group.</p>
+
+<form method="post" action="<TMPL_VAR NAME=SCRIPT_URL>">
+<input type="hidden" name="__mode" value="save" />
+<input type="hidden" name="_type" value="groups" />
+<input type="hidden" name="id" value="<TMPL_VAR NAME=ID>" />
+
+<p><label for="label"><MT_TRANS phrase="Group Title"></label><br />
+<input type="text" name="label" id="label" value="<TMPL_VAR NAME=LABEL ESCAPE=HTML>" /></p>
+
+<p><label for="desc"><MT_TRANS phrase="Group Description"></label><br />
+<textarea name="desc" id="desc" rows="5" cols="60"><TMPL_VAR NAME=DESCRIPTION ESCAPE=HTML></textarea></p>
+
+<p><label><MT_TRANS phrase="Typekey users, enter their Typekey usernames (case sensitive)"></label></p>
+<TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
+<p><input name="typekey_users" id="typekey_users" value="<TMPL_VAR NAME=USER>" /></p>
+</TMPL_LOOP>
+
+<div align="center">
+<input type="submit" value="<MT_TRANS phrase="Save">" />
+</div>
+
+</form>
+
+<TMPL_INCLUDE NAME="footer_global.tmpl">

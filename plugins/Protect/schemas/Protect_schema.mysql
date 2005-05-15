@@ -13,6 +13,8 @@ create table mt_protect (
 create table mt_protect_groups (
 	protect_groups_id integer not null auto_increment primary key,
 	protect_groups_label varchar(100) not null,
+	protect_groups_description varchar(255),
 	protect_groups_data mediumtext,
-	index (protect_groups_label)
+	index (protect_groups_label),
+	unique(protect_groups_label)
 	); 

@@ -1,0 +1,48 @@
+<TMPL_INCLUDE name="header_global.tmpl">
+
+<p>Typekey groups are a way for you to quickly assign permissions. They save you time so that you don't have to keep entering the same user names over and over again</p>
+
+<div align="right"><img alt="Create new group" src="<TMPL_VAR NAME=STATIC_URI>images/create.gif" width="9" height="9" /> <a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=groups&add=1">Create new group</a></div>
+
+<TMPL_IF EMPTY>
+<table width="100%">
+<tr><td align="center" bgcolor="#EEEEEE">You currently have no Typekey groups.</td></tr>
+</table>
+<TMPL_ELSE>
+
+<div class="list">
+    <form method="get" action="<TMPL_VAR NAME=SCRIPT_URL>">
+        <input type="hidden" name="__mode" value="delete" />
+        <input type="hidden" name="_type" value="groups" />        
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>&nbsp;</th>
+        <th>&nbsp;</th>
+    </tr>
+<TMPL_LOOP NAME=LOOP>
+
+    <tr class="<TMPL_IF NAME=ENTRY_ODD>odd<TMPL_ELSE>even</TMPL_IF>">
+        <td><TMPL_VAR NAME=LABEL></td>
+        <td><TMPL_VAR NAME=DESCRIPTION></td>  
+        <td nowrap><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=groups&id=<TMPL_VAR NAME=ID>&edit=1">edit</a></td>                   
+        <td><input type="checkbox" name="id" value="<TMPL_VAR NAME=ID>" /></td>
+    </tr>
+
+</TMPL_LOOP>
+    </table>
+<br /><br />
+<div align="right">
+<input type="button" onclick="doCheckAll(this.form,true)" name="check_all" value="<MT_TRANS phrase="Check All">" />
+<input type="button" onclick="doCheckAll(this.form,false)" name="uncheck_all" value="<MT_TRANS phrase="Uncheck All">" />
+<input type="submit" name="delete" value="Delete" />
+</div>        
+</form>
+
+</div>
+
+</TMPL_IF>
+
+<TMPL_INCLUDE name="footer_global.tmpl">

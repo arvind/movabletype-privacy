@@ -7,7 +7,7 @@ use MT::Object;
 @Protect::Groups::ISA = qw( MT::Object );
 __PACKAGE__->install_properties({
     columns => [
-        'id', 'label', 'data',
+        'id', 'label', 'description', 'data',
     ],
     indexes => {
         id => 1,

@@ -19,6 +19,7 @@ use MT::App::CMS;
 use MT;
 use MT::Permission;
 use Protect::Protect;
+use Protect::Groups;
 
 sub init
 {
@@ -31,6 +32,7 @@ sub init
     'edit'                => \&edit,
     'save'                => \&save,
     'list_entries'        => \&list,
+    'tk_groups'           => \&tk_groups
     );
     
     
@@ -86,6 +88,7 @@ if (my $auth = $app->{author}) {
         }
         $param->{blog_loop} = \@data;
     }
+    $param->{global_config} = 1;
     $app->build_page('config.tmpl', $param);
 }
 
@@ -214,6 +217,33 @@ sub edit {
   	$param->{typekey_token} = $blog->remote_auth_token;
     $app->add_breadcrumb($blog->name,$app->{mtscript_url}.'?__mode=menu&blog_id='.$blog->id); 
     $app->add_breadcrumb("Protection Options");	
+  } elsif($type eq 'groups') {
+			$param->{add} = 1 if $q->param('add') == 1;
+			$param->{edit} = 1 if $q->param('edit') == 1;
+			my $data = Protect::Groups->load({id => $entry_id });
+			if($data){
+			$param->{id} = $data->id;
+			$param->{label} = $data->label;
+			$param->{description} = $data->description;
+			my $users = $data->data;
+      for my $user (@$users) {
+          my $row = {
+              user => $user
+          };
+          
+          push @data, $row;
+      }
+    
+   }
+      for (my $i = 1; $i <= 5; $i++) {
+            push @data, $i;
+        }
+      $param->{typekey_user_loop} = \@data;
+      $tmpl = 'tk_edit.tmpl';		
+      $app->add_breadcrumb("MT Protect",'mt-protect.cgi?__mode=global_config');
+  		$app->add_breadcrumb("Typekey Groups",'mt-protect.cgi?__mode=tk_groups');
+  		$app->add_breadcrumb("Add New Group") if $q->param('add') == 1;
+  		$app->add_breadcrumb("Edit Group") if $q->param('edit') == 1;	
   }
     $param->{message} = $q->param('message');
     $app->build_page($tmpl, $param);
@@ -254,17 +284,74 @@ sub save {
             }
             $data->data(\@users);
         }
-        $data->save;
+        $data->save or
+            return $app->error("Error: " . $data->errstr);
         edit($app);
     } elsif($type eq 'blog') {
     		$data = MT::Blog->load($blog_id);
     		my $remote_auth_token = $q->param('remote_auth_token');
     		$data->remote_auth_token($remote_auth_token);
-    		$data->save;
+    		$data->save or
+            return $app->error("Error: " . $data->errstr);
 				$q->param('message', 'Typekey token saved');    		
     		edit($app);
+    }elsif($type eq 'groups') {
+    	my $label = $q->param('label');
+    	my $description = $q->param('desc');
+    	my $id = $q->param('id');
+	    unless($data = Protect::Groups->load({ id   => $id })){
+	            $data = Protect::Groups->new;
+	        }    	
+	        $data->label($label);
+	        $data->description($description);
+            my @users;
+            for my $user ($q->param('typekey_users')) {
+                if($user && $user ne ""){
+                    push (@users, $user);
+                }
+            }
+            $data->data(\@users);
+            $data->save or
+            return $app->error("Error: " . $data->errstr);
+            $q->param('message','Typekey group saved');
+            $q->param('id',$data->id);
+            $q->param('edit',1);
+            edit($app);	        
     }
     
+}
+
+sub tk_groups {
+    my $app = shift;
+    my $q = $app->{query};
+    my $iter = Protect::Groups->load_iter;
+    my @data;
+    my $param;
+    my $i         = 0; # loop iteration counter
+    my $n_entries = 0; # the number of entries displayed on this page
+    my $count     = 0; # the total number of (unpaginated) entries
+    my @category_data;    
+    while (my $entry = $iter->()) {
+        $count++;
+        $n_entries++;    	
+			my $row = {
+				id => $entry->id,
+				label => $entry->label,
+				description => $entry->description,
+				entry_odd    => $n_entries % 2 ? 1 : 0,
+    };
+   	 push @data, $row;
+  }
+      $i = 0;
+    foreach my $e (@data) {
+        $e->{entry_odd} = ($i++ % 2 ? 0 : 1);
+    }
+  $param->{loop} = \@data;
+  $param->{empty} = !$n_entries;
+  $param->{typekey_groups} = 1;
+  $app->add_breadcrumb("MT Protect",'mt-protect.cgi?__mode=global_config');
+  $app->add_breadcrumb("Typekey Groups");
+  $app->build_page('tk_groups.tmpl',$param);
 }
 
 sub list_entries {
