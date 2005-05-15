@@ -40,15 +40,15 @@ The following is a list of protected entries.
 
 <div style="float:right;">
 <TMPL_IF NAME=PREV>
-<input type="button" onclick="window.location='<TMPL_VAR NAME=SCRIPT_URL>?show=<TMPL_VAR NAME=SHOW>&limit=<TMPL_VAR NAME=LIMIT>&offset=<TMPL_VAR NAME=PREV_OFFSET>&blog_id=<TMPL_VAR NAME=BLOG_ID>&sort_order=<TMPL_VAR NAME=SORT_ORDER>&filter=<TMPL_VAR NAME=FILTER>&filter_val=<TMPL_VAR NAME=VAL>'" value="Previous <TMPL_VAR NAME=LIMIT>" />
+<input type="button" onclick="window.location='<TMPL_VAR NAME=SCRIPT_URL>?__mode=list_entries&limit=<TMPL_VAR NAME=LIMIT>&offset=<TMPL_VAR NAME=PREV_OFFSET>&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="Previous <TMPL_VAR NAME=LIMIT>" />
 </TMPL_IF>
-        <select name="limit" onchange="window.location='<TMPL_VAR NAME=SCRIPT_URL>?__mode=view&show=<TMPL_VAR NAME=SHOW>&blog_id=<TMPL_VAR NAME=BLOG_ID>&sort_order=<TMPL_VAR NAME=SORT_ORDER>&filter=<TMPL_VAR NAME=FILTER>&filter_val=<TMPL_VAR NAME=VAL>&limit=' + this.options[this.selectedIndex].value">
+        <select name="limit" onchange="window.location='<TMPL_VAR NAME=SCRIPT_URL>?__mode=list_entries&blog_id=<TMPL_VAR NAME=BLOG_ID>&limit=' + this.options[this.selectedIndex].value">
             <TMPL_LOOP NAME=LIMIT_LOOP>
                 <option value="<TMPL_VAR NAME=LIMIT>"<TMPL_IF NAME=LIMIT_SELECTED> selected</TMPL_IF>><TMPL_VAR NAME=LIMIT_LABEL> Entries </option>
             </TMPL_LOOP>
         </select> 
 <TMPL_IF NAME=NEXT>
-<input type="button" onclick="window.location='<TMPL_VAR NAME=SCRIPT_URL>?show=<TMPL_VAR NAME=SHOW>&limit=<TMPL_VAR NAME=LIMIT>&offset=<TMPL_VAR NAME=NEXT_OFFSET>&blog_id=<TMPL_VAR NAME=BLOG_ID>&sort_order=<TMPL_VAR NAME=SORT_ORDER>&filter=<TMPL_VAR NAME=FILTER>&filter_val=<TMPL_VAR NAME=VAL>'" value="Next <TMPL_VAR NAME=LIMIT>" />     
+<input type="button" onclick="window.location='<TMPL_VAR NAME=SCRIPT_URL>?__mode=list_entries&limit=<TMPL_VAR NAME=LIMIT>&offset=<TMPL_VAR NAME=NEXT_OFFSET>&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="Next <TMPL_VAR NAME=LIMIT>" />     
 </TMPL_IF>
 </div>
 

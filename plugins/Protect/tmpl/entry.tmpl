@@ -41,6 +41,8 @@ it ensures that only those allowed can access the post, passwords can always be 
   <input type="hidden" name="_type" value="entry" />
   <input type="hidden" name="id" value="<TMPL_VAR NAME=ENTRY_ID>" />
   <input type="hidden" name="blog_id" value="<TMPL_VAR NAME=BLOG_ID>" />
+  
+<h4><input type="radio" name="protection" value="None">No Protection</h4>
 
 <h4><input <TMPL_IF NAME=IS_PASSWORD>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="togglePasswordPrefs(this); return true" value="Password">Password Protection</h4>
 		

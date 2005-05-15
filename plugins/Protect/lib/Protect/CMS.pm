@@ -285,6 +285,12 @@ sub save {
         }
         $data->save or
             return $app->error("Error: " . $data->errstr);
+        if($protection eq 'None') {
+        	$data->remove or
+            return $app->error("Error: " . $data->errstr);
+          $q->param('message', 'Protection Removed');  
+        }
+           
         edit($app);
     } elsif($type eq 'blog') {
     		$data = MT::Blog->load($blog_id);
@@ -365,7 +371,7 @@ sub list_entries {
     my %arg = (
     ($limit eq 'none' ? () : (limit => $limit + 1)),
     ($offset ? (offset => $offset) : ()),
-    );		
+    );	
     my %terms = (blog_id => $blog_id);    
 		my $i         = 0; # loop iteration counter
     my $n_entries = 0; # the number of entries displayed on this page
@@ -390,7 +396,32 @@ sub list_entries {
     $i = 0;
     foreach my $e (@data) {
         $e->{entry_odd} = ($i++ % 2 ? 0 : 1);
-    }		
+    }	
+    $param->{limit}    = $limit;
+    $param->{paginate} = 0;
+    if ($limit ne 'none') {
+        ## We tried to load $limit + 1 entries above; if we actually got
+        ## $limit + 1 back, we know we have another page of entries.
+        my $have_next_entry = scalar @entry_data == $limit + 1;
+        pop @entry_data if $have_next_entry;
+        if ($offset) {
+            $param->{prev} = 1;
+            $param->{prev_offset} = $offset - $limit;
+        }
+        if ($have_next_entry) {
+            $param->{next} = 1;
+            $param->{next_offset} = $offset + $limit;
+        }
+    }
+    
+    my @limit_data;
+    for (5, 10, 20, 50, 100) {
+        push @limit_data, { limit       => $_,
+        limit_label => $_ };
+        $limit_data[-1]{limit_selected} = 1 if $limit == $_;
+    }
+    $param->{limit_loop} = \@limit_data;
+    $param->{offset}= $offset;    	
 		$param->{entry_loop} = \@data;
     $app->add_breadcrumb($blog->name, $app->{mtscript_url} . '?__mode=menu&blog_id=' . $blog->id);
     $app->add_breadcrumb($app->translate('Protected Entries'));		
