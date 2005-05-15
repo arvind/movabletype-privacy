@@ -94,6 +94,7 @@ sub protected {
 			$start .= 'switch($name){';
       my $users = $protected->data;
       for my $user (@$users) {	
+      	# Thanks for the regex Tweezerman!
       	if($user =~ /group:(.*)/){
       		my $group = $1;
       		my $data = Protect::Groups->load({ label => $group });

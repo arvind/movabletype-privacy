@@ -31,7 +31,7 @@ sub init
     'install'             => \&install,
     'edit'                => \&edit,
     'save'                => \&save,
-    'list_entries'        => \&list,
+    'list_entries'        => \&list_entries,
     'tk_groups'           => \&tk_groups
     );
     
@@ -56,7 +56,6 @@ sub build_page {
     $param->{script_full_url   } =  $app->base . $app->uri;
     $param->{mt_version        } =  MT->VERSION;
     $param->{language_tag      } =  $app->current_language;
-    $param->{author_name       } =  $app->{author}->name;
     $app->SUPER::build_page($page, $param);
 }
 
@@ -358,11 +357,44 @@ sub list_entries {
     my $app = shift;
     my $q = $app->{query};	
 		my $blog_id = $q->param('blog_id');
+		my $blog = MT::Blog->load($blog_id);
 		my $param;
-#		my $iter = Protect::Protect->load_iter({ blog_id = $blog_id });
-#		while (my $ntry = $iter->()) {
-#			my $entry = MT::Entry->load($ntry->id);
-#		} 
+		my @data;
+    my $limit   = $q->param('limit')   || 20;
+    my $offset  = $q->param('offset')  || 0;		
+    my %arg = (
+    ($limit eq 'none' ? () : (limit => $limit + 1)),
+    ($offset ? (offset => $offset) : ()),
+    );		
+    my %terms = (blog_id => $blog_id);    
+		my $i         = 0; # loop iteration counter
+    my $n_entries = 0; # the number of entries displayed on this page
+    my $count     = 0; # the total number of (unpaginated) entries
+    my @entry_data;
+		my $iter = Protect::Protect->load_iter(\%terms, \%arg);
+		while (my $ntry = $iter->()) {
+      $count++;
+      $n_entries++;  
+      my $id = $ntry->entry_id;
+			my $entry = MT::Entry->load($id);
+			my $row = {
+				id => $entry->id,
+				title => $entry->title,
+				date => format_ts("%Y.%m.%d", $entry->created_on),
+				author => $entry->author->name,
+				type => $ntry->type,
+				entry_odd    => $n_entries % 2 ? 1 : 0,
+			};
+			push @data, $row;
+		} 
+    $i = 0;
+    foreach my $e (@data) {
+        $e->{entry_odd} = ($i++ % 2 ? 0 : 1);
+    }		
+		$param->{entry_loop} = \@data;
+    $app->add_breadcrumb($blog->name, $app->{mtscript_url} . '?__mode=menu&blog_id=' . $blog->id);
+    $app->add_breadcrumb($app->translate('Protected Entries'));		
+  	$app->build_page('list.tmpl',$param);    
 }
 
 #####################################################################

@@ -1,0 +1,60 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+
+<h2>Protected Entries</h2>
+
+
+<div class="instructional">
+The following is a list of protected entries. 
+</div>
+
+      <TMPL_IF NAME=MESSAGE>
+        <p class="message"><TMPL_VAR NAME=MESSAGE> <TMPL_IF NAME=MESSAGE>Click to <a title="Rebuild Files" onmouseover="window.status='Rebuild Files'; return true" href="#" onClick="window.open('<TMPL_VAR NAME=MTSCRIPT_URL>?__mode=rebuild_confirm&blog_id=<TMPL_VAR NAME=BLOG_ID>', 'rebuild', 'width=400,height=300,resizable=yes')">REBUILD</a>.</TMPL_IF></p>
+      </TMPL_IF>
+
+<div class="list">
+
+<table>
+    <tr>
+        <th>Title</th>
+				<th>Date</th>
+        <th>Author</th>
+        <th>Type</th>
+        <th>&nbsp;</th>
+    </tr>
+<TMPL_LOOP NAME=ENTRY_LOOP>
+
+    <tr class="<TMPL_IF NAME=ENTRY_ODD>odd<TMPL_ELSE>even</TMPL_IF>">
+				<td><a href="<TMPL_VAR NAME=MTSCRIPT_URL>?__mode=view&_type=entry&id=<TMPL_VAR NAME=ID>&blog_id=<TMPL_VAR NAME=BLOG_ID>"><TMPL_VAR NAME=TITLE></a></td> 
+        <td><TMPL_VAR NAME=DATE></td>
+      	<td><TMPL_VAR NAME=AUTHOR></td> 
+      	<td><TMPL_VAR NAME=TYPE> Protected</td> 
+        <td><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=entry&id=<TMPL_VAR NAME=ID>&blog_id=<TMPL_VAR NAME=BLOG_ID>">Edit Protection Options</a></td>  
+     </tr>
+
+</TMPL_LOOP>
+    </table>
+   
+<br />
+
+<hr />
+
+<div style="float:right;">
+<TMPL_IF NAME=PREV>
+<input type="button" onclick="window.location='<TMPL_VAR NAME=SCRIPT_URL>?show=<TMPL_VAR NAME=SHOW>&limit=<TMPL_VAR NAME=LIMIT>&offset=<TMPL_VAR NAME=PREV_OFFSET>&blog_id=<TMPL_VAR NAME=BLOG_ID>&sort_order=<TMPL_VAR NAME=SORT_ORDER>&filter=<TMPL_VAR NAME=FILTER>&filter_val=<TMPL_VAR NAME=VAL>'" value="Previous <TMPL_VAR NAME=LIMIT>" />
+</TMPL_IF>
+        <select name="limit" onchange="window.location='<TMPL_VAR NAME=SCRIPT_URL>?__mode=view&show=<TMPL_VAR NAME=SHOW>&blog_id=<TMPL_VAR NAME=BLOG_ID>&sort_order=<TMPL_VAR NAME=SORT_ORDER>&filter=<TMPL_VAR NAME=FILTER>&filter_val=<TMPL_VAR NAME=VAL>&limit=' + this.options[this.selectedIndex].value">
+            <TMPL_LOOP NAME=LIMIT_LOOP>
+                <option value="<TMPL_VAR NAME=LIMIT>"<TMPL_IF NAME=LIMIT_SELECTED> selected</TMPL_IF>><TMPL_VAR NAME=LIMIT_LABEL> Entries </option>
+            </TMPL_LOOP>
+        </select> 
+<TMPL_IF NAME=NEXT>
+<input type="button" onclick="window.location='<TMPL_VAR NAME=SCRIPT_URL>?show=<TMPL_VAR NAME=SHOW>&limit=<TMPL_VAR NAME=LIMIT>&offset=<TMPL_VAR NAME=NEXT_OFFSET>&blog_id=<TMPL_VAR NAME=BLOG_ID>&sort_order=<TMPL_VAR NAME=SORT_ORDER>&filter=<TMPL_VAR NAME=FILTER>&filter_val=<TMPL_VAR NAME=VAL>'" value="Next <TMPL_VAR NAME=LIMIT>" />     
+</TMPL_IF>
+</div>
+
+
+</div>
+
+<!-- End main content -->
+
+<TMPL_INCLUDE NAME="footer.tmpl">
