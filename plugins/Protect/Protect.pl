@@ -8,6 +8,7 @@ use MT::Plugin;
 #}
 use lib File::Spec->catdir('plugins','Protect','lib');
 use Protect::Protect;
+use Protect::Groups;
 use MT::Template::Context;
 
 use vars qw($VERSION);
@@ -93,7 +94,15 @@ sub protected {
 			$start .= 'switch($name){';
       my $users = $protected->data;
       for my $user (@$users) {	
-      	$start .= "case \"$user\":\n";
+      	if($user =~ /group:(.*)/){
+      		my $group = $1;
+      		my $data = Protect::Groups->load({ label => $group });
+      		my $user_groups = $data->data;
+      		for my $user_group (@$user_groups) {	
+		      	$start .= "case \"$user_group\":\n";
+		      }    		
+      	} else {
+      $start .= "case \"$user\":\n"; }
       }
       $start .= ' ?>';
       $start .= '<p>Thanks for signing in <?php echo typekey_nick() ?> <font size="1">(<a href="<?php echo typekey_logout_url() ?>">Logout</a>)</font></p>';
