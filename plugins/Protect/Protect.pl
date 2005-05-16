@@ -22,8 +22,9 @@ my $about = {
 }; 
 MT->add_plugin(new MT::Plugin($about));
 MT->add_plugin_action ('entry', 'mt-protect.cgi?__mode=edit', "Protect this entry");
-# MT->add_plugin_action ('list_entries', 'mt-protect.cgi?__mode=list_entries', "List Protected Entries");
+MT->add_plugin_action ('list_entries', 'mt-protect.cgi?__mode=list_entries', "List Protected Entries");
 MT->add_plugin_action ('blog', 'mt-protect.cgi?__mode=edit', 'Edit Protection Options');
+MT->add_plugin_action ('list_commenters', "mt-protect.cgi?__mode=edit&_type=groups\" onclick=\"var l=encodeURI(location); var h=this.href;var s;var ids = new Array;ids=document.getElementsByName('id');for (var i=0;i < ids.length;i++) if (ids[i].checked) s=ids[i].value+','+s;this.href=h+'&amp;author_id='+s+'&amp;_return='+l;\" annoying=\"", 'Add checked commenters to group');
 
 MT::Template::Context->add_tag(ProtectInclude           => \&include);
 MT::Template::Context->add_container_tag(Protected    => \&protected);

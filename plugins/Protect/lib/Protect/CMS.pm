@@ -217,6 +217,18 @@ sub edit {
     $app->add_breadcrumb($blog->name,$app->{mtscript_url}.'?__mode=menu&blog_id='.$blog->id); 
     $app->add_breadcrumb("Protection Options");	
   } elsif($type eq 'groups') {
+  		my $author_ids = $q->param('author_id');
+  		my @authors_list = split(/,/,$author_ids);
+      for my $author_id (@authors_list) {
+      	if($author_id ne 'undefined') {
+      		my $commenter = MT::Author->load($author_id);
+          my $cauthor = {
+              user => $commenter->name
+          };
+          
+          push @data, $cauthor;
+        }
+      }
 			$param->{add} = 1 if $q->param('add') == 1;
 			$param->{edit} = 1 if $q->param('edit') == 1;
 			my $data = Protect::Groups->load({id => $entry_id });
