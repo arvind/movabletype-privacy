@@ -10,7 +10,7 @@ use strict;
 
 use vars qw( $DEBUG $VERSION @ISA $USE_SEARCH_PATH_HACK );
 @ISA = qw(MT::App::CMS);
-$VERSION = '1.0b1';
+$VERSION = '1.0';
 
 use MT::PluginData;
 use MT::Util qw( format_ts offset_time_list );

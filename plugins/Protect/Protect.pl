@@ -7,15 +7,15 @@ use MT::Plugin;
 #  use lib './plugins/Protect/lib';
 #}
 use lib File::Spec->catdir('plugins','Protect','lib');
+use Protect::CMS;
 use Protect::Protect;
 use Protect::Groups;
 use MT::Template::Context;
 
 use vars qw($VERSION);
-$VERSION = '1.0b1';
 my $about = {
 	dir => 'Protect',
-  name => 'MT Protect v'.$VERSION,
+  name => 'MT Protect v'.$Protect::CMS::VERSION,
   config_link => 'mt-protect.cgi?__mode=global_config',
   description => 'Adds the ability to protect entires either by password or using Typekey authentication.',
   doc_link => 'http://www.movalog.com/plugins/wiki/MtProtect'
