@@ -214,6 +214,31 @@ sub edit {
   } elsif($type eq 'blog' || $type eq 'blog_home'){
   	$tmpl = 'blog.tmpl';
   	$param->{typekey_token} = $blog->remote_auth_token;
+        my $data = Protect::Protect->load({entry_id    => '0', blog_id => $blog_id });
+        if($data){
+            my $data_type = $data->type;
+            if($data_type eq 'Password'){
+                $param->{is_password} = 1;
+                my $password = $data->password;
+                $param->{password} = $password;
+            }
+            elsif($data_type eq 'Typekey'){
+                $param->{is_typekey} = 1;
+                my $users = $data->data;
+                for my $user (@$users) {
+                    my $row = {
+                        user => $user
+                    };
+                    
+                    push @data, $row;
+                }
+            }
+        }
+        for (my $i = 1; $i <= 5; $i++) {
+            push @data, $i;
+        }
+
+        $param->{typekey_user_loop} = \@data;  	
     $app->add_breadcrumb($blog->name,$app->{mtscript_url}.'?__mode=menu&blog_id='.$blog->id); 
     $app->add_breadcrumb("Protection Options");	
   } elsif($type eq 'groups') {
@@ -310,7 +335,43 @@ sub save {
     		$data->remote_auth_token($remote_auth_token);
     		$data->save or
             return $app->error("Error: " . $data->errstr);
-				$q->param('message', 'Typekey token saved');    		
+{
+        my $entry_id = '0';
+        my $protection = $q->param('protection');
+    unless($data = Protect::Protect->load({ entry_id   => $entry_id, blog_id => $blog_id })){
+            $data = Protect::Protect->new;
+            $data->blog_id($blog_id);
+            $data->entry_id($entry_id);
+            $data->created_by($app->{author}->id);
+        }
+        if($protection eq 'Password') {
+            $data->type($protection);
+            my $password = $q->param('password');
+            $data->password($password);
+            $q->param('message', 'Entry now password protected');
+          } 
+          elsif($protection eq 'Typekey') {
+            $q->param('message', 'Entry now Typekey protected');            	
+            $data->type($protection);
+            my @users;
+            for my $user ($q->param('typekey_users')) {
+                if($user && $user ne ""){
+                    push (@users, $user);
+                }
+            }
+            $data->data(\@users);
+        }
+        $data->save or
+            return $app->error("Error: " . $data->errstr);
+        if($protection eq 'None') {
+        	$data->remove or
+            return $app->error("Error: " . $data->errstr);
+          $q->param('message', 'Protection Removed');  
+        }
+           
+        edit($app);
+    }            
+				$q->param('message', 'Options Saved');    		
     		edit($app);
     }elsif($type eq 'groups') {
     	my $label = $q->param('label');

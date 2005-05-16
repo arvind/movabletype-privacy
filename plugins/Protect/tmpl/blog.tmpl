@@ -1,4 +1,27 @@
 <TMPL_INCLUDE NAME="header.tmpl">
+<div id="cfg-prefs">
+<script type="text/javascript">
+<!--
+function getByID (n) {
+    var d = window.document;
+    if (d.getElementById)
+        return d.getElementById(n);
+    else if (d.all)
+        return d.all[n];
+}
+function togglePasswordPrefs (c) {
+    var e = getByID('password_prefs');
+    if (c.checked) e.style.display = 'block';
+    if (!c.checked) e.style.display = 'none';
+}
+function toggleTKPrefs (c) {
+    var e = getByID('typekey_prefs');
+    if (c.checked) e.style.display = 'block';
+    if (!c.checked) e.style.display = 'none';
+}
+
+//-->
+</script>	
 
 <h2><TMPL_VAR NAME=BLOG_NAME>: Protection Options</h2>
 
@@ -15,6 +38,27 @@
   
 <h4><label for="remote_auth_token">TypeKey Token:</label> <input type="text" id="remote_auth_token" name="remote_auth_token" value="<TMPL_VAR NAME=TYPEKEY_TOKEN>" /></h4>
 
-<p><input type="submit" name="submit" value="Save" />&nbsp;<input type="button" onclick="window.location='<TMPL_VAR NAME=MTSCRIPT_URL>?__mode=menu&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="Go Back" />     </p>
+<h2>Protect <TMPL_VAR NAME=BLOG_NAME></h2>
 
+<h4><input type="radio" name="protection" value="None">No Protection</h4>
+
+<h4><input <TMPL_IF NAME=IS_PASSWORD>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="togglePasswordPrefs(this); return true" value="Password">Password Protection</h4>
+		
+<div id="password_prefs" class="sub-field"<TMPL_IF NAME=IS_PASSWORD> style="display: block;"</TMPL_IF>>
+<p><label><MT_TRANS phrase="Entry Password"></label></p>
+<input name="password" id="password" value="<TMPL_VAR NAME=PASSWORD>" /></p>
+</div>
+
+<h4><input <TMPL_IF NAME=IS_TYPEKEY>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="toggleTKPrefs(this); return true" value="Typekey">Typekey Protection</h4>
+		
+<div id="typekey_prefs" class="sub-field"<TMPL_IF NAME=IS_TYPEKEY> style="display: block;"</TMPL_IF>>
+<p><label><MT_TRANS phrase="Allow the following Typekey users, enter their Typekey usernames (case sensitive)"></label></p>
+<TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
+<p><input name="typekey_users" id="typekey_users" value="<TMPL_VAR NAME=USER>" /></p>
+</TMPL_LOOP>
+
+</div>
+
+<p><input type="submit" name="submit" value="Save" />&nbsp;<input type="button" onclick="window.location='<TMPL_VAR NAME=MTSCRIPT_URL>?__mode=menu&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="Go Back" />     </p>
+</div>
 <TMPL_INCLUDE NAME="footer.tmpl">
