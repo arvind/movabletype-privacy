@@ -1,5 +1,11 @@
 <TMPL_INCLUDE name="header_global.tmpl">
 
+<h2>Typekey Groups</h2>
+
+<TMPL_IF NAME=MESSAGE>
+<p class="message"><TMPL_VAR NAME=MESSAGE></p>
+</TMPL_IF>
+
 <p>Typekey groups are a way for you to quickly assign permissions. They save you time so that you don't have to keep entering the same user names over and over again</p>
 
 <div align="right"><img alt="Create new group" src="<TMPL_VAR NAME=STATIC_URI>images/create.gif" width="9" height="9" /> <a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=groups&add=1">Create new group</a></div>

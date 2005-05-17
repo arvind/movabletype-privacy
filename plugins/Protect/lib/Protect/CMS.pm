@@ -32,7 +32,8 @@ sub init
     'edit'                => \&edit,
     'save'                => \&save,
     'list_entries'        => \&list_entries,
-    'tk_groups'           => \&tk_groups
+    'tk_groups'           => \&tk_groups,
+    'delete'              => \&delete
     );
     
     
@@ -500,6 +501,54 @@ sub list_entries {
     $app->add_breadcrumb($app->translate('Protected Entries'));		
   	$app->build_page('list.tmpl',$param);    
 }
+
+sub delete
+{
+    debug("Calling delete_entry...");
+    my $app = shift;
+    my $q = $app->{query};
+ 		my $type = $q->param('_type');
+    if (!defined($q->param('confirm'))) {
+        return confirm_delete($app);
+    }
+    if($type eq 'groups') {
+    	if ($q->param('confirm') ne 'Yes') {
+				  return tk_groups($app);
+        }    	
+    	$q->param('message','Groups removed');
+        foreach my $key ($q->param('id')) {
+            my $data = Protect::Groups->load({ id    => $key });
+            $data->remove or return $app->error("Error: " . $data->errstr);
+        }
+     tk_groups($app);       	
+    }
+    
+}
+
+sub confirm_delete {
+    my $app = shift;
+    my $q = $app->{query};
+ 		my $type = $q->param('_type');    
+    my @entry_data;
+    my $param;
+    if($type eq 'groups') {
+    foreach my $id ($q->param('id')) {
+    	my $data = Protect::Groups->load({ id    => $id });
+      my $row = {
+                id          => $id,
+                label   => $data->label,
+                description    => $data->description,
+        };
+       push @entry_data, $row;
+    	}    	
+    $app->add_breadcrumb("MT Protect",'mt-protect.cgi?__mode=global_config');
+  	$app->add_breadcrumb("Typekey Groups",'mt-protect.cgi?__mode=tk_groups');	
+  	$app->add_breadcrumb("Confirm Delete");
+    }
+    $param->{entry_loop} = \@entry_data;
+    $param->{type} = $q->param('_type');
+	$app->build_page('delete.tmpl', $param);   
+}        
 
 #####################################################################
 # UTILITY SUBROUTINES

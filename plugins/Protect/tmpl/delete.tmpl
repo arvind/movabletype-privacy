@@ -1,0 +1,29 @@
+<TMPL_INCLUDE NAME="header_global.tmpl">
+
+<div class="instructional">
+Please confirm this transaction.
+</div>
+
+<form method="get" action="<TMPL_VAR NAME=SCRIPT_URL>">
+  <input type="hidden" name="__mode" value="delete" />
+  <input type="hidden" name="_type" value="<TMPL_VAR NAME=TYPE>" />
+
+ 
+<p>
+Are you sure you wish to delete the following items?
+
+<ul>
+<TMPL_LOOP NAME=ENTRY_LOOP>
+  <li><strong><TMPL_VAR NAME=LABEL></strong><br /><TMPL_VAR NAME=DESCRIPTION></li>
+  <input type="hidden" name="id" value="<TMPL_VAR NAME=ID>" />
+</TMPL_LOOP>
+</ul>
+
+</p>
+
+<input type="submit" name="confirm" value="Yes" />
+<input type="submit" name="confirm" value="No" />
+
+</form>
+
+<TMPL_INCLUDE NAME="footer_global.tmpl">
