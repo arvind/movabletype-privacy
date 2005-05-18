@@ -66,7 +66,7 @@ sub ifprotected {
 
 
 sub protected {
-	my ($ctx, $args) = @_;
+	my ($ctx, $args, $cond) = @_;
   my $blog_id = $_[0]->stash('blog')->id;
   my $blog_url = $_[0]->stash('blog')->site_url;
   $blog_url .= '/' unless $blog_url =~ m!/$!;
@@ -75,7 +75,7 @@ sub protected {
 	my $e = $_[0]->stash('entry');
 	my $entry_id = $e->id;
 	my ($start, $middle, $bottom, $protected);
-    defined (my $out = $builder->build ($ctx, $tokens))
+    defined (my $out = $builder->build ($ctx, $tokens, $cond))
       or return $ctx->error ($ctx->errstr);
 		unless($protected = Protect::Protect->load({ entry_id   => $entry_id })){
 		return $out;
@@ -128,7 +128,7 @@ sub protected {
 }
 
 sub blog_protected {
-	my ($ctx, $args) = @_;
+	my ($ctx, $args, $cond) = @_;
   my $blog_id = $_[0]->stash('blog')->id;
   my $blog_url = $_[0]->stash('blog')->site_url;
   $blog_url .= '/' unless $blog_url =~ m!/$!;
@@ -136,7 +136,7 @@ sub blog_protected {
   my $tokens = $ctx->stash ('tokens');
 	my $entry_id = '0';
 	my ($start, $middle, $bottom, $protected);
-    defined (my $out = $builder->build ($ctx, $tokens))
+    defined (my $out = $builder->build ($ctx, $tokens, $cond))
       or return $ctx->error ($ctx->errstr);
 		unless($protected = Protect::Protect->load({ entry_id   => $entry_id, blog_id => $blog_id })){
 		return $out;
