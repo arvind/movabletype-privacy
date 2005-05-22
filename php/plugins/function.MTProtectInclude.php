@@ -11,7 +11,7 @@ function smarty_function_MTProtectInclude($args, &$ctx) {
       }
     global $tk_token, $logged_in, $login_url, $name, $nick, $logout_url;  
     $tk_token = $blog['blog_remote_auth_token'];
-		$include = $blog_path.'typekey_lib.php';
+		$include = $blog_path.'typekey_lib_dynamic.php';
 		include_once($include); 
 		$logged_in = typekey_logged_in();
 		$login_url = typekey_login_url();

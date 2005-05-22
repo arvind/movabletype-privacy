@@ -17,7 +17,7 @@ function smarty_block_MTBlogProtect($content, $args, &$ctx, &$repeat) {
 				$pass = $protected['protect_password'];
 				$cookie = 'mt-postpass_'.md5($pass);
 				if($pass == "" || isset($_REQUEST[$cookie]) ) { 
-					echo "Hello World";
+					return $content;
 				} else { 
 				$middle .= '<form action="'.$blog_url.'mt-password.php" method="post">';
 				$middle .= '<input name="entry_id" value="'.$entry_id.'" type="hidden" />';
@@ -49,10 +49,7 @@ function smarty_block_MTBlogProtect($content, $args, &$ctx, &$repeat) {
 			     array_push($auth_users, $user); 
 			   } 
 			 } 
-			 print_r($auth_users);
-			 print_r($name);
-			 $nname = "Arvind";
-			 if (in_array($nname, $auth_users)) {
+			 if (in_array($name, $auth_users)) {
 			  	echo "<p>Thanks for signing in $nick <font size=\"1\">(<a href=\"$logout_url\">Logout</a>)</font></p>"; 
 			 } else { 
 			   if ($logged_in) { 

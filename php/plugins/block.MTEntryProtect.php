@@ -1,5 +1,6 @@
 <?php
 function smarty_block_MTEntryProtect($content, $args, &$ctx, &$repeat) {
+	$localvars = array('entry', '_entries_counter','entries','current_timestamp','modification_timestamp','_entries_lastn', 'current_timestamp_end');
 	$repeat = false;
 	global $tk_token, $logged_in, $login_url, $name, $nick, $logout_url;
 	$blog = $ctx->stash('blog');
@@ -17,7 +18,7 @@ function smarty_block_MTEntryProtect($content, $args, &$ctx, &$repeat) {
 				$pass = $protected['protect_password'];
 				$cookie = 'mt-postpass_'.md5($pass);
 				if($pass == "" || isset($_REQUEST[$cookie]) ) { 
-					echo "Hello World";
+					echo $output;
 				} else { 
 				$middle .= '<form action="'.$blog_url.'mt-password.php" method="post">';
 				$middle .= '<input name="entry_id" value="'.$entry_id.'" type="hidden" />';
@@ -49,10 +50,7 @@ function smarty_block_MTEntryProtect($content, $args, &$ctx, &$repeat) {
 			     array_push($auth_users, $user); 
 			   } 
 			 } 
-			 print_r($auth_users);
-			 print_r($name);
-			 $nname = "Arvind";
-			 if (in_array($nname, $auth_users)) {
+			 if (in_array($name, $auth_users)) {
 			  	echo "<p>Thanks for signing in $nick <font size=\"1\">(<a href=\"$logout_url\">Logout</a>)</font></p>"; 
 			 } else { 
 			   if ($logged_in) { 
