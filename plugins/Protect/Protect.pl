@@ -152,7 +152,7 @@ sub blog_protected {
 				$middle .= '<form action="'.$blog_url.'mt-password.php" method="post">';
 				$middle .= '<input name="entry_id" value="'.$entry_id.'" type="hidden" />';
 				$middle .= '<input name="blog_id" value="'.$blog_id.'" type="hidden" />';
-     		$middle .= '<p>This post is password protected. To view it please enter your password below:</p>';
+     		$middle .= '<p>This blog is password protected. To view it please enter your password below:</p>';
      		$middle .= '<p><label>Password:</label> <input name="post_password" type="text" size="20" /> <input type="submit" name="Submit" value="Submit" /></p>';
         $middle .= '</form>';
 				$bottom = '<?php } ?>';
@@ -179,9 +179,9 @@ sub blog_protected {
       $middle .= 'break;';
       $middle .= 'default:';
       $middle .= 'if(!$logged_in) {';
-      $middle .= 'echo "This entry has been Typekey protected so only selected Typekey users can read it. <a href=\"$login_url\">Sign in</a>";';	
+      $middle .= 'echo "This blog has been Typekey protected so only selected Typekey users can read it. <a href=\"$login_url\">Sign in</a>";';	
       $middle .= '} elseif($logged_in){';
-      $middle .= 'echo "Hello $nick. You do not have the rights to access this entry. Sorry! (<a href=\"$logout_url\">Sign Out</a>)";';
+      $middle .= 'echo "Hello $nick. You do not have the rights to access this blog. Sorry! (<a href=\"$logout_url\">Sign Out</a>)";';
       $middle .= '} } ?>';
       return $start.$out.$middle;
 		}
