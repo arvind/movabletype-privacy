@@ -1,6 +1,5 @@
 <?php
-function smarty_block_MTBlogProtect($content, $args, &$ctx, &$repeat) {
-	$repeat = false;
+function smarty_block_MTBlogProtect($args, $content, &$ctx, &$repeat) {
 	global $tk_token, $logged_in, $login_url, $name, $nick, $logout_url;
 	$blog = $ctx->stash('blog');
   $blog_id = $blog['blog_id'];
@@ -19,14 +18,16 @@ function smarty_block_MTBlogProtect($content, $args, &$ctx, &$repeat) {
 				if($pass == "" || isset($_REQUEST[$cookie]) ) { 
 					return $content;
 				} else { 
-				$middle .= '<form action="'.$blog_url.'mt-password.php" method="post">';
-				$middle .= '<input name="entry_id" value="'.$entry_id.'" type="hidden" />';
-				$middle .= '<input name="blog_id" value="'.$blog_id.'" type="hidden" />';
-     		$middle .= '<p>This post is password protected. To view it please enter your password below:</p>';
-     		$middle .= '<p><label>Password:</label> <input name="post_password" type="text" size="20" /> <input type="submit" name="Submit" value="Submit" /></p>';
-        $middle .= '</form>';
-        echo $middle;
+					if(!isset($content)){
+						$middle .= '<form action="'.$blog_url.'mt-password.php" method="post">';
+						$middle .= '<input name="entry_id" value="'.$entry_id.'" type="hidden" />';
+						$middle .= '<input name="blog_id" value="'.$blog_id.'" type="hidden" />';
+		     		$middle .= '<p>This post is password protected. To view it please enter your password below:</p>';
+		     		$middle .= '<p><label>Password:</label> <input name="post_password" type="text" size="20" /> <input type="submit" name="Submit" value="Submit" /></p>';
+		        $middle .= '</form>';
+		        echo $middle;
 				}
+			}
 
 		} elseif($type == 'Typekey') {
 // Thanks Tweezerman for help with this code			
@@ -49,17 +50,24 @@ function smarty_block_MTBlogProtect($content, $args, &$ctx, &$repeat) {
 			     array_push($auth_users, $user); 
 			   } 
 			 } 
-			 if (in_array($name, $auth_users)) {
-			  	echo "<p>Thanks for signing in $nick <font size=\"1\">(<a href=\"$logout_url\">Logout</a>)</font></p>"; 
-			 } else { 
-			   if ($logged_in) { 
-			      echo "Hello $nick. You do not have the rights to access this entry. Sorry! (<a href=\"$logout_url\">Sign Out</a>)";
-			   } else { 
-			 		   echo "This entry has been Typekey protected so only selected Typekey users can read it. <a href=\"$login_url\">Sign in</a>";
-			   } 
-			 } 			
+        if (in_array($name, $auth_users)) {
+        	if(!isset($content)){
+            echo "<p>Thanks for signing in $nick <font size=\"1\">(<a href=\"$logout_url\">Logout</a>)</font></p>";
+           }
+            return $content;
+            } else {
+            	if(!isset($content)){                	
+            if ($logged_in) {
+                echo "Hello $nick. You do not have the rights to access this entry. Sorry! (<a href=\"$logout_url\">Sign Out</a>)";
+              } else {
+                echo "This entry has been Typekey protected so only selected Typekey users can read it. <a href=\"$login_url\">Sign in</a>";
+            }
+        }
+      } 			
 			
 		}
-	}	
+ } else {
+    	return $content;
+  }
 }
 ?>
