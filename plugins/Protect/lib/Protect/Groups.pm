@@ -1,7 +1,7 @@
 package Protect::Groups;
 use strict;
 
-use Storable qw( freeze thaw );
+use YAML qw( freeze thaw );
 
 use MT::Object;
 @Protect::Groups::ISA = qw( MT::Object );

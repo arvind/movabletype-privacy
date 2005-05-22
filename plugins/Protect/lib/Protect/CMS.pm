@@ -100,6 +100,7 @@ sub install {
     my $blog = MT::Blog->load($blog_id);
     my $auth_typekey = $blog->site_path . "/Auth_TypeKey.php";
     my $typekey_lib = $blog->site_path . "/typekey_lib.php";
+    my $typekey_lib_dynamic = $blog->site_path . "/typekey_lib_dynamic.php";
     my $mt_pass = $blog->site_path . "/mt-password.php";
     if($type eq 'install') {
         my $url = 'http://www.movalog.com/archives/plugins/protect/Auth_Typekey.txt';
@@ -121,6 +122,16 @@ sub install {
             } else {
             die;
         }
+        
+        $url = 'http://www.movalog.com/archives/plugins/protect/typekey_lib_dynamic.txt';
+        $auth_tk_text = _load_link ( $url );
+        
+        if (open(TARGET, ">$typekey_lib_dynamic")) {
+            print TARGET $auth_tk_text;
+            close TARGET;
+            } else {
+            die;
+        }        
         
         $url = 'http://www.movalog.com/archives/plugins/protect/mt-pass.txt';
         $auth_tk_text = _load_link ( $url );
