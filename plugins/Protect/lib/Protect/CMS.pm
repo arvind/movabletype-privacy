@@ -467,6 +467,7 @@ sub list_entries {
       $count++;
       $n_entries++;  
       my $id = $ntry->entry_id;
+      if($id != 0) {
                         my $entry = MT::Entry->load($id);
                         my $row = {
                                 id => $entry->id,
@@ -478,6 +479,7 @@ sub list_entries {
                         };
                         push @data, $row;
                 } 
+              }
     $i = 0;
     foreach my $e (@data) {
         $e->{entry_odd} = ($i++ % 2 ? 0 : 1);
