@@ -169,9 +169,19 @@ sub install {
         }
         if (-f $typekey_lib) {
             if (unlink $typekey_lib) {
-                $app->log("Deleted Auth_Typeky.php");
+                $app->log("Deleted typekey_lib.php");
             }
         }
+        if (-f $typekey_lib_dynamic) {
+            if (unlink $typekey_lib_dynamic) {
+                $app->log("Deleted typekey_lib_dynamic.php");
+            }
+        }    
+        if (-f $mt_pass) {
+            if (unlink $mt_pass) {
+                $app->log("Deleted mt-pass.php");
+            }
+        }             
         my $pdblog = MT::PluginData->load({ plugin => 'Protect', key    => $blog_id });
         $pdblog->remove;
         $q->param('uninstalled', 1);
@@ -320,9 +330,11 @@ sub save {
             my $password = $q->param('password');
             $data->password($password);
             $q->param('message', 'Entry now password protected');
+            $app->log("'" . $app->{author}->name . "' password protected entry #".$entry_id);
           } 
           elsif($protection eq 'Typekey') {
-            $q->param('message', 'Entry now Typekey protected');                
+            $q->param('message', 'Entry now Typekey protected');  
+            $app->log("'" . $app->{author}->name . "' Typekey protected entry #".$entry_id);              
             $data->type($protection);
             my @users;
             for my $user ($q->param('typekey_users')) {
@@ -338,6 +350,7 @@ sub save {
                 $data->remove or
             return $app->error("Error: " . $data->errstr);
           $q->param('message', 'Protection Removed');  
+          $app->log("'" . $app->{author}->name . "' removed protection on entry #".$entry_id);
         }
            
         edit($app);
@@ -360,10 +373,12 @@ sub save {
             $data->type($protection);
             my $password = $q->param('password');
             $data->password($password);
-            $q->param('message', 'Entry now password protected');
+            $q->param('message', 'Blog now password protected');
+            $app->log("'" . $app->{author}->name . "' password protected blog #".$blog_id);
           } 
           elsif($protection eq 'Typekey') {
-            $q->param('message', 'Entry now Typekey protected');                
+            $q->param('message', 'Blog now Typekey protected'); 
+            $app->log("'" . $app->{author}->name . "' Typekey protected blog #".$blog_id);               
             $data->type($protection);
             my @users;
             for my $user ($q->param('typekey_users')) {
@@ -378,7 +393,8 @@ sub save {
         if($protection eq 'None') {
                 $data->remove or
             return $app->error("Error: " . $data->errstr);
-          $q->param('message', 'Protection Removed');  
+          $q->param('message', 'Protection Removed'); 
+          $app->log("'" . $app->{author}->name . "' removed protection on blog #".$blog_id); 
         }
            
         edit($app);
