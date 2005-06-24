@@ -15,6 +15,9 @@ function smarty_block_MTEntryProtect($args, $content, &$ctx, &$repeat) {
     $protected = $ctx->mt->db->get_row($sql, ARRAY_A);		
 		$ctx->stash('protected',$protected);
 		if(isset($protected)) {
+				$text = $args['password_text']; 
+				if(empty($text))
+					$text = "This post is password protected. To view it please enter your password below";
 			$type = $protected['protect_type'];
 			$ctx->stash('type',$type);
 			if($type == 'Password') {
@@ -22,12 +25,14 @@ function smarty_block_MTEntryProtect($args, $content, &$ctx, &$repeat) {
 				$ctx->stash('pass',$pass);
 				$cookie = 'mt-postpass_'.md5($pass);
 				$ctx->stash('cookie',$cookie);
-        $middle = '<form action="'.$blog_url.'mt-password.php" method="post">';
+				$middle = '<div id="protect">';
+        $middle .= '<form action="'.$blog_url.'mt-password.php" method="post">';
         $middle .= '<input name="entry_id" value="'.$entry_id.'" type="hidden" />';
         $middle .= '<input name="blog_id" value="'.$blog_id.'" type="hidden" />';
-        $middle .= '<p>This post is password protected. To view it please enter your password below:</p>';
+        $middle .= '<p>'.$text.'</p>';
         $middle .= '<p><label>Password:</label> <input name="post_password" type="text" size="20" /> <input type="submit" name="Submit" value="Submit" /></p>';
-        $middle .= '</form>';		
+        $middle .= '</form>';	
+        $middle .= '</div>';			
         $ctx->stash('middle',$middle);		
 			}	
 			elseif($type == 'Typekey'){
@@ -67,17 +72,23 @@ function smarty_block_MTEntryProtect($args, $content, &$ctx, &$repeat) {
         	$content = $ctx->stash('middle');
         }			
 			}
-			elseif($type == "Typekey") {
+			elseif($type == "Typekey") {	
+				$signintext = $args['tk_signin_text'];
+				if(empty($signintext))
+					$signintext = "This blog has been Typekey protected so only selected Typekey users can read it. ";
+				$notallowed = $args['tk_barred_text'];
+				if(empty($notallowed)) 
+					$notallowed = "You do not have the rights to access this blog. Sorry!";		
 				$auth_users = $ctx->stash('auth_users');
 				if (in_array($name, $auth_users)) {
-					$message = "<p>Thanks for signing in $nick <font size=\"1\">(<a href=\"$logout_url\">Logout</a>)</font></p>";
+					$message = "<p class=\"protected\">Thanks for signing in $nick <font size=\"1\">(<a href=\"$logout_url\">Logout</a>)</font></p>";
 					$content = $message.$content;
 				} 
 				else {
           if ($logged_in) {
-              $content = "Hello $nick. You do not have the rights to access this entry. Sorry! (<a href=\"$logout_url\">Sign Out</a>)";
+              $content = "<p class=\"protected\">Hello $nick. ".$notallowed." (<a href=\"$logout_url\">Sign Out</a>)</p>";
             } else {
-              $content = "This entry has been Typekey protected so only selected Typekey users can read it. <a href=\"$login_url\">Sign in</a>";
+              $content = "<p class=\"protected\">".$signintext." <a href=\"$login_url\">Sign in</a></p>";
           }					
 				}
 			}

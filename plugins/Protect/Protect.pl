@@ -81,22 +81,28 @@ sub protected {
 		return $out;
 	}
 	if($protected) {
+		my $text = $args->{password_text} || "This post is password protected. To view it please enter your password below:";
 		my $type = $protected->type;
 		if($type eq 'Password') {
 				$start = "<?php\n";
 				$start .= '$pass = $db->get_var("select protect_password from mt_protect where protect_entry_id = '.$entry_id.'"); ';
 				$start .= '$cookie = \'mt-postpass_\'.md5($pass); ';
 				$start .= 'if($pass == "" || isset($_REQUEST[$cookie]) ) { ?>';
-				$middle = '<?php } else { ?>';
+				$middle .= '<?php } else { ?>';
+				$middle .= '<div class="protected">';
 				$middle .= '<form action="'.$blog_url.'mt-password.php" method="post">';
 				$middle .= '<input name="entry_id" value="'.$entry_id.'" type="hidden" />';
 				$middle .= '<input name="blog_id" value="'.$blog_id.'" type="hidden" />';
-     		$middle .= '<p>This post is password protected. To view it please enter your password below:</p>';
-     		$middle .= '<p><label>Password:</label> <input name="post_password" type="text" size="20" /> <input type="submit" name="Submit" value="Submit" /></p>';
+     		$middle .= '<p>'.$text.'</p>';
+     		$middle .= '<p><label for="post_password">Password:</label> <input name="post_password" type="text" size="20" /> <input type="submit" name="Submit" value="Submit" /></p>';
         $middle .= '</form>';
-				$bottom = '<?php } ?>';
+        $middle .= '</div>';
+				$bottom .= '<?php } ?>';
 				return $start.$out.$middle.$bottom;
 		} elsif($type eq 'Typekey'){
+			my $signintext = $args->{tk_signin_text} || "This blog has been Typekey protected so only selected Typekey users can read it. ";
+			my $notallowed = $args->{tk_barred_text} || "You do not have the rights to access this blog. Sorry!";
+	
 			$start = "<?php\n";
 			$start .= 'switch($name){';
       my $users = $protected->data;
@@ -118,9 +124,9 @@ sub protected {
       $middle .= 'break;';
       $middle .= 'default:';
       $middle .= 'if(!$logged_in) {';
-      $middle .= 'echo "This entry has been Typekey protected so only selected Typekey users can read it. <a href=\"$login_url\">Sign in</a>";';	
+      $middle .= 'echo "<p class=\"protected\">'.$signintext.' <a href=\"$login_url\">Sign in</a></p>";';	
       $middle .= '} elseif($logged_in){';
-      $middle .= 'echo "Hello $nick. You do not have the rights to access this entry. Sorry! (<a href=\"$logout_url\">Sign Out</a>)";';
+      $middle .= 'echo "<p class=\"protected\">Hello $nick.'.$notallowed.' (<a href=\"$logout_url\">Sign Out</a>)</p>";';
       $middle .= '} } ?>';
       return $start.$out.$middle;
 		}
@@ -142,22 +148,28 @@ sub blog_protected {
 		return $out;
 	}
 	if($protected) {
+		my $text = $args->{password_text} || "This blog is password protected. To view it please enter your password below:";
 		my $type = $protected->type;
 		if($type eq 'Password') {
 				$start = "<?php\n";
-				$start .= '$pass = $db->get_var("select protect_password from mt_protect where protect_entry_id = '.$entry_id.' and protect_blog_id ='.$blog_id.'"); ';
+				$start .= '$pass = $db->get_var("select protect_password from mt_protect where protect_entry_id = '.$entry_id.'"); ';
 				$start .= '$cookie = \'mt-postpass_\'.md5($pass); ';
 				$start .= 'if($pass == "" || isset($_REQUEST[$cookie]) ) { ?>';
-				$middle = '<?php } else { ?>';
+				$middle .= '<?php } else { ?>';
+				$middle .= '<div class="protected">';
 				$middle .= '<form action="'.$blog_url.'mt-password.php" method="post">';
 				$middle .= '<input name="entry_id" value="'.$entry_id.'" type="hidden" />';
 				$middle .= '<input name="blog_id" value="'.$blog_id.'" type="hidden" />';
-     		$middle .= '<p>This blog is password protected. To view it please enter your password below:</p>';
-     		$middle .= '<p><label>Password:</label> <input name="post_password" type="text" size="20" /> <input type="submit" name="Submit" value="Submit" /></p>';
+     		$middle .= '<p>'.$text.'</p>';
+     		$middle .= '<p><label for="post_password">Password:</label> <input name="post_password" type="text" size="20" /> <input type="submit" name="Submit" value="Submit" /></p>';
         $middle .= '</form>';
-				$bottom = '<?php } ?>';
+        $middle .= '</div>';
+				$bottom .= '<?php } ?>';
 				return $start.$out.$middle.$bottom;
 		} elsif($type eq 'Typekey'){
+			my $signintext = $args->{tk_signin_text} || "This blog has been Typekey protected so only selected Typekey users can read it. ";
+			my $notallowed = $args->{tk_barred_text} || "You do not have the rights to access this blog. Sorry!";
+
 			$start = "<?php\n";
 			$start .= 'switch($name){';
       my $users = $protected->data;
@@ -174,15 +186,16 @@ sub blog_protected {
       $start .= "case \"$user\":\n"; }
       }
       $start .= ' ?>';
-      $start .= '<p>Thanks for signing in <?php echo typekey_nick() ?> <font size="1">(<a href="<?php echo typekey_logout_url() ?>">Logout</a>)</font></p>';
+      $start .= '<p class="protected">Thanks for signing in <?php echo typekey_nick() ?> <font size="1">(<a href="<?php echo typekey_logout_url() ?>">Logout</a>)</font></p>';
       $middle = "<?php\n";
       $middle .= 'break;';
       $middle .= 'default:';
       $middle .= 'if(!$logged_in) {';
-      $middle .= 'echo "This blog has been Typekey protected so only selected Typekey users can read it. <a href=\"$login_url\">Sign in</a>";';	
+      $middle .= 'echo "<p class=\"protected\">'.$signintext.' <a href=\"$login_url\">Sign in</a></p>";';	
       $middle .= '} elseif($logged_in){';
-      $middle .= 'echo "Hello $nick. You do not have the rights to access this blog. Sorry! (<a href=\"$logout_url\">Sign Out</a>)";';
+      $middle .= 'echo "<p class=\"protected\">Hello $nick.'.$notallowed.' (<a href=\"$logout_url\">Sign Out</a>)</p>";';
       $middle .= '} } ?>';
+
       return $start.$out.$middle;
 		}
 	}	 
