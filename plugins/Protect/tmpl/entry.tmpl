@@ -30,10 +30,7 @@ function toggleTKPrefs (c) {
 <p class="message"><TMPL_VAR NAME=MESSAGE></p>
 </TMPL_IF>
 
-<p>You can protect this entry so only certain people can view its contents. You can do this one of two ways. 
-The first is using a simple password that people will have to enter to see the post. 
-The alternative is to use Typekey so access is based on their identity. Using Typekey is the recommended method as
-it ensures that only those allowed can access the post, passwords can always be leaked!</p>
+<p><MT_TRANS phrase="You can protect this entry so only certain people can view its contents. You can do this one of two ways. The first is using a simple password that people will have to enter to see the post. The alternative is to use Typekey so access is based on their identity. Using Typekey is the recommended method as it ensures that only those allowed can access the post, passwords can always be leaked!"></p>
 
 
 <form method="post" action="<TMPL_VAR NAME=SCRIPT_URL>">
@@ -42,7 +39,7 @@ it ensures that only those allowed can access the post, passwords can always be 
   <input type="hidden" name="id" value="<TMPL_VAR NAME=ENTRY_ID>" />
   <input type="hidden" name="blog_id" value="<TMPL_VAR NAME=BLOG_ID>" />
   
-<h4><input type="radio" name="protection" value="None">No Protection</h4>
+<h4><input type="radio" name="protection" value="None"><MT_TRANS phrase="No Protection"></h4>
 
 <h4><input <TMPL_IF NAME=IS_PASSWORD>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="togglePasswordPrefs(this); return true" value="Password">Password Protection</h4>
 		
@@ -51,7 +48,7 @@ it ensures that only those allowed can access the post, passwords can always be 
 <input name="password" id="password" value="<TMPL_VAR NAME=PASSWORD>" /></p>
 </div>
 
-<h4><input <TMPL_IF NAME=IS_TYPEKEY>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="toggleTKPrefs(this); return true" value="Typekey">Typekey Protection</h4>
+<h4><input <TMPL_IF NAME=IS_TYPEKEY>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="toggleTKPrefs(this); return true" value="Typekey"><MT_TRANS phrase="Typekey Protection"></h4>
 		
 <div id="typekey_prefs" class="sub-field"<TMPL_IF NAME=IS_TYPEKEY> style="display: block;"</TMPL_IF>>
 <p><label><MT_TRANS phrase="Allow the following Typekey users, enter their Typekey usernames (case sensitive)"></label></p>
@@ -61,7 +58,7 @@ it ensures that only those allowed can access the post, passwords can always be 
 
 </div>
 
-<p><input type="submit" name="submit" value="Save" />&nbsp;<input type="button" onclick="window.location='<TMPL_VAR NAME=MTSCRIPT_URL>?__mode=view&_type=entry&id=<TMPL_VAR NAME=ENTRY_ID>&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="Go Back" />     </p>
+<p><input type="submit" name="submit" value="<MT_TRANS phrase="Save">" />&nbsp;<input type="button" onclick="window.location='<TMPL_VAR NAME=MTSCRIPT_URL>?__mode=view&_type=entry&id=<TMPL_VAR NAME=ENTRY_ID>&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="<MT_TRANS phrase="Go Back">" />     </p>
 
 </form>
 
@@ -69,10 +66,10 @@ it ensures that only those allowed can access the post, passwords can always be 
 
 <TMPL_INCLUDE NAME="footer.tmpl">
 <TMPL_ELSE>
-An error occurred:<p>
+<MT_TRANS phrase="An error occurred:"><p>
 
 <pre>
-No entry_id
+<MT_TRANS phrase="No entry_id">
 
 </pre>
 </TMPL_IF>

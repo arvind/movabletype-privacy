@@ -1,13 +1,13 @@
 <TMPL_INCLUDE NAME="header_global.tmpl">
 
 
-<h2><TMPL_IF NAME=LABEL>Typekey Group: <TMPL_VAR NAME=LABEL><TMPL_ELSE>New Typekey Group</TMPL_IF></h2>
+<h2><TMPL_IF NAME=LABEL><MT_TRANS phrase="Typekey Group:"> <TMPL_VAR NAME=LABEL><TMPL_ELSE><MT_TRANS phrase="New Typekey Group"></TMPL_IF></h2>
 
 <TMPL_IF NAME=MESSAGE>
 <p class="message"><TMPL_VAR NAME=MESSAGE></p>
 </TMPL_IF>
 
-<p><TMPL_IF NAME=NAME>Use this page to edit the attributes of the group <TMPL_VAR NAME=LABEL>.<TMPL_ELSE>Use this page to create a new typekey group.</TMPL_IF> You can set an optional description for your group.</p>
+<p><TMPL_IF NAME=NAME><MT_TRANS phrase="Use this page to edit the attributes of the group"> <TMPL_VAR NAME=LABEL>.<TMPL_ELSE><MT_TRANS phrase="Use this page to create a new typekey group."></TMPL_IF> <MT_TRANS phrase="You can set an optional description for your group."></p>
 
 <form method="post" action="<TMPL_VAR NAME=SCRIPT_URL>">
 <input type="hidden" name="__mode" value="save" />

@@ -1,18 +1,18 @@
 <TMPL_INCLUDE name="header_global.tmpl">
 
-<h2>Typekey Groups</h2>
+<h2><MT_TRANS phrase="Typekey Groups"></h2>
 
 <TMPL_IF NAME=MESSAGE>
 <p class="message"><TMPL_VAR NAME=MESSAGE></p>
 </TMPL_IF>
 
-<p>Typekey groups are a way for you to quickly assign permissions. They save you time so that you don't have to keep entering the same user names over and over again</p>
+<p><MT_TRANS phrase="Typekey groups are a way for you to quickly assign permissions. They save you time so that you don't have to keep entering the same user names over and over again"></p>
 
-<div align="right"><img alt="Create new group" src="<TMPL_VAR NAME=STATIC_URI>images/create.gif" width="9" height="9" /> <a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=groups&add=1">Create new group</a></div>
+<div align="right"><img alt="<MT_TRANS phrase="Create new group">" src="<TMPL_VAR NAME=STATIC_URI>images/create.gif" width="9" height="9" /> <a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=groups&add=1"><MT_TRANS phrase="Create new group"></a></div>
 
 <TMPL_IF EMPTY>
 <table width="100%">
-<tr><td align="center" bgcolor="#EEEEEE">You currently have no Typekey groups.</td></tr>
+<tr><td align="center" bgcolor="#EEEEEE"><MT_TRANS phrase="You currently have no Typekey groups."></td></tr>
 </table>
 <TMPL_ELSE>
 
@@ -23,8 +23,8 @@
 
 <table>
     <tr>
-        <th>Name</th>
-        <th>Description</th>
+        <th><MT_TRANS phrase="Name"></th>
+        <th><MT_TRANS phrase="Description"></th>
         <th>&nbsp;</th>
         <th>&nbsp;</th>
     </tr>
@@ -43,7 +43,7 @@
 <div align="right">
 <input type="button" onclick="doCheckAll(this.form,true)" name="check_all" value="<MT_TRANS phrase="Check All">" />
 <input type="button" onclick="doCheckAll(this.form,false)" name="uncheck_all" value="<MT_TRANS phrase="Uncheck All">" />
-<input type="submit" name="delete" value="Delete" />
+<input type="submit" name="delete" value="<MT_TRANS phrase="Delete">" />
 </div>        
 </form>
 

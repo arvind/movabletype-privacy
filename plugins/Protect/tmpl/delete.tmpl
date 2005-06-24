@@ -1,7 +1,7 @@
 <TMPL_INCLUDE NAME="header_global.tmpl">
 
 <div class="instructional">
-Please confirm this transaction.
+<MT_TRANS phrase="Please confirm this transaction.">
 </div>
 
 <form method="get" action="<TMPL_VAR NAME=SCRIPT_URL>">
@@ -10,7 +10,7 @@ Please confirm this transaction.
 
  
 <p>
-Are you sure you wish to delete the following items?
+<MT_TRANS phrase="Are you sure you wish to delete the following items?">
 
 <ul>
 <TMPL_LOOP NAME=ENTRY_LOOP>
@@ -21,8 +21,8 @@ Are you sure you wish to delete the following items?
 
 </p>
 
-<input type="submit" name="confirm" value="Yes" />
-<input type="submit" name="confirm" value="No" />
+<input type="submit" name="confirm" value="<MT_TRANS phrase="Yes">" />
+<input type="submit" name="confirm" value="<MT_TRANS phrase="No">" />
 
 </form>
 

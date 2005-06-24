@@ -23,33 +23,33 @@ function toggleTKPrefs (c) {
 //-->
 </script>	
 
-<h2><TMPL_VAR NAME=BLOG_NAME>: Protection Options</h2>
+<h2><TMPL_VAR NAME=BLOG_NAME>: <MT_TRANS phrase="Protection Options"></h2>
 
 <TMPL_IF NAME=MESSAGE>
 <p class="message"><TMPL_VAR NAME=MESSAGE></p>
 </TMPL_IF>
 
-<p>Enter your TypeKey site token. To sign up for a TypeKey token, visit the <a href="http://www.typekey.com">TypeKey</a> website.
+<p><MT_TRANS phrase="Enter your TypeKey site token. To sign up for a TypeKey token, visit the <a href="http://www.typekey.com">TypeKey</a> website.">
 
 <form method="post" action="<TMPL_VAR NAME=SCRIPT_URL>">
   <input type="hidden" name="__mode" value="save" />
   <input type="hidden" name="_type" value="blog" />
   <input type="hidden" name="blog_id" value="<TMPL_VAR NAME=BLOG_ID>" />
   
-<h4><label for="remote_auth_token">TypeKey Token:</label> <input type="text" id="remote_auth_token" name="remote_auth_token" value="<TMPL_VAR NAME=TYPEKEY_TOKEN>" /></h4>
+<h4><label for="remote_auth_token"><MT_TRANS phrase="TypeKey Token:"></label> <input type="text" id="remote_auth_token" name="remote_auth_token" value="<TMPL_VAR NAME=TYPEKEY_TOKEN>" /></h4>
 
 <h2>Protect <TMPL_VAR NAME=BLOG_NAME></h2>
 
-<h4><input type="radio" name="protection" value="None">No Protection</h4>
+<h4><input type="radio" name="protection" value="<MT_TRANS phrase="None">"><MT_TRANS phrase="No Protection"></h4>
 
-<h4><input <TMPL_IF NAME=IS_PASSWORD>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="togglePasswordPrefs(this); return true" value="Password">Password Protection</h4>
+<h4><input <TMPL_IF NAME=IS_PASSWORD>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="togglePasswordPrefs(this); return true" value="<MT_TRANS phrase="Password">"><MT_TRANS phrase="Password Protection"></h4>
 		
 <div id="password_prefs" class="sub-field"<TMPL_IF NAME=IS_PASSWORD> style="display: block;"</TMPL_IF>>
 <p><label><MT_TRANS phrase="Entry Password"></label></p>
 <input name="password" id="password" value="<TMPL_VAR NAME=PASSWORD>" /></p>
 </div>
 
-<h4><input <TMPL_IF NAME=IS_TYPEKEY>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="toggleTKPrefs(this); return true" value="Typekey">Typekey Protection</h4>
+<h4><input <TMPL_IF NAME=IS_TYPEKEY>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="toggleTKPrefs(this); return true" value="Typekey"><MT_TRANS phrase="Typekey Protection"></h4>
 		
 <div id="typekey_prefs" class="sub-field"<TMPL_IF NAME=IS_TYPEKEY> style="display: block;"</TMPL_IF>>
 <p><label><MT_TRANS phrase="Allow the following Typekey users, enter their Typekey usernames (case sensitive)"></label></p>
@@ -59,6 +59,6 @@ function toggleTKPrefs (c) {
 
 </div>
 
-<p><input type="submit" name="submit" value="Save" />&nbsp;<input type="button" onclick="window.location='<TMPL_VAR NAME=MTSCRIPT_URL>?__mode=menu&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="Go Back" />     </p>
+<p><input type="submit" name="submit" value="<MT_TRANS phrase="Save">" />&nbsp;<input type="button" onclick="window.location='<TMPL_VAR NAME=MTSCRIPT_URL>?__mode=menu&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="<MT_TRANS phrase="Go Back">" />     </p>
 </div>
 <TMPL_INCLUDE NAME="footer.tmpl">
