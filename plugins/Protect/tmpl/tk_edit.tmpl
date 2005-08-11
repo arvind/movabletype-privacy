@@ -1,7 +1,20 @@
-<TMPL_INCLUDE NAME="header_global.tmpl">
+<TMPL_INCLUDE NAME="header.tmpl">
+<script type="text/javascript">
+<!--
+function writeinput() {
+var theNewParagraph = document.createElement('p');
+var input = document.createElement('input');
+input.type = 'text';
+input.name = 'typekey_users';
+theNewParagraph.appendChild(input);
+document.getElementById('typekey_users').appendChild(theNewParagraph);
 
+	}
 
-<h2><TMPL_IF NAME=LABEL><MT_TRANS phrase="Typekey Group:"> <TMPL_VAR NAME=LABEL><TMPL_ELSE><MT_TRANS phrase="New Typekey Group"></TMPL_IF></h2>
+//-->
+</script>		
+
+<h2><TMPL_IF NAME=LABEL><MT_TRANS phrase="Typekey Group:"> <span class="title-highlight"><TMPL_VAR NAME=LABEL></span><TMPL_ELSE><MT_TRANS phrase="New Typekey Group"></TMPL_IF></h2>
 
 <TMPL_IF NAME=MESSAGE>
 <p class="message"><TMPL_VAR NAME=MESSAGE></p>
@@ -21,9 +34,11 @@
 <textarea name="desc" id="desc" rows="5" cols="60"><TMPL_VAR NAME=DESCRIPTION ESCAPE=HTML></textarea></p>
 
 <p><label><MT_TRANS phrase="Typekey users, enter their Typekey usernames (case sensitive)"></label></p>
-<TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
+<div id="typekey_users"><TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
 <p><input name="typekey_users" id="typekey_users" value="<TMPL_VAR NAME=USER>" /></p>
-</TMPL_LOOP>
+</TMPL_LOOP></div>
+<p><img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="Create New Entry">" width="9" height="9" />
+<a href="javascript:void(0);" onclick='writeinput();'><MT_TRANS phrase="More"></a></p>
 
 <div align="center">
 <input type="submit" value="<MT_TRANS phrase="Save">" />
@@ -31,4 +46,4 @@
 
 </form>
 
-<TMPL_INCLUDE NAME="footer_global.tmpl">
+<TMPL_INCLUDE NAME="footer.tmpl">

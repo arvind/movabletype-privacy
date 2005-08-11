@@ -1,4 +1,14 @@
 <TMPL_INCLUDE NAME="header.tmpl">
+<style type="text/css">
+.sub-field {
+	display: none;
+	margin: 0px 0px 0px 8px;
+	border-width: 0px 0px 0px 1px;
+	border-color: #CFD9E2;
+	border-style: solid;
+	padding: 0px 0px 0px 12px;
+	}
+</style>
 <div id="cfg-prefs">
 <script type="text/javascript">
 <!--
@@ -20,45 +30,59 @@ function toggleTKPrefs (c) {
     if (!c.checked) e.style.display = 'none';
 }
 
+function writeinput() {
+var theNewParagraph = document.createElement('p');
+var input = document.createElement('input');
+input.type = 'text';
+input.name = 'typekey_users';
+theNewParagraph.appendChild(input);
+document.getElementById('typekey_users').appendChild(theNewParagraph);
+
+	}
+
 //-->
 </script>	
 
-<h2><TMPL_VAR NAME=BLOG_NAME>: <MT_TRANS phrase="Protection Options"></h2>
+<h2><MT_TRANS phrase="Protect Blog">: <span class="title-highlight"><TMPL_IF NAME=BLOG_ID><TMPL_VAR NAME=BLOG_NAME ESCAPE=HTML><TMPL_ELSE><MT_TRANS phrase="System-wide"></TMPL_IF></span></h2>
 
 <TMPL_IF NAME=MESSAGE>
 <p class="message"><TMPL_VAR NAME=MESSAGE></p>
 </TMPL_IF>
 
-<p><MT_TRANS phrase="Enter your Typekey site token. To sign up for a Typekey token, visit the"> <a href="http://www.typekey.com">Typekey</a> <MT_TRANS phrase="website.">
+<p class="page-desc"><MT_TRANS phrase="You can protect this blog so only certain people can view its contents. You can do this one of two ways. The first is using a simple password that people will have to enter to see the post. The alternative is to use Typekey so access is based on their identity. Using Typekey is the recommended method as it ensures that only those allowed can access the post, passwords can always be leaked!"></p>
 
 <form method="post" action="<TMPL_VAR NAME=SCRIPT_URL>">
   <input type="hidden" name="__mode" value="save" />
   <input type="hidden" name="_type" value="blog" />
+  <input type="hidden" name="id" value="<TMPL_VAR NAME=ENTRY_ID>" />
   <input type="hidden" name="blog_id" value="<TMPL_VAR NAME=BLOG_ID>" />
+  <input type="hidden" name="magic_token" value="<TMPL_VAR NAME=MAGIC_TOKEN>" />
   
-<h4><label for="remote_auth_token"><MT_TRANS phrase="TypeKey Token:"></label> <input type="text" id="remote_auth_token" name="remote_auth_token" value="<TMPL_VAR NAME=TYPEKEY_TOKEN>" /></h4>
+<h4><input type="radio" name="protection" value="None"> <MT_TRANS phrase="No Protection"></h4>
 
-<h2>Protect <TMPL_VAR NAME=BLOG_NAME></h2>
-
-<h4><input type="radio" name="protection" value="<MT_TRANS phrase="None">"><MT_TRANS phrase="No Protection"></h4>
-
-<h4><input <TMPL_IF NAME=IS_PASSWORD>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="togglePasswordPrefs(this); return true" value="<MT_TRANS phrase="Password">"><MT_TRANS phrase="Password Protection"></h4>
+<h4><input <TMPL_IF NAME=IS_PASSWORD>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="togglePasswordPrefs(this); return true" value="Password"> <MT_TRANS phrase="Password Protection"></h4>
 		
-<div id="password_prefs" class="sub-field"<TMPL_IF NAME=IS_PASSWORD> style="display: block;"</TMPL_IF>>
+<div id="password_prefs" class="sub-field" style="display: <TMPL_IF NAME=IS_PASSWORD>block<TMPL_ELSE>none</TMPL_IF>;">
 <p><label><MT_TRANS phrase="Entry Password"></label></p>
 <input name="password" id="password" value="<TMPL_VAR NAME=PASSWORD>" /></p>
 </div>
 
-<h4><input <TMPL_IF NAME=IS_TYPEKEY>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="toggleTKPrefs(this); return true" value="Typekey"><MT_TRANS phrase="Typekey Protection"></h4>
+<h4><input <TMPL_IF NAME=IS_TYPEKEY>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="toggleTKPrefs(this); return true" value="Typekey"> <MT_TRANS phrase="Typekey Protection"></h4>
 		
-<div id="typekey_prefs" class="sub-field"<TMPL_IF NAME=IS_TYPEKEY> style="display: block;"</TMPL_IF>>
+<div id="typekey_prefs" class="sub-field" style="display: <TMPL_IF NAME=IS_TYPEKEY>block<TMPL_ELSE>none</TMPL_IF>;">
 <p><label><MT_TRANS phrase="Allow the following Typekey users, enter their Typekey usernames (case sensitive)"></label></p>
-<TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
+<div id="typekey_users"><TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
 <p><input name="typekey_users" id="typekey_users" value="<TMPL_VAR NAME=USER>" /></p>
-</TMPL_LOOP>
+</TMPL_LOOP></div>
+<p><img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="Create New Entry">" width="9" height="9" />
+<a href="javascript:void(0);" onclick='writeinput();'><MT_TRANS phrase="More"></a></p>
 
 </div>
 
-<p><input type="submit" name="submit" value="<MT_TRANS phrase="Save">" />&nbsp;<input type="button" onclick="window.location='<TMPL_VAR NAME=MTSCRIPT_URL>?__mode=menu&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="<MT_TRANS phrase="Go Back">" />     </p>
+<p><input type="submit" name="submit" value="<MT_TRANS phrase="Save">" />&nbsp;<input type="button" onclick="window.location='<TMPL_VAR NAME=MTSCRIPT_URL>?__mode=view&_type=entry&id=<TMPL_VAR NAME=ENTRY_ID>&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="<MT_TRANS phrase="Go Back">" />     </p>
+
+</form>
+
 </div>
+
 <TMPL_INCLUDE NAME="footer.tmpl">

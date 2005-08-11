@@ -1,14 +1,74 @@
-<TMPL_INCLUDE name="header_global.tmpl">
+<TMPL_INCLUDE name="header.tmpl">
+<script type="text/javascript">
+<!--
+function enableFilterButton() {
+    getByID("filter-button").style.display = "inline";
+}
+function toggleFilter() {
+    var filterActive = getByID("filter-active");
+    if (filterActive.style.display == "none") {
+        filterActive.style.display = "block";
+        getByID("filter-select").style.display = "none";
+    } else {
+        filterActive.style.display = "none";
+        getByID("filter-select").style.display = "block";
+    }
+}
 
+function setFilterCol(choice) {
+    getByID('filter-select').className = "filter-" + choice;
+    if (choice == 'none')
+        getByID('filter-mode').selectedIndex = 0;
+    else {
+        getByID('filter-mode').selectedIndex = 1;
+        var fld = getByID('filter-col');
+        if (choice == 'status')
+            fld.selectedIndex = 0;
+        else if (choice == 'category_id')
+            fld.selectedIndex = 1;
+        else if (choice == 'author_id')
+            fld.selectedIndex = 2;
+        col_span = getByID("filter-text-col");
+        if (fld.selectedIndex > -1 && col_span)
+            col_span.innerHTML = '<strong>' +
+                fld.options[fld.selectedIndex].text + '</strong>';
+    }
+}
+
+var tableSelect;
+function init()
+{
+<TMPL_UNLESS NAME=IS_POWER_EDIT>
+	// setup
+	tableSelect = new TC.TableSelect( "selector" );
+	tableSelect.rowSelect = true;
+</TMPL_UNLESS>
+
+	setFilterCol(<TMPL_IF NAME=FILTER>'<TMPL_VAR NAME=FILTER>'<TMPL_ELSE>'none'</TMPL_IF>);<TMPL_IF NAME=FILTER>
+	setFilterVal('<TMPL_VAR NAME=FILTER_VAL>');
+</TMPL_IF>
+}
+
+TC.attachLoadEvent( init );
+// -->
+</script>
+<div id="list-entry">
 <h2><MT_TRANS phrase="Typekey Groups"></h2>
 
 <TMPL_IF NAME=MESSAGE>
 <p class="message"><TMPL_VAR NAME=MESSAGE></p>
 </TMPL_IF>
 
-<p><MT_TRANS phrase="Typekey groups are a way for you to quickly assign permissions. They save you time so that you don't have to keep entering the same user names over and over again"></p>
+<p class="page-desc"><MT_TRANS phrase="Typekey groups are a way for you to quickly assign permissions. They save you time so that you don't have to keep entering the same user names over and over again"></p>
 
-<div align="right"><img alt="<MT_TRANS phrase="Create new group">" src="<TMPL_VAR NAME=STATIC_URI>images/create.gif" width="9" height="9" /> <a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=groups&add=1"><MT_TRANS phrase="Create new group"></a></div>
+<div class="tabs">
+<ul>
+<li class="special">
+<img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="Create New Entry">" width="9" height="9" />
+<a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=groups&add=1"><MT_TRANS phrase="Create New Group"></a>
+</li>
+</ul>
+</div>
 
 <TMPL_IF EMPTY>
 <table width="100%">
@@ -16,39 +76,41 @@
 </table>
 <TMPL_ELSE>
 
-<div class="list">
+<div class="list" id="selector">
     <form method="get" action="<TMPL_VAR NAME=SCRIPT_URL>">
         <input type="hidden" name="__mode" value="delete" />
         <input type="hidden" name="_type" value="groups" />        
 
-<table>
+<table cellspacing="0" class="compact">
+<thead>
     <tr>
+    <th class="cb"><input type="checkbox" name="id-head" value="all" class="select" /></th>
         <th><MT_TRANS phrase="Name"></th>
         <th><MT_TRANS phrase="Description"></th>
-        <th>&nbsp;</th>
-        <th>&nbsp;</th>
+        <th><MT_TRANS phrase="Members"></th>
     </tr>
+</thead>   
+<tbody>    
 <TMPL_LOOP NAME=LOOP>
 
     <tr class="<TMPL_IF NAME=ENTRY_ODD>odd<TMPL_ELSE>even</TMPL_IF>">
-        <td><TMPL_VAR NAME=LABEL></td>
+    <td class="cb"><input type="checkbox" name="id" value="<TMPL_VAR NAME=ID>" class="select" /></td>
+        <td><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=groups&id=<TMPL_VAR NAME=ID>&edit=1"><TMPL_VAR NAME=LABEL></a></td>
         <td><TMPL_VAR NAME=DESCRIPTION></td>  
-        <td nowrap><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=groups&id=<TMPL_VAR NAME=ID>&edit=1">edit</a></td>                   
-        <td><input type="checkbox" name="id" value="<TMPL_VAR NAME=ID>" /></td>
+        <td><TMPL_VAR NAME=MEMBER_COUNT></a></td>                   
+        
     </tr>
 
 </TMPL_LOOP>
+</tbody>
     </table>
-<br /><br />
-<div align="right">
-<input type="button" onclick="doCheckAll(this.form,true)" name="check_all" value="<MT_TRANS phrase="Check All">" />
-<input type="button" onclick="doCheckAll(this.form,false)" name="uncheck_all" value="<MT_TRANS phrase="Uncheck All">" />
-<input type="submit" name="delete" value="<MT_TRANS phrase="Delete">" />
+<div class="list-actions">
+<div class="button-bar">
+<input type="button" onclick="doRemoveItems(this.form, 'group', 'groups')" name="delete_entries" value="<MT_TRANS phrase="Delete">" accesskey="d" title="Delete selected groups (d)" />
+</div>     
 </div>        
 </form>
-
 </div>
-
 </TMPL_IF>
-
-<TMPL_INCLUDE name="footer_global.tmpl">
+</div>
+<TMPL_INCLUDE name="footer.tmpl">
