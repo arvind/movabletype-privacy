@@ -10,7 +10,7 @@ use strict;
 
 use vars qw( $DEBUG $VERSION @ISA $USE_SEARCH_PATH_HACK );
 @ISA = qw(MT::App::CMS);
-$VERSION = '1.0';
+$VERSION = '1.2';
 
 use MT::PluginData;
 use MT::Util qw( format_ts offset_time_list );
@@ -41,7 +41,7 @@ sub init
     $app->{default_mode}   = 'edit';
     $app->{user_class}     = 'MT::Author';
     $app->{requires_login} = 1;
-    $app->{mtscript_url}   = $app->{cfg}->CGIPath . $app->{cfg}->AdminScript;
+    $app->{mtscript_url}   = $app->mt_uri;
     $app;
 }
 
@@ -51,6 +51,7 @@ sub build_page {
     my $q = $app->{query};
     my($page, $param) = @_;
     $param->{plugin_name       } =  "Protect";
+    $param->{blog_id           } = $q->param('blog_id');
     $param->{plugin_version    } =  $VERSION;
     $param->{plugin_author     } =  "Arvind Satyanarayan";
     $param->{mtscript_url      } =  $app->{mtscript_url};
@@ -186,7 +187,7 @@ sub install {
         $pdblog->remove;
         $q->param('uninstalled', 1);
     }
-    config_global($app);
+    $app->redirect($app->{mtscript_url}.'?__mode=list_plugins');
 }
 
 sub edit {
@@ -215,27 +216,24 @@ sub edit {
             elsif($data_type eq 'Typekey'){
                 $param->{is_typekey} = 1;
                 my $users = $data->data;
-                for my $user (@$users) {
-                    my $row = {
+                for my $user (@$users) {               
+                    push @data, {
                         user => $user
                     };
-                    
-                    push @data, $row;
                 }
             }
         }
-        for (my $i = 1; $i <= 5; $i++) {
-            push @data, $i;
-        }
+				for (my $i = 1; $i <= 5; $i++) {push @data, {user => ''};}
 
         $param->{typekey_user_loop} = \@data;
-        $app->add_breadcrumb($blog->name,$app->{mtscript_url}.'?__mode=menu&blog_id='.$blog->id);
+#        $app->add_breadcrumb('Main Menu',$app->{mtscript_url});
+#        $app->add_breadcrumb($blog->name,$app->{mtscript_url}.'?__mode=menu&blog_id='.$blog->id);
         $app->add_breadcrumb($app->translate('Entries'), $app->{mtscript_url} . '?__mode=list_entries&blog_id=' . $blog_id);
         $app->add_breadcrumb($entry->title || $app->translate('(untitled)'), $app->{mtscript_url} . '?__mode=view&_type=entry&id=' . $entry_id . '&blog_id=' . $blog_id);
-        $app->add_breadcrumb("Password Protect");
+        $app->add_breadcrumb("Protect Entry");
   } elsif($type eq 'blog' || $type eq 'blog_home'){
         $tmpl = 'blog.tmpl';
-        $param->{typekey_token} = $blog->remote_auth_token;
+        $param->{blog_name} = $blog->name;
         my $data = Protect::Protect->load({entry_id    => '0', blog_id => $blog_id });
         if($data){
             my $data_type = $data->type;
@@ -247,33 +245,26 @@ sub edit {
             elsif($data_type eq 'Typekey'){
                 $param->{is_typekey} = 1;
                 my $users = $data->data;
-                for my $user (@$users) {
-                    my $row = {
-                        user => $user
-                    };
-                    
-                    push @data, $row;
+                for my $user (@$users) {                  
+                    push @data, {user => $user};
                 }
             }
         }
-        for (my $i = 1; $i <= 5; $i++) {
-            push @data, $i;
-        }
+      for (my $i = 1; $i <= 5; $i++) {push @data, {user => ''};}
 
-        $param->{typekey_user_loop} = \@data;        
-    $app->add_breadcrumb($blog->name,$app->{mtscript_url}.'?__mode=menu&blog_id='.$blog->id); 
-    $app->add_breadcrumb("Protection Options");        
+        $param->{typekey_user_loop} = \@data;  
+#    $app->add_breadcrumb('Main Menu',$app->{mtscript_url});          
+#    $app->add_breadcrumb($blog->name,$app->{mtscript_url}.'?__mode=menu&blog_id='.$blog->id); 
+    $app->add_breadcrumb("Protect Blog");        
   } elsif($type eq 'groups') {
                 my $author_ids = $q->param('author_id');
                 my @authors_list = split(/,/,$author_ids);
+                shift @authors_list;
       for my $author_id (@authors_list) {
         if($author_id ne 'undefined') {
                 my $commenter = MT::Author->load($author_id);
-          my $cauthor = {
-              user => $commenter->name
-          };
-          
-          push @data, $cauthor;
+       
+          push @data, {user => $commenter->name};
         }
       }
                         $param->{add} = 1 if $q->param('add') == 1;
@@ -284,21 +275,16 @@ sub edit {
                         $param->{label} = $data->label;
                         $param->{description} = $data->description;
                         my $users = $data->data;
-      for my $user (@$users) {
-          my $row = {
-              user => $user
-          };
-          
-          push @data, $row;
+      for my $user (@$users) {       
+          push @data, {user => $user};
       }
     
    }
-      for (my $i = 1; $i <= 5; $i++) {
-            push @data, $i;
-        }
+			for (my $i = 1; $i <= 5; $i++) {push @data, {user => ''};}
+			
       $param->{typekey_user_loop} = \@data;
       $tmpl = 'tk_edit.tmpl';                
-      $app->add_breadcrumb("MT Protect",'mt-protect.cgi?__mode=global_config');
+      $app->add_breadcrumb("MT Protect",$app->{mtscript_url}.'?__mode=list_plugins');
                 $app->add_breadcrumb("Typekey Groups",'mt-protect.cgi?__mode=tk_groups');
                 $app->add_breadcrumb("Add New Group") if $q->param('add') == 1;
                 $app->add_breadcrumb("Edit Group") if $q->param('edit') == 1;        
@@ -310,15 +296,13 @@ sub edit {
 sub save {
     my $app = shift;
     my $q = $app->{query};
-    my $blog_id = $q->param('blog_id');    
-    my $param;
-    my $tmpl;
-    my @data;
-    my $data;
+    my $blog_id = $q->param('blog_id'); 
+    my($param,$tmpl,@data,$data,$uri,$message); 
     my $type = $q->param('_type');
     if($type eq 'entry') {
         my $entry_id = $q->param('id');
         my $protection = $q->param('protection');
+        
     unless($data = Protect::Protect->load({ entry_id   => $entry_id })){
             $data = Protect::Protect->new;
             $data->blog_id($blog_id);
@@ -329,11 +313,11 @@ sub save {
             $data->type($protection);
             my $password = $q->param('password');
             $data->password($password);
-            $q->param('message', 'Entry now password protected');
+            $message = $app->translate('Entry now password protected');
             $app->log("'" . $app->{author}->name . "' password protected entry #".$entry_id);
           } 
           elsif($protection eq 'Typekey') {
-            $q->param('message', 'Entry now Typekey protected');  
+            $message = $app->translate('Entry now Typekey protected');  
             $app->log("'" . $app->{author}->name . "' Typekey protected entry #".$entry_id);              
             $data->type($protection);
             my @users;
@@ -344,23 +328,18 @@ sub save {
             }
             $data->data(\@users);
         }
-        $data->save or
-            return $app->error("Error: " . $data->errstr);
         if($protection eq 'None') {
                 $data->remove or
             return $app->error("Error: " . $data->errstr);
-          $q->param('message', 'Protection Removed');  
+          $message = $app->translate('Protection Removed');  
           $app->log("'" . $app->{author}->name . "' removed protection on entry #".$entry_id);
+        } else {      
+        $data->save or
+            return $app->error("Error: " . $data->errstr);        	
         }
            
-        edit($app);
+        $uri = $app->uri.'?__mode=edit&_type=entry&blog_id='.$blog_id.'&id='.$entry_id.'&message='.$message;
     } elsif($type eq 'blog') {
-                $data = MT::Blog->load($blog_id);
-                my $remote_auth_token = $q->param('remote_auth_token');
-                $data->remote_auth_token($remote_auth_token);
-                $data->save or
-            return $app->error("Error: " . $data->errstr);
-{
         my $entry_id = '0';
         my $protection = $q->param('protection');
     unless($data = Protect::Protect->load({ entry_id   => $entry_id, blog_id => $blog_id })){
@@ -373,11 +352,11 @@ sub save {
             $data->type($protection);
             my $password = $q->param('password');
             $data->password($password);
-            $q->param('message', 'Blog now password protected');
+            $message = $app->translate('Blog now password protected');
             $app->log("'" . $app->{author}->name . "' password protected blog #".$blog_id);
           } 
           elsif($protection eq 'Typekey') {
-            $q->param('message', 'Blog now Typekey protected'); 
+            $message = $app->translate('Blog now Typekey protected'); 
             $app->log("'" . $app->{author}->name . "' Typekey protected blog #".$blog_id);               
             $data->type($protection);
             my @users;
@@ -393,14 +372,14 @@ sub save {
         if($protection eq 'None') {
                 $data->remove or
             return $app->error("Error: " . $data->errstr);
-          $q->param('message', 'Protection Removed'); 
+          $message = $app->translate('Protection Removed'); 
           $app->log("'" . $app->{author}->name . "' removed protection on blog #".$blog_id); 
+        } else {
+        $data->save or
+            return $app->error("Error: " . $data->errstr);        	
         }
            
-        edit($app);
-    }            
-                                $q->param('message', 'Options Saved');                
-                edit($app);
+			$uri = $app->uri.'?__mode=edit&_type=blog&blog_id='.$blog_id.'&message='.$message;
     }elsif($type eq 'groups') {
         my $label = $q->param('label');
         my $description = $q->param('desc');
@@ -419,24 +398,22 @@ sub save {
             $data->data(\@users);
             $data->save or
             return $app->error("Error: " . $data->errstr);
-            $q->param('message','Typekey group saved');
-            $q->param('id',$data->id);
+            $message = $app->translate('Typekey group saved');
+            $id = $data->id;
             $q->param('edit',1);
-            edit($app);                
+            $uri = $app->uri.'?__mode=edit&_type=groups&id='.$id.'&message='.$message.'&edit=1';                
     }
-    
+   $app->redirect($uri); 
 }
 
 sub tk_groups {
     my $app = shift;
     my $q = $app->{query};
     my $iter = Protect::Groups->load_iter;
-    my @data;
-    my $param;
+    my (@data,@count,$param);
     my $i         = 0; # loop iteration counter
     my $n_entries = 0; # the number of entries displayed on this page
-    my $count     = 0; # the total number of (unpaginated) entries
-    my @category_data;    
+    my $count     = 0; # the total number of (unpaginated) entries 
     while (my $entry = $iter->()) {
         $count++;
         $n_entries++;        
@@ -446,6 +423,12 @@ sub tk_groups {
                                 description => $entry->description,
                                 entry_odd    => $n_entries % 2 ? 1 : 0,
     };
+    
+    my $users = $entry->data;
+      for my $user (@$users) {       
+          push @count, {user => $user};
+      }
+    	$row->{member_count} = scalar @count.' '.$app->translate('members');
          push @data, $row;
   }
       $i = 0;
@@ -455,7 +438,7 @@ sub tk_groups {
   $param->{loop} = \@data;
   $param->{empty} = !$n_entries;
   $param->{typekey_groups} = 1;
-  $app->add_breadcrumb("MT Protect",'mt-protect.cgi?__mode=global_config');
+  $app->add_breadcrumb("MT Protect",$app->{mtscript_url}.'?__mode=list_plugins');
   $app->add_breadcrumb("Typekey Groups");
   $app->build_page('tk_groups.tmpl',$param);
 }
@@ -481,9 +464,10 @@ sub list_entries {
                 my $iter = Protect::Protect->load_iter(\%terms, \%arg);
                 while (my $ntry = $iter->()) {
       $count++;
-      $n_entries++;  
+
       my $id = $ntry->entry_id;
       if($id != 0) {
+      	      $n_entries++;
                         my $entry = MT::Entry->load($id);
                         my $row = {
                                 id => $entry->id,
@@ -524,9 +508,10 @@ sub list_entries {
         $limit_data[-1]{limit_selected} = 1 if $limit == $_;
     }
     $param->{limit_loop} = \@limit_data;
+    $param->{empty} = !$n_entries;
     $param->{offset}= $offset;        
                 $param->{entry_loop} = \@data;
-    $app->add_breadcrumb($blog->name, $app->{mtscript_url} . '?__mode=menu&blog_id=' . $blog->id);
+    $app->add_breadcrumb('Entries', $app->{mtscript_url} . '?__mode=list_entries&blog_id=' . $blog->id);
     $app->add_breadcrumb($app->translate('Protected Entries'));                
         $app->build_page('list.tmpl',$param);    
 }
@@ -537,19 +522,20 @@ sub delete
     my $app = shift;
     my $q = $app->{query};
                 my $type = $q->param('_type');
-    if (!defined($q->param('confirm'))) {
-        return confirm_delete($app);
-    }
     if($type eq 'groups') {
-        if ($q->param('confirm') ne 'Yes') {
-                                  return tk_groups($app);
-        }        
         $q->param('message','Groups removed');
         foreach my $key ($q->param('id')) {
             my $data = Protect::Groups->load({ id    => $key });
             $data->remove or return $app->error("Error: " . $data->errstr);
         }
      tk_groups($app);        
+    } elsif($type eq 'entries') {
+        $q->param('message','Groups removed');
+        foreach my $key ($q->param('id')) {
+            my $data = Protect::Protect->load({ entry_id    => $key });
+            $data->remove or return $app->error("Error: " . $data->errstr);
+        }
+     list_entries($app);        
     }
     
 }
@@ -601,19 +587,19 @@ sub debug {
     print STDERR "$mark $err\n" if $DEBUG;
 }
 
-sub brpath {
-    
-    my $app = shift;
-    return $app->{__brpath} if exists $app->{__brpath};
-    my $brpath = File::Spec->catdir($app->path,'plugins','Protect');
-    $app->{__brpath} = $brpath;
-    
-}
-
-sub uri { File::Spec->catdir($_[0]->brpath,$_[0]->brscript) }
-
-sub brscript {
-    return 'mt-protect.cgi';
-}
+#sub brpath {
+#    
+#    my $app = shift;
+#    return $app->{__brpath} if exists $app->{__brpath};
+#    my $brpath = File::Spec->catdir($app->path,'plugins','Protect');
+#    $app->{__brpath} = $brpath;
+#    
+#}
+#
+sub uri { my $app = shift; $app->app_path . $app->script; }
+#
+#sub brscript {
+#    return 'mt-protect.cgi';
+#}
 
 1; 

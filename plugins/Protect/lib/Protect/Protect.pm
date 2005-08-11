@@ -15,7 +15,12 @@ __PACKAGE__->install_properties({
         type => 1,
     },
     column_defs => {
-        data => 'blob',
+    		'id' => 'integer not null auto_increment',
+    		'blog_id' => 'integer not null',
+    		'entry_id' => 'integer not null',
+    		'type' => 'varchar(10) not null',
+    		'password' => 'varchar(200)',
+        'data' => 'blob',
     },
     datasource => 'protect',
     primary_key => 'id',

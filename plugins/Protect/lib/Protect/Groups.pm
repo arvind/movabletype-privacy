@@ -14,7 +14,10 @@ __PACKAGE__->install_properties({
         label => 1,
     },
     column_defs => {
-        data => 'blob',
+        'id' => 'integer not null auto_increment',
+        'description' => 'text',
+        'label' => 'string(100) not null',    	
+        'data' => 'blob',
     },
     datasource => 'protect_groups',
     primary_key => 'id',
