@@ -52,7 +52,7 @@ sub has_column
 eval {
     local $SIG{__WARN__} = sub { print "**** WARNING: $_[0]\n" };
     require MT;
-    my $mt = MT->new( Config => $MT_DIR . 'mt.cfg')
+    my $mt = MT->new( Config => $MT_DIR . 'mt-config.cgi')
         or die MT->errstr;
 
     print "Upgrading your databases:\n";

@@ -12,29 +12,32 @@ use Protect::Groups;
 use MT::Template::Context;
 my $mt = MT->instance;
 use vars qw($VERSION);
-my $about = {
-	dir => 'Protect',
-  name => 'MT Protect',
-  version => $Protect::CMS::VERSION,
-  description => 'Adds the ability to protect entires either by password or using Typekey authentication.',
-  doc_link => 'http://www.movalog.com/plugins/wiki/MtProtect',
-  system_config_template => \&template,
-}; 
+use base qw(MT::Plugin);
+
+MT->add_plugin(MT::Plugin::Protect->new);
+
+sub name { 'MT Protect' }
+sub description { 'Adds the ability to protect entires either by password or using Typekey authentication.' }
+sub version { $Protect::CMS::VERSION }
+sub doc_link { 'http://www.movalog.com/plugins/wiki/MtProtect' }
+sub author_name { 'Arvind Satyanarayan' }
+sub author_link { 'http://www.movalog.com/' }
+ 
+
 sub init_app {
     my $plugin = shift;
     $plugin->SUPER::init_app(@_);
     my ($app) = @_;
 
     if ($app->isa('MT::App::CMS')) {
-				$app->add_itemset_action({type => 'commenter',
-                              key => "set_protection_group",
-                              label => "Create a Typekey Group",
-                              code => \&tkgroup,
-                          });
+        $app->add_itemset_action({type => 'commenter',
+                                  key => "set_protection_group",
+                                  label => "Create a Typekey Group",
+                                  code => sub { $plugin->tkgroup(@_) },
+                               });
     }
-}                          
+}                       
                         
-MT->add_plugin(new MT::Plugin($about));
 MT->add_plugin_action ('entry', 'mt-protect.cgi?__mode=edit', "Protect this entry");
 MT->add_plugin_action ('list_entries', 'mt-protect.cgi?__mode=list_entries', "List Protected Entries");
 MT->add_plugin_action ('blog', 'mt-protect.cgi?__mode=edit', 'Edit Protection Options');
@@ -46,7 +49,7 @@ MT::Template::Context->add_container_tag(EntryProtect    => \&protected);
 MT::Template::Context->add_container_tag(BlogProtect    => \&blog_protected);
 MT::Template::Context->add_conditional_tag(IfProtected    => \&ifprotected);
 
-sub template {
+sub config_template {
     my $app = $mt;
     my $q = $app->{query};
     my ($plugin,$param) = @_;
@@ -89,7 +92,9 @@ EOT
 } 
 
 sub tkgroup {
-	my $app = shift;
+    my $plugin = shift;
+    my ($app) = @_;
+	
 	my $q = $app->{query};
 	my $author_ids;
 	for my $author_id ($q->param('id')){
@@ -113,7 +118,7 @@ sub include {
 	$html .= '$nick = typekey_nick();';
 	$html .= '$logout_url = typekey_logout_url();';
 	$html .= 'include(\''.$path.'/php/mt.php\'); ';
-	$html .= '$mt = new MT('.$ctx->stash('blog')->id.', \''.$path.'/mt.cfg\'); ';
+	$html .= '$mt = new MT('.$ctx->stash('blog')->id.', \''.MT->instance->{cfg_file}.'\'); ';
 	$html .= '$db = $mt->db(); ';
 	$html .= ' ?>';
 	return $html;	

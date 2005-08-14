@@ -162,7 +162,7 @@ print "<h3>Loading initial data into system...</h3>\n";
 require MT;
 my $mt;
 
-unless ($mt = MT->new( Config => $MT_DIR . 'mt.cfg', Directory => $MT_DIR )) {
+unless ($mt = MT->new( Config => $MT_DIR . 'mt-config.cgi', Directory => $MT_DIR )) {
 
     my $err = MT->errstr;
     if ($err =~ m/Your DataSource directory .*does not exist./i) {
