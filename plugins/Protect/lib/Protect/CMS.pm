@@ -104,7 +104,7 @@ sub install {
     my $typekey_lib_dynamic = $blog->site_path . "/typekey_lib_dynamic.php";
     my $mt_pass = $blog->site_path . "/mt-password.php";
     if($type eq 'install') {
-        my $url = 'http://www.movalog.com/archives/plugins/protect/Auth_Typekey.txt';
+        my $url = 'http://www.movalog.com/downloads/MT-Protect/Auth_Typekey.txt';
         my $auth_tk_text = _load_link ( $url );
         
         if (open(TARGET, ">$auth_typekey")) {
@@ -114,7 +114,7 @@ sub install {
             die;
         }
         
-        $url = 'http://www.movalog.com/archives/plugins/protect/typekey_lib.txt';
+        $url = 'http://www.movalog.com/downloads/MT-Protect/typekey_lib.txt';
         $auth_tk_text = _load_link ( $url );
         
         if (open(TARGET, ">$typekey_lib")) {
@@ -124,7 +124,7 @@ sub install {
             die;
         }
         
-        $url = 'http://www.movalog.com/archives/plugins/protect/typekey_lib_dynamic.txt';
+        $url = 'http://www.movalog.com/downloads/MT-Protect/typekey_lib_dynamic.txt';
         $auth_tk_text = _load_link ( $url );
         
         if (open(TARGET, ">$typekey_lib_dynamic")) {
@@ -134,7 +134,7 @@ sub install {
             die;
         }        
         
-        $url = 'http://www.movalog.com/archives/plugins/protect/mt-pass.txt';
+        $url = 'http://www.movalog.com/downloads/MT-Protect/mt-pass.txt';
         $auth_tk_text = _load_link ( $url );
         
                     require MT::Builder;
