@@ -8,9 +8,10 @@
 package Protect::CMS;
 use strict;
 
-use vars qw( $DEBUG $VERSION @ISA $USE_SEARCH_PATH_HACK );
+use vars qw( $DEBUG $VERSION @ISA $SCHEMA_VERSION );
 @ISA = qw(MT::App::CMS);
 $VERSION = '1.2';
+$SCHEMA_VERSION = 1.2;
 
 use MT::PluginData;
 use MT::Util qw( format_ts offset_time_list );
@@ -20,6 +21,7 @@ use MT;
 use MT::Permission;
 use Protect::Protect;
 use Protect::Groups;
+use JSON;
 
 sub init
 {
@@ -33,7 +35,9 @@ sub init
     'save'                => \&save,
     'list_entries'        => \&list_entries,
     'tk_groups'           => \&tk_groups,
-    'delete'              => \&delete
+    'delete'              => \&delete,
+    'notice'              => \&notice,
+    'upgrade'             => \&upgrade,
     );
     
     
@@ -63,6 +67,9 @@ sub build_page {
 
 sub config_global {
     my $app = shift;
+   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
+			schema_check($app);
+   }	        
     my $q = $app->{query};
     my $param;
     my $cblog_id = $q->param('cblog_id');
@@ -95,6 +102,9 @@ if (my $auth = $app->{author}) {
 
 sub install {
     my $app = shift;
+   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
+			schema_check($app);
+   }    
     my $q = $app->{query};
     my $blog_id = $q->param('cblog_id');
     my $type = $q->param('_type');
@@ -192,6 +202,9 @@ sub install {
 
 sub edit {
     my $app = shift;
+   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
+			schema_check($app);
+   }    
     my $q = $app->{query};
     my $param;
     my $tmpl;
@@ -210,7 +223,7 @@ sub edit {
             my $data_type = $data->type;
             if($data_type eq 'Password'){
                 $param->{is_password} = 1;
-                my $password = $data->password;
+                my $password = $data->data;
                 $param->{password} = $password;
             }
             elsif($data_type eq 'Typekey'){
@@ -239,12 +252,13 @@ sub edit {
             my $data_type = $data->type;
             if($data_type eq 'Password'){
                 $param->{is_password} = 1;
-                my $password = $data->password;
+                my $password = $data->data;
                 $param->{password} = $password;
             }
             elsif($data_type eq 'Typekey'){
                 $param->{is_typekey} = 1;
                 my $users = $data->data;
+
                 for my $user (@$users) {                  
                     push @data, {user => $user};
                 }
@@ -295,6 +309,9 @@ sub edit {
 
 sub save {
     my $app = shift;
+   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
+			schema_check($app);
+   }    
     my $q = $app->{query};
     my $blog_id = $q->param('blog_id'); 
     my($param,$tmpl,@data,$data,$uri,$message); 
@@ -312,7 +329,7 @@ sub save {
         if($protection eq 'Password') {
             $data->type($protection);
             my $password = $q->param('password');
-            $data->password($password);
+            $data->data($password);
             $message = $app->translate('Entry now password protected');
             $app->log("'" . $app->{author}->name . "' password protected entry #".$entry_id);
           } 
@@ -351,7 +368,7 @@ sub save {
         if($protection eq 'Password') {
             $data->type($protection);
             my $password = $q->param('password');
-            $data->password($password);
+            $data->data($password);
             $message = $app->translate('Blog now password protected');
             $app->log("'" . $app->{author}->name . "' password protected blog #".$blog_id);
           } 
@@ -408,6 +425,9 @@ sub save {
 
 sub tk_groups {
     my $app = shift;
+   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
+			schema_check($app);
+   }    
     my $q = $app->{query};
     my $iter = Protect::Groups->load_iter;
     my (@data,@count,$param);
@@ -445,6 +465,9 @@ sub tk_groups {
 
 sub list_entries {
     my $app = shift;
+   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
+			schema_check($app);
+   }    
     my $q = $app->{query};        
                 my $blog_id = $q->param('blog_id');
                 my $blog = MT::Blog->load($blog_id);
@@ -520,6 +543,9 @@ sub delete
 {
     debug("Calling delete_entry...");
     my $app = shift;
+   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
+			schema_check($app);
+   }    
     my $q = $app->{query};
                 my $type = $q->param('_type');
     if($type eq 'groups') {
@@ -542,6 +568,9 @@ sub delete
 
 sub confirm_delete {
     my $app = shift;
+   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
+			schema_check($app);
+   }    
     my $q = $app->{query};
                 my $type = $q->param('_type');    
     my @entry_data;
@@ -563,11 +592,153 @@ sub confirm_delete {
     $param->{entry_loop} = \@entry_data;
     $param->{type} = $q->param('_type');
         $app->build_page('delete.tmpl', $param);   
-}        
+}   
+
+sub notice {
+	my $app = shift;
+	my $q = $app->{query};
+	my $tmpl = $q->param('do').'.tmpl';
+	my $param;
+	$param->{instup} = 1;
+	$param->{blog_id} = $q->param('blog_id');
+  unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
+   	
+	
+	$app->add_breadcrumb("MT Protect");		
+	$app->add_breadcrumb("Install")
+		if $q->param('do') eq 'install';			
+	$app->add_breadcrumb("Upgrade")
+		if $q->param('do') eq 'upgrade';		
+	$app->build_page($tmpl,$param);
+	} else {
+	$param->{up_to_date} = 1;
+	$app->build_page('upgrade_runner.tmpl',$param);
+	}
+}  
+
+sub upgrade {
+	# print "Content-Type: text/html\n\n";
+	my $app = shift;
+	my $q = $app->{query};
+  my $dbh = MT::Object->driver->{dbh};	
+  my $driver = MT::Object->driver;
+	my $schema_version = 1.0
+			unless($driver->table_exists('Protect::Groups'));
+	my $schema_version = 1.1
+			if(has_column($dbh, 'mt_protect', 'protect_password'));			
+  my @stmts;	
+	my $param;
+	$param->{up_to_date} = 1;
+  unless (MT::PluginData->load({ plugin => 'MT Blogroll', key => 'setup_'.$SCHEMA_VERSION })) {
+  	$param->{up_to_date} = 0;	
+  if($schema_version == 1.0) {
+	push @stmts, <<CREATE,
+create table mt_protect_groups (
+	protect_groups_id integer not null auto_increment primary key,
+	protect_groups_label varchar(100) not null,
+	protect_groups_description varchar(255),
+	protect_groups_data mediumtext,
+	index (protect_groups_label),
+	unique(protect_groups_label)
+	)
+CREATE
+  }
+  
+   if($schema_version <= 1.1) { 
+   my $iter = Protect::Protect->load_iter;
+   while (my $entry = $iter->()) {    
+   	if($entry->type eq 'Typekey') {
+      my $users = $entry->data;
+      my @data;
+      for my $user (@$users) {               
+				push (@data, $user);
+      }
+      $entry->data(\@data);
+    } elsif($entry->type eq 'Password') {
+    	my $pass = $entry->password;
+    	$entry->data($pass);
+    }
+      $entry->save or die $entry->errstr;   		
+  }
+   $iter = Protect::Groups->load_iter;
+   while (my $entry = $iter->()) {    
+      my $users = $entry->data;
+      my @data;      
+      for my $user (@$users) {               
+				push (@data, $user);
+      }
+      $entry->data(\@data);
+      $entry->save or die $entry->errstr;   		
+  }
+    
+   my $data = MT::PluginData->new;
+   $data->plugin('MT Protect');
+   $data->key('setup_'.$SCHEMA_VERSION);
+   $data->data(\1);
+   $data->save or die "Unable to save setup confirmation", $data->errstr;
+ 
+  push @stmts, "alter table `mt_protect` drop `protect_password`";
+}
+
+    for my $sql (@stmts) {
+        #print "Running '$sql'\n";
+        $dbh->do($sql) or die $dbh->errstr . " on $sql";
+    } 
+  }
+    my $install_mode;
+    my $json_steps = objToJson(@stmts);
+     
+  $app->build_page('upgrade_runner.tmpl', $param);  
+}   
 
 #####################################################################
 # UTILITY SUBROUTINES
 #####################################################################
+
+sub schema_check {
+	my $app = shift;
+	my $dbh = MT::Object->driver->{dbh};
+  my $sversion = $SCHEMA_VERSION; 
+  my $driver = MT::Object->driver;
+  
+  if (!$driver->table_exists('Protect::Protect')) { 
+	$app->redirect($app->uri.'?__mode=notice&do=install&blog_id='.$app->{query}->param('blog_id'))
+}		
+		$sversion = 1.0
+			unless($driver->table_exists('Protect::Groups'));
+						
+		$sversion = 1.1
+			if(has_column($dbh, 'mt_protect', 'protect_password'));			
+    
+    $app->redirect($app->uri.'?__mode=notice&do=upgrade&blog_id='.$app->{query}->param('blog_id'))
+    	if($sversion < $SCHEMA_VERSION);     	
+}
+
+sub add_once {
+    my ($stmts, $dbh, $table, $col, $type) = @_;
+    
+    push @$stmts, "alter table $table add $col $type"
+        unless has_column($dbh, $table, $col);
+    return @$stmts;
+}
+
+sub has_column
+{
+    my ($dbh, $table, $column) = @_;
+
+    my $sth = $dbh->prepare("describe $table");
+    if ($sth && $sth->execute()) {
+	my $ddl = $sth->fetchall_arrayref();
+
+	my @columns = map { $$_[0] } @$ddl;
+
+	return (grep { $_ =~ /$column/ } @columns) ? 1 : 0;
+    } else {
+	$sth = $dbh->prepare("select $column from $table");
+	$sth->execute() or return 0;
+	return 1;
+    }
+}
 
 sub _load_link {
     my $link = shift;
