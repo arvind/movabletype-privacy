@@ -4,23 +4,47 @@
 function writeinput() {
 var theNewParagraph = document.createElement('p');
 var input = document.createElement('input');
+var type = document.getElementById('type').value;
 input.type = 'text';
 input.name = 'typekey_users';
+if(type == 'Typekey') {
+input.style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>images/typekey.gif) 2px 1px no-repeat'
+input.style['paddingLeft'] = '30px';
+}
+if(type == 'OpenID') {
+input.style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>images/openid.gif) 2px 1px no-repeat'
+input.style['paddingLeft'] = '30px';
+}
 theNewParagraph.appendChild(input);
 document.getElementById('typekey_users').appendChild(theNewParagraph);
 
 	}
+	
+function changeinput(type) {
+var e = document.getElementById('typekey_users');
+var inputs = e.getElementsByTagName("input");
+	for (var i = 0; i < inputs.length; i++) {
+		if(type == 'Typekey') {
+		inputs[i].style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>images/typekey.gif) 2px 1px no-repeat'
+		inputs[i].style['paddingLeft'] = '30px';
+		}
+		if(type == 'OpenID') {
+		inputs[i].style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>images/openid.gif) 2px 1px no-repeat'
+		inputs[i].style['paddingLeft'] = '30px';
+		}
+	}
+}	
 
 //-->
 </script>		
 
-<h2><TMPL_IF NAME=LABEL><MT_TRANS phrase="Typekey Group:"> <span class="title-highlight"><TMPL_VAR NAME=LABEL></span><TMPL_ELSE><MT_TRANS phrase="New Typekey Group"></TMPL_IF></h2>
+<h2><TMPL_IF NAME=LABEL><MT_TRANS phrase="Protection Group:"> <span class="title-highlight"><TMPL_VAR NAME=LABEL></span><TMPL_ELSE><MT_TRANS phrase="New Protection Group"></TMPL_IF></h2>
 
 <TMPL_IF NAME=MESSAGE>
 <p class="message"><TMPL_VAR NAME=MESSAGE></p>
 </TMPL_IF>
 
-<p><TMPL_IF NAME=NAME><MT_TRANS phrase="Use this page to edit the attributes of the group"> <TMPL_VAR NAME=LABEL>.<TMPL_ELSE><MT_TRANS phrase="Use this page to create a new typekey group."></TMPL_IF> <MT_TRANS phrase="You can set an optional description for your group."></p>
+<p><TMPL_IF NAME=NAME><MT_TRANS phrase="Use this page to edit the attributes of the group"> <TMPL_VAR NAME=LABEL>.<TMPL_ELSE><MT_TRANS phrase="Use this page to create a new Protection Group."></TMPL_IF> <MT_TRANS phrase="You can set an optional description for your group."></p>
 
 <form method="post" action="<TMPL_VAR NAME=SCRIPT_URL>">
 <input type="hidden" name="__mode" value="save" />
@@ -33,11 +57,18 @@ document.getElementById('typekey_users').appendChild(theNewParagraph);
 <p><label for="desc"><MT_TRANS phrase="Group Description"></label><br />
 <textarea name="desc" id="desc" rows="5" cols="60"><TMPL_VAR NAME=DESCRIPTION ESCAPE=HTML></textarea></p>
 
-<p><label><MT_TRANS phrase="Typekey users, enter their Typekey usernames (case sensitive)"></label></p>
+<p><label for="type">Type of Group:</label><br />
+<select name="type" id="type" onchange="changeinput(this.options[this.selectedIndex].value);">
+<option value="Typekey"<TMPL_IF NAME=TYPEKEY> selected="selected"</TMPL_IF>>Typekey</option>
+<option value="OpenID"<TMPL_IF NAME=OPENID> selected="selected"</TMPL_IF>>OpenID</option>
+</select></p>
+
+
+<p><label><MT_TRANS phrase="Enter usernames (case sensitive)"></label></p>
 <div id="typekey_users"><TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
-<p><input name="typekey_users" id="typekey_users" value="<TMPL_VAR NAME=USER>" /></p>
+<p><input style="<TMPL_IF NAME=OPENID>background: #fff url(<TMPL_VAR NAME=STATIC_URI>images/openid.gif) 2px 1px no-repeat; padding-left:30px;<TMPL_ELSE>padding-left: 30px;background:#fff url(<TMPL_VAR NAME=STATIC_URI>images/typekey.gif) 2px 1px no-repeat;</TMPL_IF>" name="users" id="users" value="<TMPL_VAR NAME=USER>" /></p>
 </TMPL_LOOP></div>
-<p><img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="Create New Entry">" width="9" height="9" />
+<p><img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="More">" width="9" height="9" />
 <a href="javascript:void(0);" onclick='writeinput();'><MT_TRANS phrase="More"></a></p>
 
 <div align="center">

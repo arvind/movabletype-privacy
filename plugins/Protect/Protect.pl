@@ -32,16 +32,26 @@ sub init_app {
     if ($app->isa('MT::App::CMS')) {
         $app->add_itemset_action({type => 'commenter',
                                   key => "set_protection_group",
-                                  label => "Create a Typekey Group",
+                                  label => "Create a Protection Group",
                                   code => sub { $plugin->tkgroup(@_) },
                                });
+        $app->add_itemset_action({type => 'entry',
+                                  key => "set_protection",
+                                  label => "Protect Entry(ies)",
+                                  code => sub { $plugin->protect_entries(@_) },
+                               });      
+        $app->add_itemset_action({type => 'blog',
+                                  key => "set_protection",
+                                  label => "Protect Blog(s)",
+                                  code => sub { $plugin->protect_blogs(@_) },
+                               });                                                           
     }
 }                       
                         
-MT->add_plugin_action ('entry', 'mt-protect.cgi?__mode=edit', "Protect this entry");
+# MT->add_plugin_action ('entry', 'mt-protect.cgi?__mode=edit', "Protect this entry");
 MT->add_plugin_action ('list_entries', 'mt-protect.cgi?__mode=list_entries', "List Protected Entries");
-MT->add_plugin_action ('blog', 'mt-protect.cgi?__mode=edit', 'Edit Protection Options');
-MT->add_plugin_action ('list_commenters', "mt-protect.cgi?__mode=tk_groups", 'Typekey Groups');
+MT->add_plugin_action ('blog', 'mt-protect.cgi?__mode=edit', 'Protect Blog');
+MT->add_plugin_action ('list_commenters', "mt-protect.cgi?__mode=tk_groups", 'List Protection Groups');
 
 MT::Template::Context->add_tag(ProtectInclude           => \&include);
 MT::Template::Context->add_container_tag(Protected    => \&protected);
@@ -103,6 +113,40 @@ sub tkgroup {
 	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=groups&author_id='. $author_ids);
 }
 
+sub protect_entries {
+    my $plugin = shift;
+    my ($app) = @_;
+	
+	my $q = $app->{query};
+	my ($entry_ids, $i);
+	for my $entry_id ($q->param('id')){
+		$i++;
+		$entry_ids .= ",$entry_id";
+	}
+	if($i == 1) {
+	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=entry&id='. $q->param('id').'&blog_id='.$q->param('blog_id'));
+	} else {
+	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=entry&entry_ids='. $entry_ids.'&blog_id='.$q->param('blog_id'));	
+	}
+}
+
+sub protect_blogs {
+    my $plugin = shift;
+    my ($app) = @_;
+	
+	my $q = $app->{query};
+	my ($blog_ids, $i);
+	for my $blog_id ($q->param('id')){
+		$i++;
+		$blog_ids .= ",$blog_id";
+	}
+	if($i == 1) {
+	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=blog&blog_id='. $q->param('id'));
+	} else {
+	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=blog&blog_ids='. $blog_ids);	
+	}
+}
+
 sub include {
   my($ctx) = @_;	
   my $path = MT::instance()->server_path() || "";
@@ -117,9 +161,11 @@ sub include {
 	$html .= '$name = typekey_name();';
 	$html .= '$nick = typekey_nick();';
 	$html .= '$logout_url = typekey_logout_url();';
+	$html .= 'require_once("'.$blog_path.'openid.php");';
 	$html .= 'include(\''.$path.'/php/mt.php\'); ';
 	$html .= '$mt = new MT('.$ctx->stash('blog')->id.', \''.MT->instance->{cfg_file}.'\'); ';
 	$html .= '$db = $mt->db(); ';
+	$html .= '$openidname = $_SESSION["sess_openid_auth_code"]';
 	$html .= ' ?>';
 	return $html;	
 }
@@ -145,6 +191,13 @@ sub protected {
   my $tokens = $ctx->stash ('tokens');
 	my $e = $_[0]->stash('entry');
 	my $entry_id = $e->id;
+    my $staticwebpath = MT::ConfigMgr->instance->StaticWebstaticwebpath;
+    if (!$staticwebpath) {
+        $staticwebpath = MT::ConfigMgr->instance->CGIstaticwebpath;
+        $staticwebpath .= '/' unless $staticwebpath =~ m!/$!;
+        $staticwebpath .= 'mt-static/';
+    }
+    $staticwebpath .= '/' unless $staticwebpath =~ m!/$!;	
 	my ($start, $middle, $bottom, $protected);
     defined (my $out = $builder->build ($ctx, $tokens, $cond))
       or return $ctx->error ($ctx->errstr);
@@ -172,7 +225,7 @@ sub protected {
 				return $start.$out.$middle.$bottom;
 		} elsif($type eq 'Typekey'){
 			my $signintext = $args->{tk_signin_text} || "This blog has been Typekey protected so only selected Typekey users can read it. ";
-			my $notallowed = $args->{tk_barred_text} || "You do not have the rights to access this blog. Sorry!";
+			my $notallowed = $args->{tk_barred_text} || "You do not have the rights to access this entry. Sorry!";
 	
 			$start = "<?php\n";
 			$start .= 'switch($name){';
@@ -200,6 +253,50 @@ sub protected {
       $middle .= 'echo "<p class=\"protected\">Hello $nick.'.$notallowed.' (<a href=\"$logout_url\">Sign Out</a>)</p>";';
       $middle .= '} } ?>';
       return $start.$out.$middle;
+		} elsif($type eq 'OpenID'){
+			my $signintext = $args->{oi_signin_text} || "This entry has been protected using OpenID so only selected OpenID users can read it. ";
+			my $notallowed = $args->{oi_barred_text} || "You do not have the rights to access this entry. Sorry!";
+	
+			$start = "<?php\n";
+			$start .= 'switch($openidname){';
+      my $users = $protected->data;
+      for my $user (@$users) {	
+      	# Thanks for the regex Tweezerman!
+      	if($user =~ /group:(.*)/){
+      		my $group = $1;
+      		my $data = Protect::Groups->load({ label => $group });
+      		my $user_groups = $data->data;
+      		for my $user_group (@$user_groups) {
+      			$user_group = 'http://'.$user_group
+      				if(index($user_group,'http://') == -1);
+      			$user_group .= '/' unless $user_group =~ m!/$!;		
+		      	$start .= "case \"$user_group\":\n";
+		      }    		
+      	} else {
+      			$user = 'http://'.$user
+      				if(index($user,'http://') == -1);	
+      $user .= '/' unless $user =~ m!/$!;				      		
+      $start .= "case \"$user\":\n"; }
+      }
+      $start .= ' ?>';
+      $start .= '<p>Thanks for signing in <?php echo $openidname ?> <font size="1">(<a href="<?php echo $PHP_SELF."?openid_logout"; ?>">Logout</a>)</font></p>';
+      $middle = "<?php\n";
+      $middle .= 'break;';
+      $middle .= 'default: ?>';
+			$middle .= '<form method="post" id="openidform" action="<?php echo $_SERVER["PHP_SELF"]; ?>">';
+ 			$middle .= '<div>';
+ 			$middle .= '<?php if ($_SESSION["sess_openid_auth_code"] != "") { ?>';
+   		$middle .= 'You are logged in as: <?=$_SESSION["sess_openid_auth_code"]?>'.$notallowed.' (<a href="<?php echo $PHP_SELF."?openid_logout"; ?>">Logout</a>)';
+  		$middle .= '<?php } else { ?>';
+   		$middle .= '<input type="hidden" name="openid_type" value="openid" />';
+   		$middle .= '<label for="openid_name">'.$signintext.'</label><br />';
+   		$middle .= '<input style="padding-left: 22px;background:#fff url('.$staticwebpath.'images/openid.gif) 2px 1px no-repeat;" type="text" value="" name="openid_name" id="openid_name" />';
+   		$middle .= '<input type="submit" id="openidsubmit" value="Log In" />';
+ 			$middle .= '<?php } ?>';
+ 			$middle .= '</div>';
+			$middle .= '</form>';      
+			$middle .= '<?php } ?>';
+      return $start.$out.$middle;
 		}
 	}	 
 }
@@ -209,6 +306,13 @@ sub blog_protected {
   my $blog_id = $_[0]->stash('blog')->id;
   my $blog_url = $_[0]->stash('blog')->site_url;
   $blog_url .= '/' unless $blog_url =~ m!/$!;
+    my $staticwebpath = MT::ConfigMgr->instance->StaticWebstaticwebpath;
+    if (!$staticwebpath) {
+        $staticwebpath = MT::ConfigMgr->instance->CGIstaticwebpath;
+        $staticwebpath .= '/' unless $staticwebpath =~ m!/$!;
+        $staticwebpath .= 'mt-static/';
+    }
+    $staticwebpath .= '/' unless $staticwebpath =~ m!/$!;	  
   my $builder = $ctx->stash ('builder');
   my $tokens = $ctx->stash ('tokens');
 	my $entry_id = '0';
@@ -267,6 +371,50 @@ sub blog_protected {
       $middle .= 'echo "<p class=\"protected\">Hello $nick.'.$notallowed.' (<a href=\"$logout_url\">Sign Out</a>)</p>";';
       $middle .= '} } ?>';
 
+      return $start.$out.$middle;
+		} elsif($type eq 'OpenID'){
+			my $signintext = $args->{oi_signin_text} || "This blog has been protected using OpenID so only selected OpenID users can read it. ";
+			my $notallowed = $args->{oi_barred_text} || "You do not have the rights to access this blog. Sorry!";
+	
+			$start = "<?php\n";
+			$start .= 'switch($openidname){';
+      my $users = $protected->data;
+      for my $user (@$users) {	
+      	# Thanks for the regex Tweezerman!
+      	if($user =~ /group:(.*)/){
+      		my $group = $1;
+      		my $data = Protect::Groups->load({ label => $group });
+      		my $user_groups = $data->data;
+      		for my $user_group (@$user_groups) {
+      			$user_group = 'http://'.$user_group
+      				if(index($user_group,'http://') == -1);
+      			$user_group .= '/' unless $user_group =~ m!/$!;		
+		      	$start .= "case \"$user_group\":\n";
+		      }    		
+      	} else {
+      			$user = 'http://'.$user
+      				if(index($user,'http://') == -1);	
+      $user .= '/' unless $user =~ m!/$!;				      		
+      $start .= "case \"$user\":\n"; }
+      }
+      $start .= ' ?>';
+      $start .= '<p>Thanks for signing in <?php echo $openidname ?> <font size="1">(<a href="<?php echo $PHP_SELF."?openid_logout"; ?>">Logout</a>)</font></p>';
+      $middle = "<?php\n";
+      $middle .= 'break;';
+      $middle .= 'default: ?>';
+			$middle .= '<form method="post" id="openidform" action="<?php echo $_SERVER["PHP_SELF"]; ?>">';
+ 			$middle .= '<div>';
+ 			$middle .= '<?php if ($_SESSION["sess_openid_auth_code"] != "") { ?>';
+   		$middle .= 'You are logged in as: <?=$_SESSION["sess_openid_auth_code"]?>'.$notallowed.' (<a href="<?php echo $PHP_SELF."?openid_logout"; ?>">Logout</a>)';
+  		$middle .= '<?php } else { ?>';
+   		$middle .= '<input type="hidden" name="openid_type" value="openid" />';
+   		$middle .= '<label for="openid_name">'.$signintext.'</label><br />';
+   		$middle .= '<input style="padding-left: 22px;background:#fff url('.$staticwebpath.'images/openid.gif) 2px 1px no-repeat;" type="text" value="" name="openid_name" id="openid_name" />';
+   		$middle .= '<input type="submit" id="openidsubmit" value="Log In" />';
+ 			$middle .= '<?php } ?>';
+ 			$middle .= '</div>';
+			$middle .= '</form>';      
+			$middle .= '<?php } ?>';
       return $start.$out.$middle;
 		}
 	}	 

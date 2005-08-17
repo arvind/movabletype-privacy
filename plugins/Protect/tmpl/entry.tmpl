@@ -20,64 +20,83 @@ function getByID (n) {
     else if (d.all)
         return d.all[n];
 }
-function togglePasswordPrefs (c) {
-    var e = getByID('password_prefs');
-    if (c.checked) e.style.display = 'block';
-    if (!c.checked) e.style.display = 'none';
+function toggleProtectPrefs (c, div) {
+var b = new Array('password_prefs','typekey_prefs','openid_prefs');
+for (var i = 0; i < b.length; i++) {
+	var c = getByID(b[i]);
+	c.style.display = 'none';
 }
-function toggleTKPrefs (c) {
-    var e = getByID('typekey_prefs');
-    if (c.checked) e.style.display = 'block';
-    if (!c.checked) e.style.display = 'none';
+    var e = getByID(div);
+    e.style.display = 'block';
 }
 
-function writeinput() {
+function writeinput(div) {
 var theNewParagraph = document.createElement('p');
 var input = document.createElement('input');
 input.type = 'text';
-input.name = 'typekey_users';
+input.name = div;
+if(div == 'typekey_users') {
+input.style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>images/typekey.gif) 2px 1px no-repeat'
+input.style['paddingLeft'] = '30px';
+}
+if(div == 'openid_users') {
+input.style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>images/openid.gif) 2px 1px no-repeat'
+input.style['paddingLeft'] = '22px';
+}
 theNewParagraph.appendChild(input);
-document.getElementById('typekey_users').appendChild(theNewParagraph);
+document.getElementById(div).appendChild(theNewParagraph);
 
 	}
 
 //-->
 </script>	
 
-<h2>Protect Entry: <span class="title-highlight"><TMPL_VAR NAME=ENTRY_TITLE ESCAPE=HTML></span></h2>
+<h2><TMPL_IF NAME=IS_SINGLE>Protect Entry: <span class="title-highlight"><TMPL_VAR NAME=ENTRY_TITLE ESCAPE=HTML></span><TMPL_ELSE>Protect Multiple Entries</TMPL_IF></h2>
 
 <TMPL_IF NAME=MESSAGE>
 <p class="message"><TMPL_VAR NAME=MESSAGE></p>
 </TMPL_IF>
 
 <p class="page-desc"><MT_TRANS phrase="You can protect this entry so only certain people can view its contents. You can do this one of two ways. The first is using a simple password that people will have to enter to see the post. The alternative is to use Typekey so access is based on their identity. Using Typekey is the recommended method as it ensures that only those allowed can access the post, passwords can always be leaked!"></p>
-
+<TMPL_UNLESS NAME=IS_SINGLE><p class="page-desc"><b><MT_TRANS phrase="Caution: You are protecting multiple entries using this page hence they will all get the same protection"></b></p></TMPL_UNLESS> 
 
 <form method="post" action="<TMPL_VAR NAME=SCRIPT_URL>">
   <input type="hidden" name="__mode" value="save" />
   <input type="hidden" name="_type" value="entry" />
-  <input type="hidden" name="id" value="<TMPL_VAR NAME=ENTRY_ID>" />
+  <input type="hidden" name="<TMPL_IF NAME=IS_SINGLE>id<TMPL_ELSE>entry_ids</TMPL_IF>" value="<TMPL_VAR NAME=ENTRY_ID>" />
   <input type="hidden" name="blog_id" value="<TMPL_VAR NAME=BLOG_ID>" />
   <input type="hidden" name="magic_token" value="<TMPL_VAR NAME=MAGIC_TOKEN>" />
   
-<h4><input type="radio" name="protection" value="None"> <MT_TRANS phrase="No Protection"></h4>
+<h4><input type="radio" name="protection" value="None" onclick="getByID('password_prefs').style.display = 'none';getByID('typekey_prefs').style.display = 'none';"> <MT_TRANS phrase="No Protection"></h4>
 
-<h4><input <TMPL_IF NAME=IS_PASSWORD>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="togglePasswordPrefs(this); return true" value="Password"> <MT_TRANS phrase="Password Protection"></h4>
+<h4><input <TMPL_IF NAME=IS_PASSWORD>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="toggleProtectPrefs(this,'password_prefs'); return true" value="Password"> <MT_TRANS phrase="Password Protection"></h4>
 		
 <div id="password_prefs" class="sub-field" style="display: <TMPL_IF NAME=IS_PASSWORD>block<TMPL_ELSE>none</TMPL_IF>;">
 <p><label><MT_TRANS phrase="Entry Password"></label></p>
 <input name="password" id="password" value="<TMPL_VAR NAME=PASSWORD>" /></p>
 </div>
 
-<h4><input <TMPL_IF NAME=IS_TYPEKEY>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="toggleTKPrefs(this); return true" value="Typekey"> <MT_TRANS phrase="Typekey Protection"></h4>
+<h4><input <TMPL_IF NAME=IS_TYPEKEY>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="toggleProtectPrefs(this,'typekey_prefs'); return true" value="Typekey"> <MT_TRANS phrase="Typekey Protection"></h4>
 		
 <div id="typekey_prefs" class="sub-field" style="display: <TMPL_IF NAME=IS_TYPEKEY>block<TMPL_ELSE>none</TMPL_IF>;">
 <p><label><MT_TRANS phrase="Allow the following Typekey users, enter their Typekey usernames (case sensitive)"></label></p>
 <div id="typekey_users"><TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
-<p><input name="typekey_users" id="typekey_users" value="<TMPL_VAR NAME=USER>" /></p>
+<p><input style="padding-left: 30px;background:#fff url(<TMPL_VAR NAME=STATIC_URI>images/typekey.gif) 2px 1px no-repeat;" name="typekey_users" id="typekey_users" value="<TMPL_VAR NAME=USER>" /></p>
 </TMPL_LOOP></div>
-<p><img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="Create New Entry">" width="9" height="9" />
-<a href="javascript:void(0);" onclick='writeinput();'><MT_TRANS phrase="More"></a></p>
+<p><img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="More">" width="9" height="9" />
+<a href="javascript:void(0);" onclick="writeinput('typekey_users');"><MT_TRANS phrase="More"></a></p>
+
+</div>
+
+<h4><input <TMPL_IF NAME=IS_OPENID>checked="checked"</TMPL_IF> type="radio" name="protection" onclick="toggleProtectPrefs(this,'openid_prefs'); return true" value="OpenID"> <MT_TRANS phrase="OpenID Protection"></h4>
+		
+<div id="openid_prefs" class="sub-field" style="display: <TMPL_IF NAME=IS_OPENID>block<TMPL_ELSE>none</TMPL_IF>;">
+<p><label><MT_TRANS phrase="Allow the following OpenID addresses"></label></p>
+<div id="openid_users"><TMPL_LOOP NAME=OPENID_USER_LOOP>
+<p><input style="padding-left: 22px;background:#fff url(<TMPL_VAR NAME=STATIC_URI>images/openid.gif) 2px 1px no-repeat;" name="openid_users" id="openid_users" value="<TMPL_VAR NAME=USER>" /></p>
+</TMPL_LOOP></div>
+<p><img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="More">" width="9" height="9" />
+<a href="javascript:void(0);" onclick="writeinput('openid_users');"><MT_TRANS phrase="More"></a></p>
 
 </div>
 

@@ -53,16 +53,17 @@ TC.attachLoadEvent( init );
 // -->
 </script>
 <div id="list-entry">
-<h2><MT_TRANS phrase="Typekey Groups"></h2>
+<h2><MT_TRANS phrase="Protection Groups"></h2>
 
 <TMPL_IF NAME=MESSAGE>
 <p class="message"><TMPL_VAR NAME=MESSAGE></p>
 </TMPL_IF>
 
-<p class="page-desc"><MT_TRANS phrase="Typekey groups are a way for you to quickly assign permissions. They save you time so that you don't have to keep entering the same user names over and over again"></p>
+<p class="page-desc"><MT_TRANS phrase="Protection Groups are a way for you to quickly assign permissions. They save you time so that you don't have to keep entering the same user names over and over again"></p>
 
 <div class="tabs">
 <ul>
+<li class="yah"><a href="?__mode=tk_groups"><MT_TRANS phrase="Protection Groups"></a></li>
 <li class="special">
 <img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="Create New Entry">" width="9" height="9" />
 <a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=groups&add=1"><MT_TRANS phrase="Create New Group"></a>
@@ -72,7 +73,7 @@ TC.attachLoadEvent( init );
 
 <TMPL_IF EMPTY>
 <table width="100%">
-<tr><td align="center" bgcolor="#EEEEEE"><MT_TRANS phrase="You currently have no Typekey groups."></td></tr>
+<tr><td align="center" bgcolor="#EEEEEE"><MT_TRANS phrase="You currently have no Protection Groups."></td></tr>
 </table>
 <TMPL_ELSE>
 
@@ -87,6 +88,7 @@ TC.attachLoadEvent( init );
     <th class="cb"><input type="checkbox" name="id-head" value="all" class="select" /></th>
         <th><MT_TRANS phrase="Name"></th>
         <th><MT_TRANS phrase="Description"></th>
+        <th><MT_TRANS phrase="Type"></th>
         <th><MT_TRANS phrase="Members"></th>
     </tr>
 </thead>   
@@ -97,6 +99,7 @@ TC.attachLoadEvent( init );
     <td class="cb"><input type="checkbox" name="id" value="<TMPL_VAR NAME=ID>" class="select" /></td>
         <td><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=groups&id=<TMPL_VAR NAME=ID>&edit=1"><TMPL_VAR NAME=LABEL></a></td>
         <td><TMPL_VAR NAME=DESCRIPTION></td>  
+        <td><TMPL_VAR NAME=TYPE></td>  
         <td><TMPL_VAR NAME=MEMBER_COUNT></a></td>                   
         
     </tr>
