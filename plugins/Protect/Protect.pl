@@ -149,6 +149,10 @@ sub protect_blogs {
 
 sub include {
   my($ctx) = @_;	
+    my $host = $ctx->stash('blog')->site_url;
+    if ($host =~ m!^https?://([^/:]+)(:\d+)?/!) {
+        $host = $_[1]->{exclude_port} ? $1 : $1 . ($2 || '');
+    }  
   my $path = MT::instance()->server_path() || "";
   $path =~ s!/*$!!;
   my $blog_path = $_[0]->stash('blog')->site_path;
@@ -157,15 +161,18 @@ sub include {
 	$html .= '$tk_token = \''.$ctx->stash('blog')->remote_auth_token.'\'; ';
 	$html .= 'include "'.$blog_path.'typekey_lib.php"; ';
 	$html .= '$logged_in = typekey_logged_in();';
-	$html .= '$login_url = typekey_login_url();';
+	$html .= '$redirect_url = sprintf("http://%s%s", $_SERVER[\'HTTP_HOST\'], $PHP_SELF);';
+	$html .= '$login_url = typekey_login_url($redirect_url);';
 	$html .= '$name = typekey_name();';
 	$html .= '$nick = typekey_nick();';
 	$html .= '$logout_url = typekey_logout_url();';
+	$html .= 'global $this_page;';
+	$html .= '$this_page = sprintf("http://%s%s", "'.$host.'", $PHP_SELF);';
 	$html .= 'require_once("'.$blog_path.'openid.php");';
 	$html .= 'include(\''.$path.'/php/mt.php\'); ';
 	$html .= '$mt = new MT('.$ctx->stash('blog')->id.', \''.MT->instance->{cfg_file}.'\'); ';
 	$html .= '$db = $mt->db(); ';
-	$html .= '$openidname = $_SESSION["sess_openid_auth_code"]';
+	$html .= '$openidname = $_SESSION["sess_openid_auth_code"];';
 	$html .= ' ?>';
 	return $html;	
 }
