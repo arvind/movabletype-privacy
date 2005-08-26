@@ -118,7 +118,7 @@ sub load_files {
     my $mt_pass = $blog->site_path . "/mt-password.php";
     my $openid = $blog->site_path . "/openid.php";
     if($type eq 'install') {
-        my $url = 'http://www.movalog.com/downloads/MT-Protect/Auth_Typekey.txt';
+        my $url = 'http://www.movalog.com/downloads/MT-Protect/12/Auth_Typekey.txt';
         my $auth_tk_text = _load_link ( $url );
         
         if (open(TARGET, ">$auth_typekey")) {
@@ -128,7 +128,7 @@ sub load_files {
             die;
         }
         
-        $url = 'http://www.movalog.com/downloads/MT-Protect/typekey_lib.txt';
+        $url = 'http://www.movalog.com/downloads/MT-Protect/12/typekey_lib.txt';
         $auth_tk_text = _load_link ( $url );
         
         if (open(TARGET, ">$typekey_lib")) {
@@ -138,7 +138,7 @@ sub load_files {
             die;
         }
         
-        $url = 'http://www.movalog.com/downloads/MT-Protect/openid.php.txt';
+        $url = 'http://www.movalog.com/downloads/MT-Protect/12/openid.php.txt';
         $auth_tk_text = _load_link ( $url );
         
         if (open(TARGET, ">$openid")) {
@@ -158,7 +158,7 @@ sub load_files {
 #            die;
 #        }        
         
-        $url = 'http://www.movalog.com/downloads/MT-Protect/mt-pass.txt';
+        $url = 'http://www.movalog.com/downloads/MT-Protect/12/mt-pass.txt';
         $auth_tk_text = _load_link ( $url );
         
                     require MT::Builder;
