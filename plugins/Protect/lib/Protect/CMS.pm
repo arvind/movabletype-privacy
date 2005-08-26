@@ -886,7 +886,7 @@ CREATE
    my $data = MT::PluginData->new;
    $data->plugin('MT Protect');
    $data->key('setup_'.$SCHEMA_VERSION);
-   $data->data(\1);
+#   $data->data(\1);
    $data->save or $app->upgrade_error("Unable to save setup confirmation $data->errstr");
  }
   
@@ -936,7 +936,7 @@ if ($app->{cfg}->ObjectDriver =~ /^DBI::(.*)$/) {
    my $data = MT::PluginData->new;
    $data->plugin('MT Protect');
    $data->key('setup_'.$SCHEMA_VERSION);
-   $data->data(\1);
+#   $data->data(\1);
    $data->save or $app->upgrade_error("Unable to save setup confirmation", $data->errstr);    
 
 	$app->print("Installed MT Protect v".$VERSION." schema version ".$SCHEMA_VERSION."\n");    
@@ -960,8 +960,10 @@ sub schema_check {
   my $sversion = $SCHEMA_VERSION; 
   my $driver = MT::Object->driver;
   my $type = $app->{query}->param('_type') || $app->{query}->param('from');
-  my $uri = $app->uri.'?__mode=notice&do=install&blog_id='.$app->{query}->param('blog_id');
+  my $uri = $app->uri.'?__mode=notice&do=install&blog_id='.$app->{query}->param('blog_id').'&id='.$app->{query}->param('id').'&_type='.$type;
   if ($app->{cfg}->ObjectDriver =~ /mysql/) {
+  	if(has_column($dbh, 'mt_protect', 'protect_id')) {
+  		
 		$sversion = 1.0
 			unless(has_column($dbh, 'mt_protect_groups', 'protect_groups_id'));
 			
@@ -970,6 +972,7 @@ sub schema_check {
     
     $uri = $app->uri.'?__mode=notice&do=upgrade&blog_id='.$app->{query}->param('blog_id').'&id='.$app->{query}->param('id').'&_type='.$type
     	if($sversion < $SCHEMA_VERSION);     	
+    }
 } 
 $app->redirect($uri)
 	if $uri;    	

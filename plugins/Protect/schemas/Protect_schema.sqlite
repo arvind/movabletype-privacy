@@ -4,7 +4,7 @@ create table mt_protect (
     protect_blog_id integer not null,
     protect_password varchar(200),
     protect_type varchar(10) not null,
-    protect_data bytea,
+    protect_data text
 );
 create index protect_entry_id on mt_protect (protect_entry_id);
 create index protect_blog_id on mt_protect (protect_blog_id);
