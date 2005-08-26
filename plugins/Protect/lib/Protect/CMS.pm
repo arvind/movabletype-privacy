@@ -34,6 +34,7 @@ sub init
     'edit'                => \&edit,
     'save'                => \&save,
     'list_entries'        => \&list_entries,
+    'list_blogs'          => \&list_blogs,
     'tk_groups'           => \&tk_groups,
     'delete'              => \&delete,
     'notice' => \&notice,
@@ -344,7 +345,7 @@ sub edit {
 
       $tmpl = 'tk_edit.tmpl';                
       $app->add_breadcrumb("MT Protect",$app->{mtscript_url}.'?__mode=list_plugins');
-                $app->add_breadcrumb("Typekey Groups",'mt-protect.cgi?__mode=tk_groups');
+                $app->add_breadcrumb("Protection Groups",'mt-protect.cgi?__mode=tk_groups');
                 $app->add_breadcrumb("Add New Group") if $q->param('add') == 1;
                 $app->add_breadcrumb("Edit Group") if $q->param('edit') == 1;        
   }
@@ -559,7 +560,7 @@ sub tk_groups {
   $param->{empty} = !$n_entries;
   $param->{typekey_groups} = 1;
   $app->add_breadcrumb("MT Protect",$app->{mtscript_url}.'?__mode=list_plugins');
-  $app->add_breadcrumb("Typekey Groups");
+  $app->add_breadcrumb("Protection Groups");
   $app->build_page('tk_groups.tmpl',$param);
 }
 
@@ -633,10 +634,80 @@ sub list_entries {
     $param->{limit_loop} = \@limit_data;
     $param->{empty} = !$n_entries;
     $param->{offset}= $offset;        
-                $param->{entry_loop} = \@data;
+    $param->{entry_loop} = \@data;
+    $param->{entries} = 1;
     $app->add_breadcrumb('Entries', $app->{mtscript_url} . '?__mode=list_entries&blog_id=' . $blog->id);
     $app->add_breadcrumb($app->translate('Protected Entries'));                
         $app->build_page('list.tmpl',$param);    
+}
+
+sub list_blogs {
+    my $app = shift;
+   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
+			schema_check($app);
+   }    
+    my $q = $app->{query};        
+		my $param;
+    my @data;
+    my $limit   = $q->param('limit')   || 20;
+    my $offset  = $q->param('offset')  || 0;                
+    my %arg = (
+    ($limit eq 'none' ? () : (limit => $limit + 1)),
+    ($offset ? (offset => $offset) : ()),
+    );        
+    my %terms = (entry_id => 0);    
+    my $i         = 0; # loop iteration counter
+    my $n_entries = 0; # the number of entries displayed on this page
+    my $count     = 0; # the total number of (unpaginated) entries
+    my @entry_data;
+                my $iter = Protect::Protect->load_iter(\%terms, \%arg);
+                while (my $entry = $iter->()) {
+      $count++;
+
+      my $id = $entry->blog_id;
+      my $blog = MT::Blog->load($id);
+      	      $n_entries++;
+                        my $row = {
+                                id => $blog->id,
+                                title => $blog->name,
+                                type => $entry->type,
+                                entry_odd    => $n_entries % 2 ? 1 : 0,
+                        };
+                        push @data, $row;
+              }
+    $i = 0;
+    
+    $param->{limit}    = $limit;
+    $param->{paginate} = 0;
+    if ($limit ne 'none') {
+        ## We tried to load $limit + 1 entries above; if we actually got
+        ## $limit + 1 back, we know we have another page of entries.
+        my $have_next_entry = scalar @entry_data == $limit + 1;
+        pop @entry_data if $have_next_entry;
+        if ($offset) {
+            $param->{prev} = 1;
+            $param->{prev_offset} = $offset - $limit;
+        }
+        if ($have_next_entry) {
+            $param->{next} = 1;
+            $param->{next_offset} = $offset + $limit;
+        }
+    }
+    
+    my @limit_data;
+    for (5, 10, 20, 50, 100) {
+        push @limit_data, { limit       => $_,
+        limit_label => $_ };
+        $limit_data[-1]{limit_selected} = 1 if $limit == $_;
+    }
+    $param->{limit_loop} = \@limit_data;
+    $param->{empty} = !$n_entries;
+    $param->{offset}= $offset;        
+                $param->{entry_loop} = \@data;
+    $app->add_breadcrumb('System Overview', $app->{mtscript_url} . '?__mode=admin');
+    $app->add_breadcrumb('Weblogs', $app->{mtscript_url} . '?__mode=system_list_blogs');
+    $app->add_breadcrumb($app->translate('Protected Weblogs'));                
+        $app->build_page('list_blogs.tmpl',$param);    
 }
 
 sub delete
@@ -656,14 +727,20 @@ sub delete
         }
      tk_groups($app);        
     } elsif($type eq 'entries') {
-        $q->param('message','Groups removed');
+        $q->param('message','Entries unprotected');
         foreach my $key ($q->param('id')) {
             my $data = Protect::Protect->load({ entry_id    => $key });
             $data->remove or return $app->error("Error: " . $data->errstr);
         }
      list_entries($app);        
-    }
-    
+    } elsif($type eq 'weblogs') {
+        $q->param('message','Weblogs unprotected');
+        foreach my $key ($q->param('id')) {
+            my $data = Protect::Protect->load({ entry_id => 0, blog_id    => $key });
+            $data->remove or return $app->error("Error: " . $data->errstr);
+        }
+     list_entries($app);        
+    }    
 }
 
 sub confirm_delete {

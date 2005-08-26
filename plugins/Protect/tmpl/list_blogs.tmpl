@@ -62,30 +62,28 @@ function init()
 TC.attachLoadEvent( init );
 // -->
 </script>
-<div id="list-entry">
-<h2><MT_TRANS phrase="Protected Entries">: <span class="title-highlight"><TMPL_VAR NAME=BLOG_NAME ESCAPE=HTML></span></h2>
+<div id="list-weblog">
+<h2><MT_TRANS phrase="Protected Weblogs">: <span class="title-highlight"><MT_TRANS phrase="System Overview"></span></h2>
 
 
-<p class="page-desc"><MT_TRANS phrase="The following is a list of protected entries."></p>
+<p class="page-desc"><MT_TRANS phrase="The following is a list of protected weblogs."></p>
 
 <TMPL_IF EMPTY>
 <table width="100%">
-<tr><td align="center" bgcolor="#EEEEEE"><MT_TRANS phrase="You currently have no protected entries."></td></tr>
+<tr><td align="center" bgcolor="#EEEEEE"><MT_TRANS phrase="You currently have no protected weblogs."></td></tr>
 </table>
 <TMPL_ELSE>
 
 <div class="list" id="selector">
     <form method="get" action="<TMPL_VAR NAME=SCRIPT_URL>">
         <input type="hidden" name="__mode" value="delete" />
-        <input type="hidden" name="_type" value="entries" />   
+        <input type="hidden" name="_type" value="weblogs" />   
 
 <table cellspacing="0" class="compact">
 <thead>
     <tr>
     <th class="cb"><input type="checkbox" name="id-head" value="all" class="select" /></th>
         <th><MT_TRANS phrase="Title"></th>
-	<th><MT_TRANS phrase="Date"></th>
-        <th><MT_TRANS phrase="Author"></th>
         <th><MT_TRANS phrase="Type"></th>
         <th>&nbsp;</th>
     </tr>
@@ -95,11 +93,9 @@ TC.attachLoadEvent( init );
 
     <tr class="<TMPL_IF NAME=ENTRY_ODD>odd<TMPL_ELSE>even</TMPL_IF>">
     <td class="cb"><input type="checkbox" name="id" value="<TMPL_VAR NAME=ID>" class="select" /></td>
-				<td><a href="<TMPL_VAR NAME=MTSCRIPT_URL>?__mode=view&_type=entry&id=<TMPL_VAR NAME=ID>&blog_id=<TMPL_VAR NAME=BLOG_ID>"><TMPL_VAR NAME=TITLE></a></td> 
-        <td><TMPL_VAR NAME=DATE></td>
-      	<td><TMPL_VAR NAME=AUTHOR></td> 
+				<td><a href="<TMPL_VAR NAME=MTSCRIPT_URL>?__mode=view&_type=blog&blog_id=<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=TITLE></a></td> 
       	<td><TMPL_VAR NAME=TYPE> <MT_TRANS phrase="Protected"></td> 
-        <td><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=entry&id=<TMPL_VAR NAME=ID>&blog_id=<TMPL_VAR NAME=BLOG_ID>"><MT_TRANS phrase="Edit Protection Options"></a></td>  
+        <td><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=blog&blog_id=<TMPL_VAR NAME=ID>"><MT_TRANS phrase="Edit Protection Options"></a></td>  
      </tr>
 </tbody>
 </TMPL_LOOP>
@@ -108,22 +104,22 @@ TC.attachLoadEvent( init );
 <br />
 <div class="list-actions">
 <div class="button-bar">
-<input type="button" onclick="doRemoveItemsProtect(this.form, 'entry', 'entries')" name="delete_entries" value="<MT_TRANS phrase="Remove Protection">" accesskey="d" title="Remove Protection" />
+<input type="button" onclick="doRemoveItemsProtect(this.form, 'weblog', 'weblogs')" name="delete_weblogs" value="<MT_TRANS phrase="Remove Protection">" accesskey="d" title="Remove Protection" />
 </div>     
 </div> 
 <hr />
 
 <div style="float:right;">
 <TMPL_IF NAME=PREV>
-<input type="button" onclick="window.location='<TMPL_VAR NAME=SCRIPT_URL>?__mode=list_entries&limit=<TMPL_VAR NAME=LIMIT>&offset=<TMPL_VAR NAME=PREV_OFFSET>&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="<MT_TRANS phrase="Previous"> <TMPL_VAR NAME=LIMIT>" />
+<input type="button" onclick="window.location='<TMPL_VAR NAME=SCRIPT_URL>?__mode=list_weblogs&limit=<TMPL_VAR NAME=LIMIT>&offset=<TMPL_VAR NAME=PREV_OFFSET>&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="<MT_TRANS phrase="Previous"> <TMPL_VAR NAME=LIMIT>" />
 </TMPL_IF>
-        <select name="limit" onchange="window.location='<TMPL_VAR NAME=SCRIPT_URL>?__mode=list_entries&blog_id=<TMPL_VAR NAME=BLOG_ID>&limit=' + this.options[this.selectedIndex].value">
+        <select name="limit" onchange="window.location='<TMPL_VAR NAME=SCRIPT_URL>?__mode=list_weblogs&blog_id=<TMPL_VAR NAME=BLOG_ID>&limit=' + this.options[this.selectedIndex].value">
             <TMPL_LOOP NAME=LIMIT_LOOP>
-                <option value="<TMPL_VAR NAME=LIMIT>"<TMPL_IF NAME=LIMIT_SELECTED> selected</TMPL_IF>><TMPL_VAR NAME=LIMIT_LABEL> <MT_TRANS phrase="Entries"> </option>
+                <option value="<TMPL_VAR NAME=LIMIT>"<TMPL_IF NAME=LIMIT_SELECTED> selected</TMPL_IF>><TMPL_VAR NAME=LIMIT_LABEL> <MT_TRANS phrase="Weblogs"> </option>
             </TMPL_LOOP>
         </select> 
 <TMPL_IF NAME=NEXT>
-<input type="button" onclick="window.location='<TMPL_VAR NAME=SCRIPT_URL>?__mode=list_entries&limit=<TMPL_VAR NAME=LIMIT>&offset=<TMPL_VAR NAME=NEXT_OFFSET>&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="<MT_TRANS phrase="Next"> <TMPL_VAR NAME=LIMIT>" />     
+<input type="button" onclick="window.location='<TMPL_VAR NAME=SCRIPT_URL>?__mode=list_weblogs&limit=<TMPL_VAR NAME=LIMIT>&offset=<TMPL_VAR NAME=NEXT_OFFSET>&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="<MT_TRANS phrase="Next"> <TMPL_VAR NAME=LIMIT>" />     
 </TMPL_IF>
 </div>
 </div>
