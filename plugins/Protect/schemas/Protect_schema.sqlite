@@ -14,7 +14,7 @@ create table mt_protect_groups (
 	protect_groups_label varchar(100) not null,
 	protect_groups_description varchar(255),
 	protect_groups_type varchar(10) not null,
-	protect_groups_data bytea,
+	protect_groups_data text,
 	unique(protect_groups_label)
 ); 
 create index protect_groups_label on mt_protect_groups (protect_groups_label);
