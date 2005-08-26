@@ -231,7 +231,7 @@ sub protected {
 				$bottom .= '<?php } ?>';
 				return $start.$out.$middle.$bottom;
 		} elsif($type eq 'Typekey'){
-			my $signintext = $args->{tk_signin_text} || "This blog has been Typekey protected so only selected Typekey users can read it. ";
+			my $signintext = $args->{tk_signin_text} || "This entry has been Typekey protected so only selected Typekey users can read it. ";
 			my $notallowed = $args->{tk_barred_text} || "You do not have the rights to access this entry. Sorry!";
 	
 			$start = "<?php\n";
