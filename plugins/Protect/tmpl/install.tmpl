@@ -1,0 +1,22 @@
+<TMPL_INCLUDE NAME=header.tmpl>
+
+<div class="upgrade">
+
+<h2><MT_TRANS phrase="Welcome to MT Protect!"></h2>
+
+<p><MT_TRANS phrase="Before you can begin using the plugin, we need to complete your installation by initializing your database."></p>  
+
+<div class="button-bar">
+<form method="post" action="<TMPL_VAR NAME=SCRIPT_URL>">
+<input type="hidden" name="__mode" value="install">
+    <input type="hidden" name="install_mode" value="<TMPL_VAR NAME=INSTALL_MODE>" />
+    <input type="hidden" name="_type" value="<TMPL_VAR NAME=TYPE>" />
+    <input type="hidden" name="blog_id" value="<TMPL_VAR NAME=BLOG_ID>" />
+    <input type="hidden" name="id" value="<TMPL_VAR NAME=ID>" />
+<input type="submit" value="<MT_TRANS phrase="Finish Install">" />
+</form>
+</div>
+
+</div>
+
+<TMPL_INCLUDE NAME=footer.tmpl>

@@ -30,14 +30,17 @@ sub init
     $app->SUPER::init(%param) or return;
     $app->add_methods(
     'global_config'       => \&config_global,
-    'install'             => \&install,
+    'load_files'             => \&load_files,
     'edit'                => \&edit,
     'save'                => \&save,
     'list_entries'        => \&list_entries,
     'tk_groups'           => \&tk_groups,
     'delete'              => \&delete,
-    'notice'              => \&notice,
-    'upgrade'             => \&upgrade,
+    'notice' => \&notice,
+    'upgrade' => \&doinstallupgrade,
+    'install' => \&doinstallupgrade,
+    'run_upgrade' => \&run_upgrade,
+    'run_install' => \&run_install,    
     );
     
     
@@ -100,7 +103,7 @@ if (my $auth = $app->{author}) {
     $app->build_page('config.tmpl', $param);
 }
 
-sub install {
+sub load_files {
     my $app = shift;
    unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
 			schema_check($app);
@@ -698,36 +701,70 @@ sub notice {
 	my $param;
 	$param->{instup} = 1;
 	$param->{blog_id} = $q->param('blog_id');
+	$param->{id} = $q->param('id');
+	$param->{type} = $q->param('_type');
   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
    	
-	
+	$param->{schema_version} = $app->{schema_version};
 	$app->add_breadcrumb("MT Protect");		
-	$app->add_breadcrumb("Install")
-		if $q->param('do') eq 'install';			
-	$app->add_breadcrumb("Upgrade")
-		if $q->param('do') eq 'upgrade';		
+	if($q->param('do') eq 'install') {
+	$app->add_breadcrumb("Install");
+	$param->{blogroll_install} = 1;
+	$param->{install_mode} = 1;
+} elsif($q->param('do') eq 'upgrade') {
+$app->add_breadcrumb("Upgrade")};		
 	$app->build_page($tmpl,$param);
 	} else {
 	$param->{up_to_date} = 1;
 	$app->build_page('upgrade_runner.tmpl',$param);
 	}
-}  
+} 
 
-sub upgrade {
-	# print "Content-Type: text/html\n\n";
+sub doinstallupgrade {
 	my $app = shift;
+	my $q = $app->{query};
+  my $install_mode = $q->param('install_mode');	
+  my $dbh = MT::Object->driver->{dbh};
+
+  $q->param('DryRun',1);
+  if($install_mode) {
+  run_install($app);
+} else {
+	run_upgrade($app);
+}
+
+  my $steps = $app->response->{steps};  
+  my $json_steps;  
+    if ($steps && @$steps) {
+        $json_steps = objToJson($steps);
+    }
+
+    my $param = {
+        installing => $install_mode,
+        up_to_date => $json_steps ? 0 : 1,
+        initial_steps => $json_steps,
+        blog_id => $q->param('blog_id'),
+        id => $q->param('id'),
+        type => $q->param('_type'),
+    };
+
+    return $app->build_page('upgrade_runner.tmpl', $param);
+  } 
+
+sub run_upgrade {
+	my $app = shift;
+	$app->{upgrading} = 1;
 	my $q = $app->{query};
   my $dbh = MT::Object->driver->{dbh};	
   my $driver = MT::Object->driver;
-	my $schema_version = 1.0
-			unless($driver->table_exists('Protect::Groups'));
-	my $schema_version = 1.1
-			if(has_column($dbh, 'mt_protect', 'protect_password'));			
+  my $schema_version;
+	$schema_version = 1.0
+			unless(has_column($dbh, 'mt_protect_groups', 'protect_groups_id'));	
+	$schema_version = 1.1
+			unless(has_column($dbh, 'mt_protect_groups', 'protect_groups_type'));			
   my @stmts;	
 	my $param;
-	$param->{up_to_date} = 1;
-  unless (MT::PluginData->load({ plugin => 'MT Blogroll', key => 'setup_'.$SCHEMA_VERSION })) {
-  	$param->{up_to_date} = 0;	
+  unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
   if($schema_version == 1.0) {
 	push @stmts, <<CREATE,
 create table mt_protect_groups (
@@ -742,6 +779,7 @@ CREATE
   }
   
    if($schema_version <= 1.1) { 
+   	if(!$q->param('DryRun')) {
    my $iter = Protect::Protect->load_iter;
    while (my $entry = $iter->()) {    
    	if($entry->type eq 'Typekey') {
@@ -755,7 +793,7 @@ CREATE
     	my $pass = $entry->password;
     	$entry->data($pass);
     }
-      $entry->save or die $entry->errstr;   		
+      $entry->save or $app->upgrade_error($entry->errstr);   		
   }
    $iter = Protect::Groups->load_iter;
    while (my $entry = $iter->()) {    
@@ -765,29 +803,75 @@ CREATE
 				push (@data, $user);
       }
       $entry->data(\@data);
-      $entry->save or die $entry->errstr;   		
+      $entry->save or $app->upgrade_error($entry->errstr);   		
   }
     
    my $data = MT::PluginData->new;
    $data->plugin('MT Protect');
    $data->key('setup_'.$SCHEMA_VERSION);
    $data->data(\1);
-   $data->save or die "Unable to save setup confirmation", $data->errstr;
- 
-  push @stmts, "alter table `mt_protect` drop `protect_password`";
+   $data->save or $app->upgrade_error("Unable to save setup confirmation $data->errstr");
+ }
+  
 	@stmts = add_once(\@stmts, $dbh, 'mt_protect_groups', 'protect_groups_type', 'varchar(10) not null');	
 }
-
+  if(!$q->param('DryRun')) {
+  	$app->{no_print_body} = 1;
+		$app->send_http_header('text/plain');
     for my $sql (@stmts) {
-        #print "Running '$sql'\n";
-        $dbh->do($sql) or die $dbh->errstr . " on $sql";
+        $dbh->do($sql) or $app->print($dbh->errstr . " on $sql");
+        $app->print($sql."\n"); 
     } 
   }
-    my $install_mode;
-    my $json_steps = objToJson(@stmts);
-     
-  $app->build_page('upgrade_runner.tmpl', $param);  
+}
+ $app->response->{steps} = \@stmts
+ 	if($q->param('DryRun'));
+	$app->json_response;
+	return $app->upgrade_finish;
 }   
+
+sub run_install {
+	my $app = shift; 
+	my $q = $app->{query};
+	my @stmts;
+if ($app->{cfg}->ObjectDriver =~ /^DBI::(.*)$/) {
+    my $type = $1;
+    my $dbh = MT::Object->driver->{dbh};
+    my $schema = File::Spec->catfile($app->{mt_dir}, 'plugins','Protect','schemas', 'Protect_schema.'.$type);
+    open FH, $schema or $app->upgrade_error("Can't open schema file '$schema': $!\n");
+    my $ddl;
+    { local $/; $ddl = <FH> }
+    close FH;
+    @stmts = split /;/, $ddl;
+  if(!$q->param('DryRun')) {
+  	$app->{no_print_body} = 1;
+  		$app->send_http_header('text/plain');    
+    for my $stmt (@stmts) {
+        $stmt =~ s!^\s*!!;
+        $stmt =~ s!\s*$!!;
+        next unless $stmt =~ /\S/;
+        $app->print($stmt."\n");        
+        $dbh->do($stmt) or $app->upgrade_error($dbh->errstr."\n");
+    }
+      
+	$app->print("Saving setup configuration and schema settings\n");	
+		  
+   my $data = MT::PluginData->new;
+   $data->plugin('MT Protect');
+   $data->key('setup_'.$SCHEMA_VERSION);
+   $data->data(\1);
+   $data->save or $app->upgrade_error("Unable to save setup confirmation", $data->errstr);    
+
+	$app->print("Installed MT Protect v".$VERSION." schema version ".$SCHEMA_VERSION."\n");    
+  }
+}
+
+ $app->response->{steps} = \@stmts
+ 	if($q->param('DryRun'));
+	$app->json_response;
+
+	return $app->upgrade_finish;
+}
 
 #####################################################################
 # UTILITY SUBROUTINES
@@ -798,18 +882,20 @@ sub schema_check {
 	my $dbh = MT::Object->driver->{dbh};
   my $sversion = $SCHEMA_VERSION; 
   my $driver = MT::Object->driver;
-  
-  if (!$driver->table_exists('Protect::Protect')) { 
-	$app->redirect($app->uri.'?__mode=notice&do=install&blog_id='.$app->{query}->param('blog_id'))
-}		
+  my $type = $app->{query}->param('_type') || $app->{query}->param('from');
+  my $uri = $app->uri.'?__mode=notice&do=install&blog_id='.$app->{query}->param('blog_id');
+  if ($app->{cfg}->ObjectDriver =~ /mysql/) {
 		$sversion = 1.0
-			unless($driver->table_exists('Protect::Groups'));
-						
+			unless(has_column($dbh, 'mt_protect_groups', 'protect_groups_id'));
+			
 		$sversion = 1.1
-			if(has_column($dbh, 'mt_protect', 'protect_password'));			
+			unless(has_column($dbh, 'mt_protect_groups', 'protect_groups_type'));
     
-    $app->redirect($app->uri.'?__mode=notice&do=upgrade&blog_id='.$app->{query}->param('blog_id'))
+    $uri = $app->uri.'?__mode=notice&do=upgrade&blog_id='.$app->{query}->param('blog_id').'&id='.$app->{query}->param('id').'&_type='.$type
     	if($sversion < $SCHEMA_VERSION);     	
+} 
+$app->redirect($uri)
+	if $uri;    	
 }
 
 sub add_once {
@@ -871,4 +957,40 @@ sub uri { my $app = shift; $app->app_path . $app->script; }
 #    return 'mt-protect.cgi';
 #}
 
+sub json_response {
+    my $app = shift;
+    $app->print(' JSON:' . objToJson($app->response));
+}
+
+sub response {
+    my $self = shift || MT->instance;
+    if (!$self->{response}) {
+        $self->{response} = { steps => [], progress => [], error => undef };
+    }
+    $self->{response};
+}
+
+sub upgrade_error {
+    my $app = shift;
+    my ($msg) = @_;
+    $app->SUPER::error(@_);
+    $app->response->{steps} = $msg;
+    $app->response->{error} = $msg;
+	die $app->json_response;
+}
+
+sub upgrade_finish {
+    my $app = shift;
+
+    $app->login;
+    if ($app->{author}) {
+        require MT::Author;
+        my $author = MT::Author->load($app->{author}->id);
+        my $cookie_obj = $app->start_session($author);
+        my $response = $app->response;
+        $response->{cookie} = { map { $_ => $cookie_obj->{$_} } (keys %$cookie_obj) };
+        $app->log("User " . $app->{author}->name .
+                  " upgraded MT Protect to version " . $VERSION);
+    }    
+}
 1; 
