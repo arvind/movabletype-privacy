@@ -10,7 +10,7 @@ use strict;
 
 use vars qw( $DEBUG $VERSION @ISA $SCHEMA_VERSION );
 @ISA = qw(MT::App::CMS);
-$VERSION = '1.2';
+$VERSION = '1.21';
 $SCHEMA_VERSION = 1.2;
 
 use MT::PluginData;

@@ -244,7 +244,8 @@ sub protected {
 		my $type = $protected->type;
 		if($type eq 'Password') {
 				$start = "<?php\n";
-				$start .= '$pass = $db->get_var("select protect_password from mt_protect where protect_entry_id = '.$entry_id.'"); ';
+				$start .= '$password = $db->get_var("select protect_data from mt_protect where protect_entry_id = '.$entry_id.'"); ';
+				$start .= '$pass = $db->unserialize($password);';
 				$start .= '$cookie = \'mt-postpass_\'.md5($pass); ';
 				$start .= 'if($pass == "" || isset($_REQUEST[$cookie]) ) { ?>';
 				$middle .= '<?php } else { ?>';
@@ -362,7 +363,8 @@ sub blog_protected {
 		my $type = $protected->type;
 		if($type eq 'Password') {
 				$start = "<?php\n";
-				$start .= '$pass = $db->get_var("select protect_password from mt_protect where protect_entry_id = '.$entry_id.'"); ';
+				$start .= '$password = $db->get_var("select protect_data from mt_protect where protect_entry_id = 0 and protect_blog_id = '.$blog_id.'"); ';
+				$start .= '$pass = $db->unserialize($password);';
 				$start .= '$cookie = \'mt-postpass_\'.md5($pass); ';
 				$start .= 'if($pass == "" || isset($_REQUEST[$cookie]) ) { ?>';
 				$middle .= '<?php } else { ?>';
