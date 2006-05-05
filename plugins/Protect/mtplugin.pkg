@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<plugin version="1.0">
+  <name>MT Protect</name>
+  <version_url>http://plugins.movalog.com/plugin-manager.php?plugin=MT%20Protect</version_url>
+  <sig>Protect/Protect.pl</sig>
+  <files>
+    <file>
+      <src>Protect/plugins/Protect</src>
+      <destination>plugins/Protect</destination>
+    </file>
+    <file>
+      <src>Protect/php/plugins</src>
+      <destination>php/plugins</destination>
+    </file>
+    <file>
+      <src>Protect/mt-static/plugins/Protect</src>
+      <destination>plugins/Protect</destination>
+      <static>1</static>
+    </file>
+    <file>
+      <src>Protect/plugins/Protect/mt-protect.cgi</src>
+      <permissions>0755</permissions>
+      <destination>plugins/Protect/mt-protect.cgi</destination>
+    </file>
+  </files>
+  <uninstall>
+    <rmdir>plugins/SCode</rmdir>
+	<rmdir static="1">plugins/Protect</rmdir>
+  </uninstall>
+</plugin>
