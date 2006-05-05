@@ -36,11 +36,11 @@ var input = document.createElement('input');
 input.type = 'text';
 input.name = div;
 if(div == 'typekey_users') {
-input.style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>images/typekey.gif) 2px 1px no-repeat'
+input.style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/typekey.gif) 2px 1px no-repeat'
 input.style['paddingLeft'] = '30px';
 }
 if(div == 'openid_users') {
-input.style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>images/openid.gif) 2px 1px no-repeat'
+input.style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/openid.gif) 2px 1px no-repeat'
 input.style['paddingLeft'] = '22px';
 }
 theNewParagraph.appendChild(input);
@@ -81,7 +81,7 @@ document.getElementById(div).appendChild(theNewParagraph);
 <div id="typekey_prefs" class="sub-field" style="display: <TMPL_IF NAME=IS_TYPEKEY>block<TMPL_ELSE>none</TMPL_IF>;">
 <p><label><MT_TRANS phrase="Allow the following Typekey users, enter their Typekey usernames (case sensitive)"></label></p>
 <div id="typekey_users"><TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
-<p><input style="padding-left: 30px;background:#fff url(<TMPL_VAR NAME=STATIC_URI>images/typekey.gif) 2px 1px no-repeat;" name="typekey_users" id="typekey_users" value="<TMPL_VAR NAME=USER>" /></p>
+<p><input style="padding-left: 30px;background:#fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/typekey.gif) 2px 1px no-repeat;" name="typekey_users" id="typekey_users" value="<TMPL_VAR NAME=USER>" /></p>
 </TMPL_LOOP></div>
 <p><img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="More">" width="9" height="9" />
 <a href="javascript:void(0);" onclick="writeinput('typekey_users');"><MT_TRANS phrase="More"></a></p>
@@ -93,7 +93,7 @@ document.getElementById(div).appendChild(theNewParagraph);
 <div id="openid_prefs" class="sub-field" style="display: <TMPL_IF NAME=IS_OPENID>block<TMPL_ELSE>none</TMPL_IF>;">
 <p><label><MT_TRANS phrase="Allow the following OpenID addresses"></label></p>
 <div id="openid_users"><TMPL_LOOP NAME=OPENID_USER_LOOP>
-<p><input style="padding-left: 22px;background:#fff url(<TMPL_VAR NAME=STATIC_URI>images/openid.gif) 2px 1px no-repeat;" name="openid_users" id="openid_users" value="<TMPL_VAR NAME=USER>" /></p>
+<p><input style="padding-left: 22px;background:#fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/openid.gif) 2px 1px no-repeat;" name="openid_users" id="openid_users" value="<TMPL_VAR NAME=USER>" /></p>
 </TMPL_LOOP></div>
 <p><img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="More">" width="9" height="9" />
 <a href="javascript:void(0);" onclick="writeinput('openid_users');"><MT_TRANS phrase="More"></a></p>

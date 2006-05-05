@@ -8,11 +8,11 @@ var type = document.getElementById('type').value;
 input.type = 'text';
 input.name = 'typekey_users';
 if(type == 'Typekey') {
-input.style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>images/typekey.gif) 2px 1px no-repeat'
+input.style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/typekey.gif) 2px 1px no-repeat'
 input.style['paddingLeft'] = '30px';
 }
 if(type == 'OpenID') {
-input.style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>images/openid.gif) 2px 1px no-repeat'
+input.style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/openid.gif) 2px 1px no-repeat'
 input.style['paddingLeft'] = '30px';
 }
 theNewParagraph.appendChild(input);
@@ -25,11 +25,11 @@ var e = document.getElementById('typekey_users');
 var inputs = e.getElementsByTagName("input");
 	for (var i = 0; i < inputs.length; i++) {
 		if(type == 'Typekey') {
-		inputs[i].style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>images/typekey.gif) 2px 1px no-repeat'
+		inputs[i].style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/typekey.gif) 2px 1px no-repeat'
 		inputs[i].style['paddingLeft'] = '30px';
 		}
 		if(type == 'OpenID') {
-		inputs[i].style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>images/openid.gif) 2px 1px no-repeat'
+		inputs[i].style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/openid.gif) 2px 1px no-repeat'
 		inputs[i].style['paddingLeft'] = '30px';
 		}
 	}
@@ -66,7 +66,7 @@ var inputs = e.getElementsByTagName("input");
 
 <p><label><MT_TRANS phrase="Enter usernames (case sensitive)"></label></p>
 <div id="typekey_users"><TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
-<p><input style="<TMPL_IF NAME=OPENID>background: #fff url(<TMPL_VAR NAME=STATIC_URI>images/openid.gif) 2px 1px no-repeat; padding-left:30px;<TMPL_ELSE>padding-left: 30px;background:#fff url(<TMPL_VAR NAME=STATIC_URI>images/typekey.gif) 2px 1px no-repeat;</TMPL_IF>" name="users" id="users" value="<TMPL_VAR NAME=USER>" /></p>
+<p><input style="<TMPL_IF NAME=OPENID>background: #fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/openid.gif) 2px 1px no-repeat; padding-left:30px;<TMPL_ELSE>padding-left: 30px;background:#fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/typekey.gif) 2px 1px no-repeat;</TMPL_IF>" name="users" id="users" value="<TMPL_VAR NAME=USER>" /></p>
 </TMPL_LOOP></div>
 <p><img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="More">" width="9" height="9" />
 <a href="javascript:void(0);" onclick='writeinput();'><MT_TRANS phrase="More"></a></p>
