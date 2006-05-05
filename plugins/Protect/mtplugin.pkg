@@ -24,7 +24,7 @@
     </file>
   </files>
   <uninstall>
-    <rmdir>plugins/SCode</rmdir>
+    <rmdir>plugins/Protect</rmdir>
 	<rmdir static="1">plugins/Protect</rmdir>
   </uninstall>
 </plugin>
