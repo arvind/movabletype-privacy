@@ -19,7 +19,7 @@ MT->add_plugin(MT::Plugin::Protect->new);
 sub name { 'MT Protect' }
 sub description { 'Adds the ability to protect entires either by password or using Typekey authentication.' }
 sub version { $Protect::CMS::VERSION }
-sub doc_link { 'http://www.movalog.com/plugins/wiki/MtProtect' }
+sub doc_link { 'http://plugins.movalog.com/mt-protect/manual' }
 sub author_name { 'Arvind Satyanarayan' }
 sub author_link { 'http://www.movalog.com/' }
  
