@@ -1,151 +1,72 @@
-#!/usr/bin/perl
+# Protect - A plugin for Movable Type.
+# Copyright (c) 2006, Arvind.
+
 package MT::Plugin::Protect;
-use strict;
-use MT;
-use MT::Plugin;
-#if (eval { use lib './plugins/Protect/lib'; 1 }) {
-#  use lib './plugins/Protect/lib';
-#}
-use Protect::CMS;
-use Protect::Protect;
-use Protect::Groups;
-use MT::Template::Context;
-my $mt = MT->instance;
-use vars qw($VERSION);
-use base qw(MT::Plugin);
 
-MT->add_plugin(MT::Plugin::Protect->new);
+use 5.006;    # requires Perl 5.6.x
+use MT 3.2;   # requires MT 3.2 or later
 
-sub name { 'MT Protect' }
-sub description { 'Adds the ability to protect entires either by password or using Typekey authentication.' }
-sub version { $Protect::CMS::VERSION }
-sub doc_link { 'http://plugins.movalog.com/mt-protect/manual' }
-sub author_name { 'Arvind Satyanarayan' }
-sub author_link { 'http://www.movalog.com/' }
- 
+use base 'MT::Plugin';
+our $VERSION = '2.0';
+our $SCHEMA_VERSION = '2.0';
 
-sub init_app {
-    my $plugin = shift;
-    $plugin->SUPER::init_app(@_);
-    my ($app) = @_;
-
-    if ($app->isa('MT::App::CMS')) {
-        $app->add_itemset_action({type => 'commenter',
-                                  key => "set_protection_group",
-                                  label => "Create a Protection Group",
-                                  code => sub { $plugin->tkgroup(@_) },
-                               });
-        $app->add_itemset_action({type => 'entry',
-                                  key => "set_protection",
-                                  label => "Protect Entry(ies)",
-                                  code => sub { $plugin->protect_entries(@_) },
-                               });      
-        $app->add_itemset_action({type => 'blog',
-                                  key => "set_protection",
-                                  label => "Protect Blog(s)",
-                                  code => sub { $plugin->protect_blogs(@_) },
-                               });                                                           
-    }
-}                       
-                        
-# MT->add_plugin_action ('entry', 'mt-protect.cgi?__mode=edit', "Protect this entry");
-MT->add_plugin_action ('list_entries', 'mt-protect.cgi?__mode=list_entries', "List Protected Entries");
-MT->add_plugin_action ('blog', 'mt-protect.cgi?__mode=edit', 'Protect Blog');
-MT->add_plugin_action ('list_commenters', "mt-protect.cgi?__mode=tk_groups", 'List Protection Groups');
-
-MT::Template::Context->add_tag(ProtectInclude           => \&include);
-MT::Template::Context->add_tag(ProtectIncludeSlim          => \&include_slim);
-MT::Template::Context->add_container_tag(Protected    => \&protected);
-MT::Template::Context->add_container_tag(EntryProtect    => \&protected);
-MT::Template::Context->add_container_tag(BlogProtect    => \&blog_protected);
-MT::Template::Context->add_conditional_tag(IfProtected    => \&ifprotected);
-
-sub config_template {
-    my $app = $mt;
-    my $q = $app->{query};
-    my ($plugin,$param) = @_;
-    my $cblog_id = $q->param('cblog_id');
-    if($cblog_id){
-        my $cblog = MT::Blog->load($cblog_id);
-        $param->{cblog} = $cblog->name;
-        $param->{installed} = $q->param('installed');
-        $param->{uninstalled} = $q->param('uninstalled');
-    $param->{protect_url} = $app->path;        
-    }
-    #    $param->{breadcrumbs} = $app->{breadcrumbs};
-    #    $param->{breadcrumbs}[-1]{is_last} = 1;
-if (my $auth = $app->{author}) {
-
-        my @perms = MT::Permission->load({ author_id => $auth->id });
-        my @data;
-        for my $perms (@perms) {
-            next unless $perms->role_mask;
-            my $blog = MT::Blog->load($perms->blog_id);
-            my $pdblog = MT::PluginData->load({ plugin => 'Protect', key    => $perms->blog_id });
-            push @data, { blog_id   => $blog->id,
-                blog_name => $blog->name,
-            blog_installed => $pdblog };
+my $plugin;
+MT->add_plugin($plugin = __PACKAGE__->new({
+	name            => "MT Protect",
+	version         => $VERSION,
+	description     => "<MT_TRANS phrase=\"Protect entries and blogs using passwords, typekey or openid authentication.\">",
+	author_name     => "Arvind Satyanarayan",
+	author_link     => "http://www.movalog.com/",
+	plugin_link     => "http://plugins.movalog.com/protect/",
+	doc_link        => "http://plugins.movalog.com/protect/manual",
+    app_action_links => {
+        'MT::App::CMS' => {
+            'list_entries' => {
+                link => 'mt-protect.cgi?__mode=list_entries',
+                link_text => 'List Protected Entries'
+            },
+            'list_commenters' => {
+                link => 'mt-protect?__mode=tk_groups',
+                link_text => 'List Protection Groups'
+            },
+            'blog' => {
+                link => 'mt-protect?__more=edit',
+                link_text => 'Protect Blog'
+            }
         }
-        $param->{blog_loop} = \@data;
-       
-    }	
-    my $tmpl = <<'EOT';
-    <TMPL_IF NAME=CBLOG>
-<p class="message"><MT_TRANS phrase="Protection was"> <TMPL_IF NAME=INSTALLED><i><MT_TRANS phrase="installed"></i></TMPL_IF><TMPL_IF NAME=UNINSTALLED><i><MT_TRANS phrase="uninstalled"></i></TMPL_IF> <MT_TRANS phrase="from"> <TMPL_VAR NAME=CBLOG></p>
-</TMPL_IF>
- <p><MT_TRANS phrase="Listed below are each of the blogs that you have installed on your system.  Following the blog name is the status of protections for that blog.  After the status of the blog is a link that will perform the opposite function for you.  For instance, if protection is disabled, you will see a link that will enable it for you.  Likewise, if protection is enabled, you will instead see the option to disable it."></p>
- <ul style="list-style-type: none;">
- <TMPL_LOOP NAME=BLOG_LOOP>
-     <li><p><a href="<TMPL_VAR NAME=MT_URL>?__mode=menu&blog_id=<TMPL_VAR NAME=BLOG_ID>" style="text-decoration: none;"><TMPL_VAR NAME=BLOG_NAME></a><br /><MT_TRANS phrase="Protection is"> <TMPL_IF NAME=BLOG_INSTALLED><MT_TRANS phrase="Enabled:"> <a href="plugins/Protect/mt-protect.cgi?__mode=load_files&_type=uninstall&cblog_id=<TMPL_VAR NAME=BLOG_ID>" style="text-decoration: none;"><MT_TRANS phrase="Disable"></a><TMPL_ELSE><MT_TRANS phrase="Disabled:"> <a href="plugins/Protect/mt-protect.cgi?__mode=load_files&_type=install&cblog_id=<TMPL_VAR NAME=BLOG_ID>" style="text-decoration: none;"><MT_TRANS phrase="Enable"></a></TMPL_IF></p></li>
- </TMPL_LOOP>
- </ul>
-EOT
-} 
+    },
+	app_itemset_actions => {
+		'MT::App::CMS' => {
+			'commenter' => {
+				key => "set_protection_group",
+				label => "Create a Protection Group",
+				code => sub { $plugin->tkgroup(@_) }				
+			},
+			'entry' => {
+                key => "set_protection",
+                label => "Protect Entry(ies)",
+                code => sub { $plugin->protect_entries(@_) }				
+			},
+			'blog' => {
+                key => "set_protection",
+                label => "Protect Blog(s)",
+                code => sub { $plugin->protect_blogs(@_) }				
+			}
+		}
+	},
+	container_tags => {
+		'EntryProtect'	=> \&protected,
+		'BlogProtect'	=> \&blog_protected,
+		'IfProtected'	=> \&ifprotected
+	},
+	template_tags => {
+		'ProtectInclude' => \&include
+	}
+}));
 
-sub tkgroup {
-    my $plugin = shift;
-    my ($app) = @_;
-	
-	my $q = $app->{query};
-	my $author_ids;
-	for my $author_id ($q->param('id')){
-		$author_ids .= ",$author_id";
-	}
-	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=groups&author_id='. $author_ids);
-}
-
-sub protect_entries {
-    my $plugin = shift;
-    my ($app) = @_;
-	
-	my $q = $app->{query};
-	my ($entry_ids, $i);
-	for my $entry_id ($q->param('id')){
-		$i++;
-		$entry_ids .= ",$entry_id";
-	}
-	if($i == 1) {
-	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=entry&id='. $q->param('id').'&blog_id='.$q->param('blog_id'));
-	} else {
-	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=entry&entry_ids='. $entry_ids.'&blog_id='.$q->param('blog_id'));	
-	}
-}
-
-sub protect_blogs {
-    my $plugin = shift;
-    my ($app) = @_;
-	
-	my $q = $app->{query};
-	my ($blog_ids, $i);
-	for my $blog_id ($q->param('id')){
-		$i++;
-		$blog_ids .= ",$blog_id";
-	}
-	if($i == 1) {
-	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=blog&blog_id='. $q->param('id'));
-	} else {
-	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=blog&blog_ids='. $blog_ids);	
-	}
+# Allows external access to plugin object: MT::Plugin::Protect->instance
+sub instance {
+	$plugin;
 }
 
 sub include {
@@ -457,3 +378,93 @@ sub blog_protected {
 	}	 
 }
 
+# 
+# sub config_template {
+#     my $app = $mt;
+#     my $q = $app->{query};
+#     my ($plugin,$param) = @_;
+#     my $cblog_id = $q->param('cblog_id');
+#     if($cblog_id){
+#         my $cblog = MT::Blog->load($cblog_id);
+#         $param->{cblog} = $cblog->name;
+#         $param->{installed} = $q->param('installed');
+#         $param->{uninstalled} = $q->param('uninstalled');
+#     $param->{protect_url} = $app->path;        
+#     }
+#     #    $param->{breadcrumbs} = $app->{breadcrumbs};
+#     #    $param->{breadcrumbs}[-1]{is_last} = 1;
+# if (my $auth = $app->{author}) {
+# 
+#         my @perms = MT::Permission->load({ author_id => $auth->id });
+#         my @data;
+#         for my $perms (@perms) {
+#             next unless $perms->role_mask;
+#             my $blog = MT::Blog->load($perms->blog_id);
+#             my $pdblog = MT::PluginData->load({ plugin => 'Protect', key    => $perms->blog_id });
+#             push @data, { blog_id   => $blog->id,
+#                 blog_name => $blog->name,
+#             blog_installed => $pdblog };
+#         }
+#         $param->{blog_loop} = \@data;
+#        
+#     }	
+#     my $tmpl = <<'EOT';
+#     <TMPL_IF NAME=CBLOG>
+# <p class="message"><MT_TRANS phrase="Protection was"> <TMPL_IF NAME=INSTALLED><i><MT_TRANS phrase="installed"></i></TMPL_IF><TMPL_IF NAME=UNINSTALLED><i><MT_TRANS phrase="uninstalled"></i></TMPL_IF> <MT_TRANS phrase="from"> <TMPL_VAR NAME=CBLOG></p>
+# </TMPL_IF>
+#  <p><MT_TRANS phrase="Listed below are each of the blogs that you have installed on your system.  Following the blog name is the status of protections for that blog.  After the status of the blog is a link that will perform the opposite function for you.  For instance, if protection is disabled, you will see a link that will enable it for you.  Likewise, if protection is enabled, you will instead see the option to disable it."></p>
+#  <ul style="list-style-type: none;">
+#  <TMPL_LOOP NAME=BLOG_LOOP>
+#      <li><p><a href="<TMPL_VAR NAME=MT_URL>?__mode=menu&blog_id=<TMPL_VAR NAME=BLOG_ID>" style="text-decoration: none;"><TMPL_VAR NAME=BLOG_NAME></a><br /><MT_TRANS phrase="Protection is"> <TMPL_IF NAME=BLOG_INSTALLED><MT_TRANS phrase="Enabled:"> <a href="plugins/Protect/mt-protect.cgi?__mode=load_files&_type=uninstall&cblog_id=<TMPL_VAR NAME=BLOG_ID>" style="text-decoration: none;"><MT_TRANS phrase="Disable"></a><TMPL_ELSE><MT_TRANS phrase="Disabled:"> <a href="plugins/Protect/mt-protect.cgi?__mode=load_files&_type=install&cblog_id=<TMPL_VAR NAME=BLOG_ID>" style="text-decoration: none;"><MT_TRANS phrase="Enable"></a></TMPL_IF></p></li>
+#  </TMPL_LOOP>
+#  </ul>
+# EOT
+# } 
+# 
+sub tkgroup {
+    my $plugin = shift;
+    my ($app) = @_;
+	
+	my $q = $app->{query};
+	my $author_ids;
+	for my $author_id ($q->param('id')){
+		$author_ids .= ",$author_id";
+	}
+	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=groups&author_id='. $author_ids);
+}
+
+sub protect_entries {
+    my $plugin = shift;
+    my ($app) = @_;
+	
+	my $q = $app->{query};
+	my ($entry_ids, $i);
+	for my $entry_id ($q->param('id')){
+		$i++;
+		$entry_ids .= ",$entry_id";
+	}
+	if($i == 1) {
+	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=entry&id='. $q->param('id').'&blog_id='.$q->param('blog_id'));
+	} else {
+	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=entry&entry_ids='. $entry_ids.'&blog_id='.$q->param('blog_id'));	
+	}
+}
+
+sub protect_blogs {
+    my $plugin = shift;
+    my ($app) = @_;
+	
+	my $q = $app->{query};
+	my ($blog_ids, $i);
+	for my $blog_id ($q->param('id')){
+		$i++;
+		$blog_ids .= ",$blog_id";
+	}
+	if($i == 1) {
+	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=blog&blog_id='. $q->param('id'));
+	} else {
+	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=blog&blog_ids='. $blog_ids);	
+	}
+}
+
+1;
