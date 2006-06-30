@@ -230,7 +230,17 @@ sub edit {
     my $blog_id = $q->param('blog_id');
     my $id = $q->param('id');
     my $type = $q->param('_type') || $q->param('from');
-
+	my $auth_prefs = $app->user->entry_prefs;
+    if (my $delim = chr($auth_prefs->{tag_delim})) {
+        if ($delim eq ',') {
+            $param->{'auth_pref_tag_delim_comma'} = 1;
+        } elsif ($delim eq ' ') {
+            $param->{'auth_pref_tag_delim_space'} = 1;
+        } else {
+            $param->{'auth_pref_tag_delim_other'} = 1;
+        }
+        $param->{'auth_pref_tag_delim'} = $delim;
+    }
     if($type eq 'entry' || $type eq 'edit_entry') {  	
     	my $entry_ids = $q->param('entry_ids');
 	    $param->{entry_id} = $id || $entry_ids;   
