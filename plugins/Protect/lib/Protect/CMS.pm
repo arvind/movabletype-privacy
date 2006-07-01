@@ -817,6 +817,29 @@ HTML
 	$$tmpl =~ s/($old)/$1\n$new\n/;
 }
 
+sub _edit_category {
+	my($eh, $app, $tmpl) = @_;
+	my($old, $new);
+	my $plugin = MT::Plugin::Protect->instance;
+	my $edit_tmpl_path = File::Spec->catdir($plugin->{full_path},'tmpl','protect.tmpl');
+	
+	$old = <<HTML;
+<p><label for="description"><MT_TRANS phrase="Description"></label> <a href="#" onclick="return openManual('categories', 'category_description')" class="help">?</a><br />
+<textarea name="description" id="description" rows="5" cols="72" class="wide"><TMPL_VAR NAME=DESCRIPTION ESCAPE=HTML></textarea></p>
+HTML
+	$old = quotemeta($old);
+	$new = <<HTML;
+<TMPL_INCLUDE NAME="$edit_tmpl_path">
+<br clear="all" />
+HTML
+	$$tmpl =~ s/($old)/$1\n$new\n/;
+	
+	$old = qq{<input accesskey="s" type="submit" value="<MT_TRANS phrase="Save">" title="<MT_TRANS phrase="Save this category (s)">" />};
+	$old = quotemeta($old);
+	$new = qq{<input accesskey="s" type="submit" value="<MT_TRANS phrase="Save">" title="<MT_TRANS phrase="Save this category (s)">" onclick="submitForm(this.form)" />};
+	$$tmpl =~ s/$old/$new/;
+}
+
 sub _param {
 	my($eh, $app, $param, $tmpl, $datasource) = @_;
 	my $q = $app->{query};
@@ -834,10 +857,22 @@ sub _param {
 	push @livejournal_users, {'lj_user' => $_ }
 		foreach split /,/, $data->livejournal_users;	
 	push @openid_users, {'oi_user' => $_ }
-		foreach split /,/, $data->openid_users;		
+		foreach split /,/, $data->openid_users;	
+	$param->{password} = $data->password;	
 	$param->{typekey_users} = \@typekey_users;
 	$param->{livejournal_users} = \@livejournal_users;
 	$param->{openid_users} = \@openid_users;
+	my $auth_prefs = $app->user->entry_prefs;
+    if (my $delim = chr($auth_prefs->{tag_delim})) {
+        if ($delim eq ',') {
+            $param->{'auth_pref_tag_delim_comma'} = 1;
+        } elsif ($delim eq ' ') {
+            $param->{'auth_pref_tag_delim_space'} = 1;
+        } else {
+            $param->{'auth_pref_tag_delim_other'} = 1;
+        }
+        $param->{'auth_pref_tag_delim'} = $delim;
+    }
 }
 
 sub post_save {

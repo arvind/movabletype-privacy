@@ -60,7 +60,10 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 	callbacks => {
 		'MT::App::CMS::AppTemplateSource.edit_entry' => sub { require Protect::CMS; Protect::CMS::_edit_entry(@_); },
 		'MT::App::CMS::AppTemplateParam.edit_entry'  => sub { require Protect::CMS; Protect::CMS::_param(@_, 'entry'); },
-		'MT::Entry::post_save' => sub { require Protect::CMS; Protect::CMS::post_save(@_); }
+		'MT::Entry::post_save' => sub { require Protect::CMS; Protect::CMS::post_save(@_); },
+		'MT::App::CMS::AppTemplateSource.edit_category' => sub { require Protect::CMS; Protect::CMS::_edit_category(@_); },
+		'MT::App::CMS::AppTemplateParam.edit_category' => sub { require Protect::CMS; Protect::CMS::_param(@_, 'category'); },
+		'MT::Category::post_save' => sub { require Protect::CMS; Protect::CMS::post_save(@_); }
 	},
 	container_tags => {
 		'EntryProtect'	=> \&protected,
