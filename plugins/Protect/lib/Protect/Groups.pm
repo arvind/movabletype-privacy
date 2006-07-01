@@ -17,7 +17,7 @@ __PACKAGE__->install_properties({
         'id' => 'integer not null auto_increment',
         'description' => 'text',
         'label' => 'string(100) not null',  
-        'type' => 'varchar(10) not null',  	
+        'type' => 'string(10) not null',  	
         'data' => 'blob',
     },
     datasource => 'protect_groups',

@@ -19,6 +19,8 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 	author_link     => "http://www.movalog.com/",
 	plugin_link     => "http://plugins.movalog.com/protect/",
 	doc_link        => "http://plugins.movalog.com/protect/manual",
+	schema_version  => $SCHEMA_VERSION,
+	object_classes  => [ 'Protect::Groups', 'Protect::Object' ],
     app_action_links => {
         'MT::App::CMS' => {
             'list_entries' => {
@@ -56,7 +58,9 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		}
 	},
 	callbacks => {
-		'MT::App::CMS::AppTemplateSource.edit_entry' => \&_edit_entry
+		'MT::App::CMS::AppTemplateSource.edit_entry' => sub { require Protect::CMS; Protect::CMS::_edit_entry(@_); },
+		'MT::App::CMS::AppTemplateParam.edit_entry'  => sub { require Protect::CMS; Protect::CMS::_param(@_, 'entry'); },
+		'MT::Entry::post_save' => sub { require Protect::CMS; Protect::CMS::post_save(@_); }
 	},
 	container_tags => {
 		'EntryProtect'	=> \&protected,
@@ -71,46 +75,6 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 # Allows external access to plugin object: MT::Plugin::Protect->instance
 sub instance {
 	$plugin;
-}
-
-sub _edit_entry {
-	my($eh, $app, $tmpl) = @_;
-	my($old, $new);
-	
- 	# First add protect tab to entry_tabs array
-	
-	$old = qq{var entry_tabs = new Array('entry','comments','pings','notification');};
-	$old = quotemeta($old);
-	$new = qq{var entry_tabs = new Array('entry','comments','pings','notification','protect');};
-	$$tmpl =~ s/$old/$new/;
-	
-	# Next add the actual tab to the tab bar
-	
-	$old = <<HTML;
-<TMPL_IF NAME=CAN_SEND_NOTIFICATIONS>
-<li id="notification-tab"<TMPL_IF NAME=TAB_NOTIFICATION> class="yah"</TMPL_IF>><a href="#" onclick="tabToggle('notification', entry_tabs)"><MT_TRANS phrase="Notification"></a></li>
-</TMPL_IF>
-HTML
-	$old = quotemeta($old);
-	$new = <<HTML;
-<TMPL_IF NAME=CAN_SEND_NOTIFICATIONS>
-<li id="notification-tab"<TMPL_IF NAME=TAB_NOTIFICATION> class="yah"</TMPL_IF>><a href="#" onclick="tabToggle('notification', entry_tabs)"><MT_TRANS phrase="Notification"></a></li>
-</TMPL_IF>
-<li id="protect-tab"<TMPL_IF NAME=TAB_PROTECT> class="yah"</TMPL_IF>><a href="#" onclick="tabToggle('protect', entry_tabs);"><MT_TRANS phrase="Protect Entry"></a></li>
-HTML
-	$$tmpl =~ s/$old/$new/;
-	
-	# And finally add the actual Protect form
-	
-	$old = qq{<div class="panel" id="comments-panel"<TMPL_IF NAME=TAB_COMMENTS> style="display: block"</TMPL_IF>>};
-	$old = quotemeta($old);
-	$new = <<HTML;
-<div class="panel" id="protect-panel"<TMPL_IF NAME=TAB_PROTECT> style="display: none"</TMPL_IF>>	
-<TMPL_INCLUDE NAME="/home/movalog/www/cgi-bin/mt/plugins/Protect/tmpl/entry.tmpl">
-</div>
-<div class="panel" id="comments-panel"<TMPL_IF NAME=TAB_COMMENTS> style="display: block"</TMPL_IF>>
-HTML
-	$$tmpl =~ s/$old/$new/;
 }
 
 sub include {

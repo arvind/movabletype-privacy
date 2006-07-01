@@ -1,13 +1,7 @@
-<TMPL_IF NAME=ENTRY_ID>
-<TMPL_INCLUDE NAME="header.tmpl">
 <link rel="stylesheet" href="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/styles.css" type="text/css" />
-<style type="text/css">
-fieldset {
-	margin-top:0;
-}
-</style>
 <script type="text/javascript">
 <!--
+var tkusers, ljusers, oiusers;
 
 function toggleProtectPrefs (c, div) {
     var e = getByID(div);
@@ -17,45 +11,45 @@ function toggleProtectPrefs (c, div) {
 		e.style.display = 'none';
 }
 
+function reveal_password () {
+	alert(getByID('password').value);
+}
+
+function submitForm(f, mode) {
+    if (f.elements["__mode"] && mode)
+        f.elements["__mode"].value = mode;
+	f.elements["typekey_users"].value = tkusers.taglist.tags;
+	f.elements["livejournal_users"].value = ljusers.taglist.tags;
+	f.elements["openid_users"].value = oiusers.taglist.tags; 
+    f.submit();
+}
+
 //-->
 </script>
 <script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/yahoo.js"></script>
 <script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/dom.js"></script>
 <script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/event.js"></script>
 <script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/tag-widget.js"></script>
-<div id="cfg-prefs">
-	
-
-<h2><TMPL_IF NAME=IS_SINGLE>Protect Entry: <span class="title-highlight"><TMPL_VAR NAME=ENTRY_TITLE ESCAPE=HTML></span><TMPL_ELSE>Protect Multiple Entries</TMPL_IF></h2>
-
-<TMPL_IF NAME=MESSAGE>
-<p class="message"><TMPL_VAR NAME=MESSAGE></p>
-</TMPL_IF>
-
-<p class="page-desc"><MT_TRANS phrase="You can protect this entry so only certain people can view its contents. You can do this one of two ways. The first is using a simple password that people will have to enter to see the post. The alternative is to use Typekey so access is based on their identity. Using Typekey is the recommended method as it ensures that only those allowed can access the post, passwords can always be leaked!"></p>
-<TMPL_UNLESS NAME=IS_SINGLE><p class="page-desc"><b><MT_TRANS phrase="Caution: You are protecting multiple entries using this page hence they will all get the same protection"></b></p></TMPL_UNLESS> 
 
 <fieldset>
-<form method="post" action="<TMPL_VAR NAME=SCRIPT_URL>">
-  <input type="hidden" name="__mode" value="save" />
-  <input type="hidden" name="_type" value="entry" />
-  <input type="hidden" name="<TMPL_IF NAME=IS_SINGLE>id<TMPL_ELSE>entry_ids</TMPL_IF>" value="<TMPL_VAR NAME=ENTRY_ID>" />
-  <input type="hidden" name="blog_id" value="<TMPL_VAR NAME=BLOG_ID>" />
-  <input type="hidden" name="magic_token" value="<TMPL_VAR NAME=MAGIC_TOKEN>" />
-  
-<h4><label><input <TMPL_IF NAME=IS_PASSWORD>checked="checked"</TMPL_IF> type="checkbox" name="protection" onclick="toggleProtectPrefs(this,'password_prefs'); return true" value="Password"> <MT_TRANS phrase="Password Protection"></label></h4>
+<input type="hidden" name="protect_beacon" value="1" id="protect_beacon" />
+<input type="hidden" name="typekey_users" value="" id="typekey_users" />
+<input type="hidden" name="livejournal_users" value="" id="livejournal_users" />
+<input type="hidden" name="openid_users" value="" id="openid_users" />
+
+<h4><label class="protect-header-label"><input <TMPL_IF NAME=IS_PASSWORD>checked="checked"</TMPL_IF> type="checkbox" name="protection" onclick="toggleProtectPrefs(this,'password_prefs'); return true" value="Password"> <MT_TRANS phrase="Password Protection"></label></h4>
 		
 <div id="password_prefs" class="setting" style="display: <TMPL_IF NAME=IS_PASSWORD>block<TMPL_ELSE>none</TMPL_IF>;">
     <div class="label">
         <label for="password"><MT_TRANS phrase="Entry Password">:</label>
     </div>
     <div class="field">
-        <input name="password" id="password" value="<TMPL_VAR NAME=PASSWORD ESCAPE=HTML>" />
-        <p></p>
+        <input name="password" id="password" value="<TMPL_VAR NAME=PASSWORD ESCAPE=HTML>" type="password" />
+  		<p><a href="#" onclick="reveal_password();"><MT_TRANS phrase="Reveal password"></a></p>
     </div>
 </div>		
 		
-<h4><label><input <TMPL_IF NAME=IS_TYPEKEY>checked="checked"</TMPL_IF> type="checkbox" name="protection" onclick="toggleProtectPrefs(this,'typekey_prefs'); return true" value="Typekey"> <MT_TRANS phrase="Typekey Protection"></label></h4>
+<h4><label class="protect-header-label"><input <TMPL_IF NAME=IS_TYPEKEY>checked="checked"</TMPL_IF> type="checkbox" name="protection" onclick="toggleProtectPrefs(this,'typekey_prefs'); return true" value="Typekey"> <MT_TRANS phrase="Typekey Protection"></label></h4>
 		
 <div id="typekey_prefs" class="setting" style="display: <TMPL_IF NAME=IS_TYPEKEY>block<TMPL_ELSE>none</TMPL_IF>;">
     <div class="label">
@@ -64,20 +58,23 @@ function toggleProtectPrefs (c, div) {
     <div class="field">
 		<div id="typekey" class="tc-tags tag-widget"></div>
 		<script type="text/javascript"> 
-			var tkusers = new TagWidget('typekey'); 
+			tkusers = new TagWidget('typekey'); 
 			tkusers.LIST_LABEL = ' '; 
 			tkusers.FORM_LABEL = ' '; 
 			tkusers.ADD_LABEL = '<MT_TRANS phrase="Add">';
 			tkusers.ALWAYS_SHOW_FORM = 1;
 			tkusers.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
 			tkusers.taglist.TAG_LINK_FORMAT = 'http://profile.typekey.com/';
+			<TMPL_LOOP NAME=TYPEKEY_USERS>
+			tkusers.addTag('<TMPL_VAR NAME=TK_USER>');
+			</TMPL_LOOP>
 			tkusers.render(); 
 		</script>
 		<p><MT_TRANS phrase="Enter Typekey users here separated by"> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="commas"><TMPL_ELSE><MT_TRANS phrase="spaces"></TMPL_IF></p>
     </div>
 </div>		
 		
-<h4><label><input <TMPL_IF NAME=IS_LIVEJOURNAL>checked="checked"</TMPL_IF> type="checkbox" name="protection" onclick="toggleProtectPrefs(this,'livejournal_prefs'); return true" value="LiveJournal"> <MT_TRANS phrase="LiveJournal Protection"></label></h4>
+<h4><label class="protect-header-label"><input <TMPL_IF NAME=IS_LIVEJOURNAL>checked="checked"</TMPL_IF> type="checkbox" name="protection" onclick="toggleProtectPrefs(this,'livejournal_prefs'); return true" value="LiveJournal"> <MT_TRANS phrase="LiveJournal Protection"></label></h4>
 		
 <div id="livejournal_prefs" class="setting" style="display: <TMPL_IF NAME=IS_LIVEJOURNAL>block<TMPL_ELSE>none</TMPL_IF>;">
     <div class="label">
@@ -86,20 +83,23 @@ function toggleProtectPrefs (c, div) {
     <div class="field">
 		<div id="livejournal" class="tc-tags tag-widget"></div>
 		<script type="text/javascript"> 
-			var ljusers = new TagWidget('livejournal'); 
+			ljusers = new TagWidget('livejournal'); 
 			ljusers.LIST_LABEL = ' '; 
 			ljusers.FORM_LABEL = ' '; 
 			ljusers.ADD_LABEL = '<MT_TRANS phrase="Add">';
 			ljusers.ALWAYS_SHOW_FORM = 1;
 			ljusers.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
 			ljusers.taglist.TAG_LINK_FORMAT = 'http://www.livejournal.com/users/';
+			<TMPL_LOOP NAME=LIVEJOURNAL_USERS>
+			ljusers.addTag('<TMPL_VAR NAME=LJ_USER>');
+			</TMPL_LOOP>
 			ljusers.render(); 
 		</script>
 		<p><MT_TRANS phrase="Enter LiveJournal users here separated by"> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="commas"><TMPL_ELSE><MT_TRANS phrase="spaces"></TMPL_IF></p>
     </div>
 </div>		
 		
-<h4><label><input <TMPL_IF NAME=IS_OPENID>checked="checked"</TMPL_IF> type="checkbox" name="openid_protection" value="OpenID" onclick="toggleProtectPrefs(this,'openid_prefs'); return true"> <MT_TRANS phrase="OpenID Protection"></label></h4>
+<h4><label class="protect-header-label"><input <TMPL_IF NAME=IS_OPENID>checked="checked"</TMPL_IF> type="checkbox" name="openid_protection" value="OpenID" onclick="toggleProtectPrefs(this,'openid_prefs'); return true"> <MT_TRANS phrase="OpenID Protection"></label></h4>
 		
 <div id="openid_prefs" class="setting" style="display: <TMPL_IF NAME=IS_OPENID>block<TMPL_ELSE>none</TMPL_IF>;">
     <div class="label">
@@ -108,31 +108,19 @@ function toggleProtectPrefs (c, div) {
     <div class="field">
 		<div id="openid" class="tc-tags tag-widget"></div>
 		<script type="text/javascript"> 
-			var oiusers = new TagWidget('openid'); 
+			oiusers = new TagWidget('openid'); 
 			oiusers.LIST_LABEL = ' '; 
 			oiusers.FORM_LABEL = ' '; 
 			oiusers.ADD_LABEL = '<MT_TRANS phrase="Add">';
 			oiusers.ALWAYS_SHOW_FORM = 1;
 			oiusers.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
+			<TMPL_LOOP NAME=OPENID_USERS>
+			oiusers.addTag('<TMPL_VAR NAME=OI_USER>');
+			</TMPL_LOOP>			
 			oiusers.render(); 
 		</script>
 		<p><MT_TRANS phrase="Enter OpenID urls here separated by"> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="commas"><TMPL_ELSE><MT_TRANS phrase="spaces"></TMPL_IF></p>
     </div>
 </div>
 
-<p><input type="submit" name="submit" value="<MT_TRANS phrase="Save">" />&nbsp;<input type="button" onclick="window.location='<TMPL_VAR NAME=MTSCRIPT_URL>?__mode=view&_type=entry&id=<TMPL_VAR NAME=ENTRY_ID>&blog_id=<TMPL_VAR NAME=BLOG_ID>'" value="<MT_TRANS phrase="Go Back">" />     </p>
-
-</form>
 </fieldset>
-</div>
-
-<TMPL_INCLUDE NAME="footer.tmpl">
-<TMPL_ELSE>
-<MT_TRANS phrase="An error occurred:"><p>
-
-<pre>
-<MT_TRANS phrase="No entry_id">
-
-</pre>
-</TMPL_IF>
-

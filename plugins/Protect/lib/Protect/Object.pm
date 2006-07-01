@@ -4,7 +4,7 @@ use strict;
 
 use MT::Blog;
 use MT::Object;
-@MT::ObjectTag::ISA = qw( MT::Object );
+@Protect::Object::ISA = qw( MT::Object );
 __PACKAGE__->install_properties({
     column_defs => {
         'id' => 'integer not null auto_increment',
@@ -13,6 +13,7 @@ __PACKAGE__->install_properties({
         'object_datasource' => 'string(50) not null',
         'password' => 'string(255)',
 		'typekey_users' => 'text',
+		'livejournal_users' => 'text',
 		'openid_users' => 'text'
     },
     indexes => {
