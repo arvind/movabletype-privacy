@@ -6,19 +6,17 @@ use MT::Serialize;
 use MT::Object;
 @Protect::Groups::ISA = qw( MT::Object );
 __PACKAGE__->install_properties({
-    columns => [
-        'id', 'label', 'description', 'data',
-    ],
+    column_defs => {
+        'id' => 'integer not null auto_increment',
+        'label' => 'string(100) not null', 
+        'description' => 'text',
+		'typekey_users' => 'text',
+		'livejournal_users' => 'text',
+		'openid_users' => 'text'		
+    },
     indexes => {
         id => 1,
         label => 1,
-    },
-    column_defs => {
-        'id' => 'integer not null auto_increment',
-        'description' => 'text',
-        'label' => 'string(100) not null',  
-        'type' => 'string(10) not null',  	
-        'data' => 'blob',
     },
     datasource => 'protect_groups',
     primary_key => 'id',

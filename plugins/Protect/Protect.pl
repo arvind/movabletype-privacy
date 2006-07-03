@@ -4,7 +4,7 @@
 package MT::Plugin::Protect;
 
 use 5.006;    # requires Perl 5.6.x
-use MT 3.2;   # requires MT 3.2 or later
+use MT 3.3;   # requires MT 3.2 or later
 
 use base 'MT::Plugin';
 our $VERSION = '2.0';
@@ -28,11 +28,11 @@ MT->add_plugin($plugin = __PACKAGE__->new({
                 link_text => 'List Protected Entries'
             },
             'list_commenters' => {
-                link => 'mt-protect?__mode=tk_groups',
+                link => 'mt-protect.cgi?__mode=tk_groups',
                 link_text => 'List Protection Groups'
             },
             'blog' => {
-                link => 'mt-protect?__more=edit',
+                link => 'mt-protect.cgi?__mode=edit',
                 link_text => 'Protect Blog'
             }
         }
@@ -42,19 +42,22 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 			'commenter' => {
 				key => "set_protection_group",
 				label => "Create a Protection Group",
-				code => sub { $plugin->tkgroup(@_) }				
+				code => sub {
+					my $app = shift;
+					$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=groups&author_id='. join ',', $app->param('id'));
+				}				
 			},
-			'entry' => {
-                key => "set_protection",
-                label => "Protect Entries",
-                code => sub { $plugin->protect_entries(@_) },
-				condition => sub { my $app = MT->instance; $app->mode eq 'list_entries' }				
-			},
-			'blog' => {
-                key => "set_protection",
-                label => "Protect Blog(s)",
-                code => sub { $plugin->protect_blogs(@_) }				
-			}
+			# 'entry' => {
+			#                 key => "set_protection",
+			#                 label => "Protect Entries",
+			#                 code => sub { $plugin->protect_entries(@_) },
+			# 	condition => sub { my $app = MT->instance; $app->mode eq 'list_entries' }				
+			# },
+			# 'blog' => {
+			#                 key => "set_protection",
+			#                 label => "Protect Blog(s)",
+			#                 code => sub { $plugin->protect_blogs(@_) }				
+			# }
 		}
 	},
 	callbacks => {
@@ -63,7 +66,8 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		'MT::Entry::post_save' => sub { require Protect::CMS; Protect::CMS::post_save(@_); },
 		'MT::App::CMS::AppTemplateSource.edit_category' => sub { require Protect::CMS; Protect::CMS::_edit_category(@_); },
 		'MT::App::CMS::AppTemplateParam.edit_category' => sub { require Protect::CMS; Protect::CMS::_param(@_, 'category'); },
-		'MT::Category::post_save' => sub { require Protect::CMS; Protect::CMS::post_save(@_); }
+		'MT::Category::post_save' => sub { require Protect::CMS; Protect::CMS::post_save(@_); },
+		'Protect::CMS::AppTemplateParam.edit' => sub { require Protect::CMS; Protect::CMS::_param(@_, 'blog'); }
 	},
 	container_tags => {
 		'EntryProtect'	=> \&protected,
@@ -437,45 +441,10 @@ sub tkgroup {
     my ($app) = @_;
 	
 	my $q = $app->{query};
-	my $author_ids;
-	for my $author_id ($q->param('id')){
-		$author_ids .= ",$author_id";
-	}
+	my $author_ids = join ',', $q->param('id');
 	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=groups&author_id='. $author_ids);
 }
 
-sub protect_entries {
-    my $plugin = shift;
-    my ($app) = @_;
-	
-	my $q = $app->{query};
-	my ($entry_ids, $i);
-	for my $entry_id ($q->param('id')){
-		$i++;
-		$entry_ids .= ",$entry_id";
-	}
-	if($i == 1) {
-	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=entry&id='. $q->param('id').'&blog_id='.$q->param('blog_id'));
-	} else {
-	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=entry&entry_ids='. $entry_ids.'&blog_id='.$q->param('blog_id'));	
-	}
-}
 
-sub protect_blogs {
-    my $plugin = shift;
-    my ($app) = @_;
-	
-	my $q = $app->{query};
-	my ($blog_ids, $i);
-	for my $blog_id ($q->param('id')){
-		$i++;
-		$blog_ids .= ",$blog_id";
-	}
-	if($i == 1) {
-	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=blog&blog_id='. $q->param('id'));
-	} else {
-	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=blog&blog_ids='. $blog_ids);	
-	}
-}
 
 1;

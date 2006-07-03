@@ -13,7 +13,6 @@ use vars qw( $DEBUG $VERSION @ISA $SCHEMA_VERSION );
 $VERSION = '1.21';
 $SCHEMA_VERSION = 1.2;
 
-use MT::PluginData;
 use MT::Util qw( format_ts offset_time_list );
 use MT::ConfigMgr;
 use MT::App::CMS;
@@ -65,295 +64,62 @@ sub build_page {
     $app->SUPER::build_page($page, $param);
 }
 
-sub config_global {
-    my $app = shift;
-   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
-			schema_check($app);
-   }	        
-    my $q = $app->{query};
-    my $param;
-    my $cblog_id = $q->param('cblog_id');
-    if($cblog_id){
-        my $cblog = MT::Blog->load($cblog_id);
-        $param->{cblog} = $cblog->name;
-        $param->{installed} = $q->param('installed');
-        $param->{uninstalled} = $q->param('uninstalled');
-    }
-    $app->add_breadcrumb("MT Protect",'mt-protect.cgi?__mode=global_config');
-    $app->add_breadcrumb("Global Config");
-    #    $param->{breadcrumbs} = $app->{breadcrumbs};
-    #    $param->{breadcrumbs}[-1]{is_last} = 1;
-if (my $auth = $app->{author}) {
-        my @perms = MT::Permission->load({ author_id => $auth->id });
-        my @data;
-        for my $perms (@perms) {
-            next unless $perms->role_mask;
-            my $blog = MT::Blog->load($perms->blog_id);
-            my $pdblog = MT::PluginData->load({ plugin => 'Protect', key    => $perms->blog_id });
-            push @data, { blog_id   => $blog->id,
-                blog_name => $blog->name,
-            blog_installed => $pdblog };
-        }
-        $param->{blog_loop} = \@data;
-    }
-    $param->{global_config} = 1;
-    $app->build_page('config.tmpl', $param);
-}
-
-sub load_files {
-    my $app = shift;
-   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
-			schema_check($app);
-   }    
-    my $q = $app->{query};
-    my $blog_id = $q->param('cblog_id');
-    my $type = $q->param('_type');
-    my $blog = MT::Blog->load($blog_id);
-    my $auth_typekey = $blog->site_path . "/Auth_TypeKey.php";
-    my $typekey_lib = $blog->site_path . "/typekey_lib.php";
-#    my $typekey_lib_dynamic = $blog->site_path . "/typekey_lib_dynamic.php";
-    my $mt_pass = $blog->site_path . "/mt-password.php";
-    my $openid = $blog->site_path . "/openid.php";
-    if($type eq 'install') {
-        my $url = 'http://www.movalog.com/downloads/MT-Protect/12/Auth_Typekey.txt';
-        my $auth_tk_text = _load_link ( $url );
-        
-        if (open(TARGET, ">$auth_typekey")) {
-            print TARGET $auth_tk_text;
-            close TARGET;
-            } else {
-            die;
-        }
-        
-        $url = 'http://www.movalog.com/downloads/MT-Protect/12/typekey_lib.txt';
-        $auth_tk_text = _load_link ( $url );
-        
-        if (open(TARGET, ">$typekey_lib")) {
-            print TARGET $auth_tk_text;
-            close TARGET;
-            } else {
-            die;
-        }
-        
-        $url = 'http://www.movalog.com/downloads/MT-Protect/12/openid.php.txt';
-        $auth_tk_text = _load_link ( $url );
-        
-        if (open(TARGET, ">$openid")) {
-            print TARGET $auth_tk_text;
-            close TARGET;
-            } else {
-            die;
-        }        
-        
-#        $url = 'http://www.movalog.com/downloads/MT-Protect/typekey_lib_dynamic.txt';
-#        $auth_tk_text = _load_link ( $url );
-#        
-#        if (open(TARGET, ">$typekey_lib_dynamic")) {
-#            print TARGET $auth_tk_text;
-#            close TARGET;
-#            } else {
-#            die;
-#        }        
-        
-        $url = 'http://www.movalog.com/downloads/MT-Protect/12/mt-pass.txt';
-        $auth_tk_text = _load_link ( $url );
-        
-                    require MT::Builder;
-                    require MT::Template::Context;
-                
-                    my $build = MT::Builder->new;
-                    my $ctx = MT::Template::Context->new;
-                                $ctx->{__stash}{blog} = $blog;
-                    my $tokens = $build->compile($ctx, $auth_tk_text)
-                        or die $build->errstr;
-                    defined(my $out = $build->build($ctx, $tokens))
-                        or die $build->errstr;
-                        
-        if (open(TARGET, ">$mt_pass")) {
-            print TARGET $out;
-            close TARGET;
-            } else {
-            die;
-        }                    
-                    
-        my $data = MT::PluginData->new;
-        $data->plugin('Protect');
-        $data->key($blog_id);
-        $data->data({ status => "Installed" });
-        $data->save or
-        return $app->error("Error: " . $data->errstr);
-        $q->param('installed', 1);
-        } elsif($type eq 'uninstall') {
-        if (-f $auth_typekey) {
-            if (unlink $auth_typekey) {
-                $app->log("Deleted Auth_Typeky.php");
-            }
-        }
-        if (-f $typekey_lib) {
-            if (unlink $typekey_lib) {
-                $app->log("Deleted typekey_lib.php");
-            }
-        }
-#        if (-f $typekey_lib_dynamic) {
-#            if (unlink $typekey_lib_dynamic) {
-#                $app->log("Deleted typekey_lib_dynamic.php");
-#            }
-#        }    
-        if (-f $mt_pass) {
-            if (unlink $mt_pass) {
-                $app->log("Deleted mt-pass.php");
-            }
-        } 
-        if (-f $openid) {
-            if (unlink $openid) {
-                $app->log("Deleted openid.php");
-            }
-        }                     
-        my $pdblog = MT::PluginData->load({ plugin => 'Protect', key    => $blog_id });
-        $pdblog->remove;
-        $q->param('uninstalled', 1);
-    }
-    $app->redirect($app->{mtscript_url}.'?__mode=list_plugins');
-}
-
 sub edit {
     my $app = shift;
-   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
-			schema_check($app);
-   }    
     my $q = $app->{query};
-    my ($param, $tmpl, $entry, @typekey_data,@openid_data);
+    my ($param, $tmpl, $entry, @typekey_data,@openid_data, $datasource);
     my $blog_id = $q->param('blog_id');
     my $id = $q->param('id');
     my $type = $q->param('_type') || $q->param('from');
-	my $auth_prefs = $app->user->entry_prefs;
-    if (my $delim = chr($auth_prefs->{tag_delim})) {
-        if ($delim eq ',') {
-            $param->{'auth_pref_tag_delim_comma'} = 1;
-        } elsif ($delim eq ' ') {
-            $param->{'auth_pref_tag_delim_space'} = 1;
-        } else {
-            $param->{'auth_pref_tag_delim_other'} = 1;
-        }
-        $param->{'auth_pref_tag_delim'} = $delim;
-    }
-    if($type eq 'entry' || $type eq 'edit_entry') {  	
-    	my $entry_ids = $q->param('entry_ids');
-	    $param->{entry_id} = $id || $entry_ids;   
-	    $app->add_breadcrumb($app->translate('Entries'), $app->{mtscript_url} . '?__mode=list_entries&blog_id=' . $blog_id); 	
-        $tmpl = 'entry.tmpl';
-        if($id) {
-        	$param->{is_single} = 1;
-        	
-		    my $entry = MT::Entry->load($id);
-		    $app->add_breadcrumb($entry->title || $app->translate('(untitled)'), $app->{mtscript_url} . '?__mode=view&_type=entry&id=' . $id . '&blog_id=' . $blog_id);
-		    $param->{entry_title} = $entry->title;        	
-        my $data = Protect::Protect->load({entry_id    => $id });
-        if($data){
-            my $data_type = $data->type;
-            if($data_type eq 'Password'){
-                $param->{is_password} = 1;
-                my $password = $data->data;
-                $param->{password} = $password;
-            }
-            elsif($data_type eq 'Typekey'){
-                $param->{is_typekey} = 1;
-                my $users = $data->data;
-                for my $user (@$users) {               
-                    push @typekey_data, {
-                        user => $user
-                    };
-                }
-            }
-            elsif($data_type eq 'OpenID'){
-                $param->{is_openid} = 1;
-                my $users = $data->data;
-                for my $user (@$users) {               
-                    push @openid_data, {
-                        user => $user
-                    };
-                }
-            }            
-        }
-      }
-				for (my $i = 1; $i <= 5; $i++) {push @typekey_data, {user => ''};}
-				for (my $i = 1; $i <= 5; $i++) {push @openid_data, {user => ''};}
-
-        
-        
-        $app->add_breadcrumb("Protect");
-  } elsif($type eq 'blog' || $type eq 'blog_home'){
-  			my $blog_ids = $q->param('blog_ids');
-  			$param->{blog_ids} = $blog_ids;
-        $tmpl = 'blog.tmpl';
-        if($blog_id) {
-        	$param->{is_single} = 1;
-        my $blog = MT::Blog->load($blog_id);	
-        $param->{blog_name} = $blog->name;	
-        my $data = Protect::Protect->load({entry_id    => '0', blog_id => $blog_id });
-        if($data){
-            my $data_type = $data->type;
-            if($data_type eq 'Password'){
-                $param->{is_password} = 1;
-                my $password = $data->data;
-                $param->{password} = $password;
-            }
-            elsif($data_type eq 'Typekey'){
-                $param->{is_typekey} = 1;
-                my $users = $data->data;
-
-                for my $user (@$users) {                  
-                    push @typekey_data, {user => $user};
-                }
-            }
-            elsif($data_type eq 'OpenID'){
-                $param->{is_openid} = 1;
-                my $users = $data->data;
-
-                for my $user (@$users) {                  
-                    push @openid_data, {user => $user};
-                }
-            }            
-        }
-      }
-      for (my $i = 1; $i <= 5; $i++) {push @typekey_data, {user => ''};}
-      for (my $i = 1; $i <= 5; $i++) {push @openid_data, {user => ''};}
-
-    $app->add_breadcrumb("Protect Blog");        
-  } elsif($type eq 'groups') {
-                my $author_ids = $q->param('author_id');
-                my @authors_list = split(/,/,$author_ids);
-                shift @authors_list;
-      for my $author_id (@authors_list) {
-        if($author_id ne 'undefined') {
-                my $commenter = MT::Author->load($author_id);
-       
-          push @typekey_data, {user => $commenter->name};
-        }
-      }
-                        $param->{add} = 1 if $q->param('add') == 1;
-                        $param->{edit} = 1 if $q->param('edit') == 1;
-                        my $data = Protect::Groups->load({id => $id });
-                        if($data){
-                        $param->{id} = $data->id;
-                        $param->{label} = $data->label;
-                        $param->{description} = $data->description;
-                        my $grouptype = $data->type;
-                        $param->{"$grouptype"} = 1;
-                        my $users = $data->data;
-      for my $user (@$users) {       
-          push @typekey_data, {user => $user};
-      }
-    
-   }
-			for (my $i = 1; $i <= 5; $i++) {push @typekey_data, {user => ''};}
-			
-
-      $tmpl = 'tk_edit.tmpl';                
-      $app->add_breadcrumb("MT Protect",$app->{mtscript_url}.'?__mode=list_plugins');
-                $app->add_breadcrumb("Protection Groups",'mt-protect.cgi?__mode=tk_groups');
-                $app->add_breadcrumb("Add New Group") if $q->param('add') == 1;
-                $app->add_breadcrumb("Edit Group") if $q->param('edit') == 1;        
+	if($type eq 'blog' || $type eq 'blog_home'){
+		$tmpl = 'edit.tmpl';
+		$app->add_breadcrumb($app->plugin->translate('Protect'));
+  	} elsif($type eq 'groups') {
+		my(@typekey_users, @livejournal_users, @openid_users);
+		my $auth_prefs = $app->user->entry_prefs;
+	    if (my $delim = chr($auth_prefs->{tag_delim})) {
+	        if ($delim eq ',') {
+	            $param->{'auth_pref_tag_delim_comma'} = 1;
+	        } elsif ($delim eq ' ') {
+	            $param->{'auth_pref_tag_delim_space'} = 1;
+	        } else {
+	            $param->{'auth_pref_tag_delim_other'} = 1;
+	        }
+	        $param->{'auth_pref_tag_delim'} = $delim;
+	    }
+		require Protect::Groups;
+		my $data = Protect::Groups->load({ id => $id });
+		if($data) {
+			$param->{is_typekey} = $data->typekey_users;
+			$param->{is_livejournal} = $data->livejournal_users;
+			$param->{is_openid} = $data->openid_users;
+			push @typekey_users, {'tk_user' => $_ }
+				foreach split /,/, $data->typekey_users;
+			push @livejournal_users, {'lj_user' => $_ }
+				foreach split /,/, $data->livejournal_users;	
+			push @openid_users, {'oi_user' => $_ }
+				foreach split /,/, $data->openid_users;	
+            $param->{id} = $data->id;
+            $param->{label} = $data->label;
+            $param->{description} = $data->description;				
+		}
+		for my $author_id (split /,/, $q->param('author_id')) {
+		 if($author_id ne 'undefined') {
+		    my $commenter = MT::Author->load($author_id);
+     	    push @typekey_users, {'tk_user' => $commenter->name};
+		 }
+		}
+		
+		$param->{typekey_users} = \@typekey_users;
+		$param->{livejournal_users} = \@livejournal_users;
+		$param->{openid_users} = \@openid_users;		
+        $tmpl = 'tk_edit.tmpl';                
+	    $app->add_breadcrumb($app->plugin->translate("MT Protect"),$app->{mtscript_url}.'?__mode=list_plugins');
+        $app->add_breadcrumb($app->plugin->translate("Protection Groups"),'mt-protect.cgi?__mode=tk_groups');
+        $app->add_breadcrumb($app->plugin->translate("Add New Group"))
+ 			if !$data;
+        $app->add_breadcrumb($data->label)
+			if $data;        
   }
     $param->{typekey_user_loop} = \@typekey_data;
     $param->{openid_user_loop} = \@openid_data;
@@ -363,177 +129,32 @@ sub edit {
 
 sub save {
     my $app = shift;
-   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
-			schema_check($app);
-   }    
     my $q = $app->{query};
     my $blog_id = $q->param('blog_id'); 
     my($param,$tmpl,@typekey_data,$data,$uri,$message); 
     my $type = $q->param('_type');
-    if($type eq 'entry') {
-    	my $entryid = $q->param('id');
-	   my $entry_ids = $q->param('entry_ids');
-	   my @entry_list = split(/,/,$entry_ids);
-	   shift @entry_list; 
-	   push @entry_list, $entryid
-	   	if !$entry_ids; 
-        my $protection = $q->param('protection');
-   for my $entry_id (@entry_list) {
-   	if($entry_id ne 'undefined') {  
-    unless($data = Protect::Protect->load({ entry_id   => $entry_id })){
-            $data = Protect::Protect->new;
-            $data->blog_id($blog_id);
-            $data->entry_id($entry_id);
-            $data->created_by($app->{author}->id);
-        }
-        if($protection eq 'Password') {
-            $data->type($protection);
-            my $password = $q->param('password');
-            $data->data($password);
-            $message = $app->translate('Entry now password protected');
-            $app->log("'" . $app->{author}->name . "' password protected entry #".$entry_id);
-          } 
-          elsif($protection eq 'Typekey') {
-            $message = $app->translate('Entry now Typekey protected');  
-            $app->log("'" . $app->{author}->name . "' Typekey protected entry #".$entry_id);              
-            $data->type($protection);
-            my @users;
-            for my $user ($q->param('typekey_users')) {
-                if($user && $user ne ""){
-                    push (@users, $user);
-                }
-            }
-            $data->data(\@users);
-        }
-          elsif($protection eq 'OpenID') {
-            $message = $app->translate('Entry now OpenID protected');  
-            $app->log("'" . $app->{author}->name . "' OpenID protected entry #".$entry_id);              
-            $data->type($protection);
-            my @users;
-            for my $user ($q->param('openid_users')) {
-                if($user && $user ne ""){
-                    push (@users, $user);
-                }
-            }
-            $data->data(\@users);
-        }        
-        if($protection eq 'None') {
-                $data->remove or
-            return $app->error("Error: " . $data->errstr);
-          $message = $app->translate('Protection Removed');  
-          $app->log("'" . $app->{author}->name . "' removed protection on entry #".$entry_id);
-        } else {      
-        $data->save or
-            return $app->error("Error: " . $data->errstr);        	
-        }
-           
-        
-      }
-      }
-    if($entryid) {  
-		$uri = $app->uri.'?__mode=edit&_type=entry&blog_id='.$blog_id.'&id='.$entryid.'&message='.$message;      
-	} else {
-		$uri = $app->mt_uri.'?__mode=list_entries&blog_id='.$blog_id.'&saved=1';
-	}
-    } elsif($type eq 'blog') {
-        my $entry_id = '0';
-        my $protection = $q->param('protection');
-    	my $blogid = $q->param('blog_id');
-	   my $blog_ids = $q->param('blog_ids');
-	   my @blog_list = split(/,/,$blog_ids);
-	   shift @blog_list; 
-	   push @blog_list, $blogid
-	   	if !$blog_ids;   
-   for my $blid (@blog_list) {
-   	if($blid ne 'undefined') {  	   	      
-    unless($data = Protect::Protect->load({ entry_id   => $entry_id, blog_id => $blid })){
-            $data = Protect::Protect->new;
-            $data->blog_id($blid);
-            $data->entry_id($entry_id);
-            $data->created_by($app->{author}->id);
-        }
-        if($protection eq 'Password') {
-            $data->type($protection);
-            my $password = $q->param('password');
-            $data->data($password);
-            $message = $app->translate('Blog now password protected');
-            $app->log("'" . $app->{author}->name . "' password protected blog #".$blid);
-          } 
-          elsif($protection eq 'Typekey') {
-            $message = $app->translate('Blog now Typekey protected'); 
-            $app->log("'" . $app->{author}->name . "' Typekey protected blog #".$blid);               
-            $data->type($protection);
-            my @users;
-            for my $user ($q->param('typekey_users')) {
-                if($user && $user ne ""){
-                    push (@users, $user);
-                }
-            }
-            $data->data(\@users);
-        }
-          elsif($protection eq 'OpenID') {
-            $message = $app->translate('Blog now OpenID protected'); 
-            $app->log("'" . $app->{author}->name . "' OpenID protected blog #".$blid);               
-            $data->type($protection);
-            my @users;
-            for my $user ($q->param('openid_users')) {
-                if($user && $user ne ""){
-                    push (@users, $user);
-                }
-            }
-            $data->data(\@users);
-        }        
-        $data->save or
-            return $app->error("Error: " . $data->errstr);
-        if($protection eq 'None') {
-                $data->remove or
-            return $app->error("Error: " . $data->errstr);
-          $message = $app->translate('Protection Removed'); 
-          $app->log("'" . $app->{author}->name . "' removed protection on blog #".$blid); 
-        } else {
-        $data->save or
-            return $app->error("Error: " . $data->errstr);        	
-        }
-       } } 
-    if($blogid) {  
-		$uri = $app->uri.'?__mode=edit&_type=blog&blog_id='.$blog_id.'&message='.$message;      
-	} else {
-		$uri = $app->mt_uri.'?__mode=system_list_blogs&saved=1';
-	}          
-			
+	if($type eq 'blog') {
+		my $blog = MT::Blog->load($blog_id);
+		post_save($app, $blog);
+		$app->redirect($app->uri.'?__more=edit&_type=blog&blog_id='.$blog_id.'&message='.$app->translate('Your changes have been saved'));
     }elsif($type eq 'groups') {
-        my $label = $q->param('label');
-        my $description = $q->param('desc');
-        my $grouptype = $q->param('type');
         my $id = $q->param('id');
-            unless($data = Protect::Groups->load({ id   => $id })){
-                    $data = Protect::Groups->new;
-                }        
-                $data->label($label);
-                $data->description($description);
-                $data->type($grouptype);
-            my @users;
-            for my $user ($q->param('users')) {
-                if($user && $user ne ""){
-                    push (@users, $user);
-                }
-            }
-            $data->data(\@users);
-            $data->save or
-            return $app->error("Error: " . $data->errstr);
-            $message = $app->translate('Typekey group saved');
-            $id = $data->id;
-            $q->param('edit',1);
-            $uri = $app->uri.'?__mode=edit&_type=groups&id='.$id.'&message='.$message.'&edit=1';                
+        unless($data = Protect::Groups->load({ id   => $id })){
+            $data = Protect::Groups->new;
+        }        
+        $data->label($q->param('label'));
+        $data->description($q->param('description'));
+		$data->typekey_users($q->param('typekey_users'));
+		$data->livejournal_users($q->param('livejournal_users'));
+		$data->openid_users($q->param('openid_users'));
+		$data->save or
+			die $data->errstr;
+        $app->redirect($app->uri.'?__mode=edit&_type=groups&id='.$data->id.'&message='.$app->translate('Your changes have been saved').'&edit=1');                
     }
-   $app->redirect($uri); 
 }
 
 sub tk_groups {
     my $app = shift;
-   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
-			schema_check($app);
-   }    
     my $q = $app->{query};
     my $iter = Protect::Groups->load_iter;
     my (@data,@count,$param);
@@ -547,7 +168,6 @@ sub tk_groups {
                                 id => $entry->id,
                                 label => $entry->label,
                                 description => $entry->description,
-                                type => $entry->type,
                                 entry_odd    => $n_entries % 2 ? 1 : 0,
     };
     
@@ -572,9 +192,6 @@ sub tk_groups {
 
 sub list_entries {
     my $app = shift;
-   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
-			schema_check($app);
-   }    
     my $q = $app->{query};        
                 my $blog_id = $q->param('blog_id');
                 my $blog = MT::Blog->load($blog_id);
@@ -649,9 +266,6 @@ sub list_entries {
 
 sub list_blogs {
     my $app = shift;
-   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
-			schema_check($app);
-   }    
     my $q = $app->{query};        
 		my $param;
     my @data;
@@ -719,10 +333,7 @@ sub list_blogs {
 sub delete
 {
     debug("Calling delete_entry...");
-    my $app = shift;
-   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
-			schema_check($app);
-   }    
+    my $app = shift;   
     my $q = $app->{query};
                 my $type = $q->param('_type');
     if($type eq 'groups') {
@@ -751,9 +362,6 @@ sub delete
 
 sub confirm_delete {
     my $app = shift;
-   unless (MT::PluginData->load({ plugin => 'MT Protect', key => 'setup_'.$SCHEMA_VERSION })) {
-			schema_check($app);
-   }    
     my $q = $app->{query};
                 my $type = $q->param('_type');    
     my @entry_data;
@@ -844,7 +452,18 @@ sub _param {
 	my($eh, $app, $param, $tmpl, $datasource) = @_;
 	my $q = $app->{query};
 	my $blog_id = $q->param('blog_id');
-	my $obj_id = $q->param('id');
+	my $obj_id = $q->param('id') || $blog_id;
+	my $auth_prefs = $app->user->entry_prefs;
+    if (my $delim = chr($auth_prefs->{tag_delim})) {
+        if ($delim eq ',') {
+            $param->{'auth_pref_tag_delim_comma'} = 1;
+        } elsif ($delim eq ' ') {
+            $param->{'auth_pref_tag_delim_space'} = 1;
+        } else {
+            $param->{'auth_pref_tag_delim_other'} = 1;
+        }
+        $param->{'auth_pref_tag_delim'} = $delim;
+    }
 	require Protect::Object;
 	my $data = Protect::Object->load({ blog_id => $blog_id, object_id => $obj_id, object_datasource => $datasource });
 	$param->{is_password} = $data->password;
@@ -862,17 +481,6 @@ sub _param {
 	$param->{typekey_users} = \@typekey_users;
 	$param->{livejournal_users} = \@livejournal_users;
 	$param->{openid_users} = \@openid_users;
-	my $auth_prefs = $app->user->entry_prefs;
-    if (my $delim = chr($auth_prefs->{tag_delim})) {
-        if ($delim eq ',') {
-            $param->{'auth_pref_tag_delim_comma'} = 1;
-        } elsif ($delim eq ' ') {
-            $param->{'auth_pref_tag_delim_space'} = 1;
-        } else {
-            $param->{'auth_pref_tag_delim_other'} = 1;
-        }
-        $param->{'auth_pref_tag_delim'} = $delim;
-    }
 }
 
 sub post_save {
@@ -935,5 +543,8 @@ sub uri { my $app = shift; $app->app_path . $app->script; }
 #    return 'mt-protect.cgi';
 #}
 
+sub plugin {
+	return MT::Plugin::Protect->instance;
+}
 
 1; 

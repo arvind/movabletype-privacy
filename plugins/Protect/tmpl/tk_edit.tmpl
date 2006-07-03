@@ -1,80 +1,139 @@
 <TMPL_INCLUDE NAME="header.tmpl">
+<link rel="stylesheet" href="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/styles.css" type="text/css" />
 <script type="text/javascript">
 <!--
-function writeinput() {
-var theNewParagraph = document.createElement('p');
-var input = document.createElement('input');
-var type = document.getElementById('type').value;
-input.type = 'text';
-input.name = 'typekey_users';
-if(type == 'Typekey') {
-input.style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/typekey.gif) 2px 1px no-repeat'
-input.style['paddingLeft'] = '30px';
-}
-if(type == 'OpenID') {
-input.style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/openid.gif) 2px 1px no-repeat'
-input.style['paddingLeft'] = '30px';
-}
-theNewParagraph.appendChild(input);
-document.getElementById('typekey_users').appendChild(theNewParagraph);
+var tkusers, ljusers, oiusers;
 
-	}
-	
-function changeinput(type) {
-var e = document.getElementById('typekey_users');
-var inputs = e.getElementsByTagName("input");
-	for (var i = 0; i < inputs.length; i++) {
-		if(type == 'Typekey') {
-		inputs[i].style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/typekey.gif) 2px 1px no-repeat'
-		inputs[i].style['paddingLeft'] = '30px';
-		}
-		if(type == 'OpenID') {
-		inputs[i].style['background'] = '#fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/openid.gif) 2px 1px no-repeat'
-		inputs[i].style['paddingLeft'] = '30px';
-		}
-	}
-}	
+function toggleProtectPrefs (c, div) {
+    var e = getByID(div);
+	if(e.style.display == 'none')
+    	e.style.display = 'block';
+	else	
+		e.style.display = 'none';
+}
+
+function submitForm(f, mode) {
+    if (f.elements["__mode"] && mode)
+        f.elements["__mode"].value = mode;
+	f.elements["typekey_users"].value = tkusers.taglist.tags;
+	f.elements["livejournal_users"].value = ljusers.taglist.tags;
+	f.elements["openid_users"].value = oiusers.taglist.tags; 
+    f.submit();
+}
 
 //-->
 </script>		
+<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/yahoo.js"></script>
+<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/dom.js"></script>
+<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/event.js"></script>
+<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/tag-widget.js"></script>
 
-<h2><TMPL_IF NAME=LABEL><MT_TRANS phrase="Protection Group:"> <span class="title-highlight"><TMPL_VAR NAME=LABEL></span><TMPL_ELSE><MT_TRANS phrase="New Protection Group"></TMPL_IF></h2>
+<h2><span class="weblog-title-highlight"><MT_TRANS phrase="Protection Group">:</span> <TMPL_IF NAME=ID><TMPL_VAR NAME=LABEL><TMPL_ELSE><MT_TRANS phrase="New Protection Group"></TMPL_IF></h2>
 
 <TMPL_IF NAME=MESSAGE>
 <p class="message"><TMPL_VAR NAME=MESSAGE></p>
 </TMPL_IF>
 
-<p><TMPL_IF NAME=NAME><MT_TRANS phrase="Use this page to edit the attributes of the group"> <TMPL_VAR NAME=LABEL>.<TMPL_ELSE><MT_TRANS phrase="Use this page to create a new Protection Group."></TMPL_IF> <MT_TRANS phrase="You can set an optional description for your group."></p>
-
+<fieldset>
 <form method="post" action="<TMPL_VAR NAME=SCRIPT_URL>">
 <input type="hidden" name="__mode" value="save" />
 <input type="hidden" name="_type" value="groups" />
 <input type="hidden" name="id" value="<TMPL_VAR NAME=ID>" />
+<input type="hidden" name="protect_beacon" value="1" id="protect_beacon" />
+<input type="hidden" name="typekey_users" value="" id="typekey_users" />
+<input type="hidden" name="livejournal_users" value="" id="livejournal_users" />
+<input type="hidden" name="openid_users" value="" id="openid_users" />
 
-<p><label for="label"><MT_TRANS phrase="Group Title"></label><br />
-<input type="text" name="label" id="label" value="<TMPL_VAR NAME=LABEL ESCAPE=HTML>" /></p>
+<div class="setting">
+    <div class="label">
+        <label for="label"><MT_TRANS phrase="Name">:</label>
+    </div>
+    <div class="field">
+        <input name="label" id="label" value="<TMPL_VAR NAME=LABEL ESCAPE=HTML>" type="text" />
+    </div>
+</div>
 
-<p><label for="desc"><MT_TRANS phrase="Group Description"></label><br />
-<textarea name="desc" id="desc" rows="5" cols="60"><TMPL_VAR NAME=DESCRIPTION ESCAPE=HTML></textarea></p>
+<div class="setting">
+    <div class="label">
+        <label for="desc"><MT_TRANS phrase="Description">:</label>
+    </div>
+    <div class="field">
+        <textarea name="description" id="description" rows="5" cols="60"><TMPL_VAR NAME=DESCRIPTION ESCAPE=HTML></textarea>
+    </div>
+</div>
 
-<p><label for="type">Type of Group:</label><br />
-<select name="type" id="type" onchange="changeinput(this.options[this.selectedIndex].value);">
-<option value="Typekey"<TMPL_IF NAME=TYPEKEY> selected="selected"</TMPL_IF>>Typekey</option>
-<option value="OpenID"<TMPL_IF NAME=OPENID> selected="selected"</TMPL_IF>>OpenID</option>
-</select></p>
-
-
-<p><label><MT_TRANS phrase="Enter usernames (case sensitive)"></label></p>
-<div id="typekey_users"><TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
-<p><input style="<TMPL_IF NAME=OPENID>background: #fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/openid.gif) 2px 1px no-repeat; padding-left:30px;<TMPL_ELSE>padding-left: 30px;background:#fff url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/typekey.gif) 2px 1px no-repeat;</TMPL_IF>" name="users" id="users" value="<TMPL_VAR NAME=USER>" /></p>
-</TMPL_LOOP></div>
-<p><img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="More">" width="9" height="9" />
-<a href="javascript:void(0);" onclick='writeinput();'><MT_TRANS phrase="More"></a></p>
+<div id="typekey_prefs" class="setting">
+    <div class="label">
+        <label for="typekey"><MT_TRANS phrase="Enter Typekey Users">:</label>
+    </div>
+    <div class="field">
+		<div id="typekey" class="tc-tags tag-widget"></div>
+		<script type="text/javascript"> 
+			tkusers = new TagWidget('typekey'); 
+			tkusers.LIST_LABEL = ' '; 
+			tkusers.FORM_LABEL = ' '; 
+			tkusers.ADD_LABEL = '<MT_TRANS phrase="Add">';
+			tkusers.ALWAYS_SHOW_FORM = 1;
+			tkusers.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
+			tkusers.taglist.TAG_LINK_FORMAT = 'http://profile.typekey.com/';
+			<TMPL_LOOP NAME=TYPEKEY_USERS>
+			tkusers.addTag('<TMPL_VAR NAME=TK_USER>');
+			</TMPL_LOOP>
+			tkusers.render(); 
+		</script>
+		<p><MT_TRANS phrase="Enter Typekey users here separated by"> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="commas"><TMPL_ELSE><MT_TRANS phrase="spaces"></TMPL_IF></p>
+    </div>
+</div>		
+		
+<div id="livejournal_prefs" class="setting">
+    <div class="label">
+        <label for="livejournal"><MT_TRANS phrase="Enter LiveJournal Users">:</label>
+    </div>
+    <div class="field">
+		<div id="livejournal" class="tc-tags tag-widget"></div>
+		<script type="text/javascript"> 
+			ljusers = new TagWidget('livejournal'); 
+			ljusers.LIST_LABEL = ' '; 
+			ljusers.FORM_LABEL = ' '; 
+			ljusers.ADD_LABEL = '<MT_TRANS phrase="Add">';
+			ljusers.ALWAYS_SHOW_FORM = 1;
+			ljusers.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
+			ljusers.taglist.TAG_LINK_FORMAT = 'http://www.livejournal.com/users/';
+			<TMPL_LOOP NAME=LIVEJOURNAL_USERS>
+			ljusers.addTag('<TMPL_VAR NAME=LJ_USER>');
+			</TMPL_LOOP>
+			ljusers.render(); 
+		</script>
+		<p><MT_TRANS phrase="Enter LiveJournal users here separated by"> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="commas"><TMPL_ELSE><MT_TRANS phrase="spaces"></TMPL_IF></p>
+    </div>
+</div>		
+		
+<div id="openid_prefs" class="setting">
+    <div class="label">
+        <label for="openid"><MT_TRANS phrase="Enter OpenID Users">:</label>
+    </div>
+    <div class="field">
+		<div id="openid" class="tc-tags tag-widget"></div>
+		<script type="text/javascript"> 
+			oiusers = new TagWidget('openid'); 
+			oiusers.LIST_LABEL = ' '; 
+			oiusers.FORM_LABEL = ' '; 
+			oiusers.ADD_LABEL = '<MT_TRANS phrase="Add">';
+			oiusers.ALWAYS_SHOW_FORM = 1;
+			oiusers.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
+			<TMPL_LOOP NAME=OPENID_USERS>
+			oiusers.addTag('<TMPL_VAR NAME=OI_USER>');
+			</TMPL_LOOP>			
+			oiusers.render(); 
+		</script>
+		<p><MT_TRANS phrase="Enter OpenID urls here separated by"> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="commas"><TMPL_ELSE><MT_TRANS phrase="spaces"></TMPL_IF></p>
+    </div>
+</div>
 
 <div align="center">
-<input type="submit" value="<MT_TRANS phrase="Save">" />
+<input type="submit" value="<MT_TRANS phrase="Save">" onclick="submitForm(this.form);"/>
 </div>
 
 </form>
-
+</fieldset>
 <TMPL_INCLUDE NAME="footer.tmpl">
