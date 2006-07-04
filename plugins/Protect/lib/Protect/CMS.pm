@@ -8,19 +8,14 @@
 package Protect::CMS;
 use strict;
 
-use vars qw( $DEBUG $VERSION @ISA $SCHEMA_VERSION );
-@ISA = qw(MT::App::CMS);
-$VERSION = '1.21';
-$SCHEMA_VERSION = 1.2;
+use vars qw( $DEBUG @ISA );
+@ISA = qw(MT::App);
 
 use MT::Util qw( format_ts offset_time_list );
 use MT::ConfigMgr;
-use MT::App::CMS;
+use MT::App;
 use MT;
 use MT::Permission;
-use Protect::Protect;
-use Protect::Groups;
-use JSON;
 
 sub init
 {
@@ -55,7 +50,9 @@ sub build_page {
     my($page, $param) = @_;
     $param->{plugin_name       } =  "Protect";
     $param->{blog_id           } = $q->param('blog_id');
-    $param->{plugin_version    } =  $VERSION;
+	$param->{system_overview_nav} = 1
+		if !$q->param('blog_id');
+    $param->{plugin_version    } =  $app->plugin->version;
     $param->{plugin_author     } =  "Arvind Satyanarayan";
     $param->{mtscript_url      } =  $app->{mtscript_url};
     $param->{script_full_url   } =  $app->base . $app->uri;
@@ -137,7 +134,7 @@ sub save {
 		my $blog = MT::Blog->load($blog_id);
 		post_save($app, $blog);
 		$app->redirect($app->uri.'?__more=edit&_type=blog&blog_id='.$blog_id.'&message='.$app->translate('Your changes have been saved'));
-    }elsif($type eq 'groups') {
+    } elsif($type eq 'groups') {
         my $id = $q->param('id');
         unless($data = Protect::Groups->load({ id   => $id })){
             $data = Protect::Groups->new;
@@ -156,38 +153,33 @@ sub save {
 sub tk_groups {
     my $app = shift;
     my $q = $app->{query};
+	require Protect::Groups;
     my $iter = Protect::Groups->load_iter;
     my (@data,@count,$param);
     my $i         = 0; # loop iteration counter
     my $n_entries = 0; # the number of entries displayed on this page
     my $count     = 0; # the total number of (unpaginated) entries 
-    while (my $entry = $iter->()) {
+    while (my $group = $iter->()) {
         $count++;
         $n_entries++;        
-                        my $row = {
-                                id => $entry->id,
-                                label => $entry->label,
-                                description => $entry->description,
-                                entry_odd    => $n_entries % 2 ? 1 : 0,
-    };
-    
-    my $users = $entry->data;
-      for my $user (@$users) {       
-          push @count, {user => $user};
-      }
-    	$row->{member_count} = scalar @count.' '.$app->translate('members');
-         push @data, $row;
-  }
-      $i = 0;
-    foreach my $e (@data) {
-        $e->{entry_odd} = ($i++ % 2 ? 0 : 1);
-    }
-  $param->{loop} = \@data;
-  $param->{empty} = !$n_entries;
-  $param->{typekey_groups} = 1;
-  $app->add_breadcrumb("MT Protect",$app->{mtscript_url}.'?__mode=list_plugins');
-  $app->add_breadcrumb("Protection Groups");
-  $app->build_page('tk_groups.tmpl',$param);
+        my $row = {
+                id => $group->id,
+                label => $group->label,
+                description => $group->description,
+				typekey_users => $group->typekey_users,
+				livejournal_users => $group->livejournal_users,
+				openid_users => $group->openid_users,
+                entry_odd    => $n_entries % 2 ? 1 : 0,
+				member_count => scalar split ',', join ',', $group->typekey_users,$group->livejournal_users,$group->openid_users
+	    };
+		push @data, $row;
+  	}
+	$param->{loop} = \@data;
+	$param->{empty} = !$n_entries;
+	$param->{typekey_groups} = 1;
+	$app->add_breadcrumb($app->plugin->translate('MT Protect'),$app->{mtscript_url}.'?__mode=list_plugins');
+	$app->add_breadcrumb($app->plugin->translate('Protection Groups'));
+	$app->build_page('tk_groups.tmpl',$param);
 }
 
 sub list_entries {
@@ -335,9 +327,10 @@ sub delete
     debug("Calling delete_entry...");
     my $app = shift;   
     my $q = $app->{query};
-                my $type = $q->param('_type');
+    my $type = $q->param('_type');
     if($type eq 'groups') {
         $q->param('message','Groups removed');
+		require Protect::Groups;
         foreach my $key ($q->param('id')) {
             my $data = Protect::Groups->load({ id    => $key });
             $data->remove or return $app->error("Error: " . $data->errstr);
@@ -359,31 +352,6 @@ sub delete
      list_entries($app);        
     }    
 }
-
-sub confirm_delete {
-    my $app = shift;
-    my $q = $app->{query};
-                my $type = $q->param('_type');    
-    my @entry_data;
-    my $param;
-    if($type eq 'groups') {
-    foreach my $id ($q->param('id')) {
-        my $data = Protect::Groups->load({ id    => $id });
-      my $row = {
-                id          => $id,
-                label   => $data->label,
-                description    => $data->description,
-        };
-       push @entry_data, $row;
-        }        
-    $app->add_breadcrumb("MT Protect",'mt-protect.cgi?__mode=global_config');
-        $app->add_breadcrumb("Typekey Groups",'mt-protect.cgi?__mode=tk_groups');        
-        $app->add_breadcrumb("Confirm Delete");
-    }
-    $param->{entry_loop} = \@entry_data;
-    $param->{type} = $q->param('_type');
-        $app->build_page('delete.tmpl', $param);   
-}   
 
 sub _edit_entry {
 	my($eh, $app, $tmpl) = @_;
@@ -410,7 +378,7 @@ HTML
 	$old = quotemeta($old);
 	$new = <<HTML;
 
-<div class="field">
+<div class="field" id="protect">
 <div class="field-header">
 <label for="text_more"><MT_TRANS phrase="Protect Entry"></label>
 </div>
@@ -446,6 +414,40 @@ HTML
 	$old = quotemeta($old);
 	$new = qq{<input accesskey="s" type="submit" value="<MT_TRANS phrase="Save">" title="<MT_TRANS phrase="Save this category (s)">" onclick="submitForm(this.form)" />};
 	$$tmpl =~ s/$old/$new/;
+}
+
+sub _list_entry {
+	my($eh, $app, $tmpl) = @_;
+	my($old, $new);
+	my $plugin = MT::Plugin::Protect->instance;
+	# $old = qq{<th id="en-title"><MT_TRANS phrase="Title"></th>};
+	# $old = quotemeta($old);
+	# $new = qq{<TMPL_UNLESS NAME=IS_POWER_EDIT><th id="en-protected">&nbsp;</th></TMPL_UNLESS>};
+	# $$tmpl =~ s/($old)/\n$new\n$1\n/;
+	
+	$old = qq{<TMPL_VAR NAME=TITLE_LONG>};
+	$old = quotemeta($old);
+	$new = qq{<TMPL_UNLESS NAME=IS_POWER_EDIT><TMPL_IF NAME=ENTRY_PROTECTED><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/protected.gif" alt="<MT_TRANS phrase="Entry Protected">"  /></a><TMPL_ELSE>&nbsp;</TMPL_IF></TMPL_UNLESS>};
+	$$tmpl =~ s/($old)/$1\n$new\n/;	
+	
+	$old = qq{<TMPL_VAR NAME=TITLE_SHORT>};
+	$old = quotemeta($old);
+	$new = qq{<TMPL_UNLESS NAME=IS_POWER_EDIT><TMPL_IF NAME=ENTRY_PROTECTED></a>&nbsp;&nbsp;<a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=view&amp;_type=entry&amp;id=<TMPL_VAR NAME=ID>&amp;blog_id=<TMPL_VAR NAME=BLOG_ID>#protect"><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/protected.gif" alt="<MT_TRANS phrase="Entry Protected">"  /><TMPL_ELSE>&nbsp;</TMPL_IF></TMPL_UNLESS>};
+	$$tmpl =~ s/($old)/$1\n$new\n/;	
+}
+
+sub _list_entry_param {
+	my($eh, $app, $param, $tmpl) = @_;
+	my $blog_id = $app->param('blog_id');
+	my $entries = $param->{entry_table}[0]{object_loop};
+	require Protect::Object;
+	foreach my $entry (@$entries) {
+		my $data = Protect::Object->load({ blog_id => $blog_id, object_id => $entry->{id}, object_datasource => 'entry' });
+		if($data && ($data->password || $data->typekey_users || $data->livejournal_users || $data->openid_usres)) {
+			$entry->{entry_protected} = 1;
+		}
+	}
+	
 }
 
 sub _param {
@@ -491,6 +493,7 @@ sub post_save {
 	my $blog_id = $q->param('blog_id');
 	return
 		if (!$q->param('protect_beacon'));
+	my @protections = $q->param('protection');
 	require Protect::Object;
 	unless($data = Protect::Object->load({ blog_id => $blog_id, object_id   => $obj->id, object_datasource => $obj->datasource })){
 		$data = Protect::Object->new;
@@ -498,10 +501,10 @@ sub post_save {
 		$data->object_id($obj->id);
 		$data->object_datasource($obj->datasource);
 	}
-	$data->password($q->param('password'));
-	$data->typekey_users($q->param('typekey_users'));
-	$data->livejournal_users($q->param('livejournal_users'));
-	$data->openid_users($q->param('openid_users'));
+	in_array('Password', @protections) ? $data->password($q->param('password')) : $data->password('');
+	in_array('Typekey', @protections) ? $data->typekey_users($q->param('typekey_users')) : $data->typekey_users('');
+	in_array('LiveJournal', @protections) ? $data->livejournal_users($q->param('livejournal_users')) : $data->livejournal_users('');
+	in_array('OpenID', @protections) ? $data->openid_users($q->param('openid_users')) : $data->openid_users('');
 	$data->save or
 		die $data->errstr; 
 }
@@ -510,41 +513,26 @@ sub post_save {
 # UTILITY SUBROUTINES
 #####################################################################
 
-sub _load_link {
-    my $link = shift;
-    require LWP::UserAgent;
-    my $ua = LWP::UserAgent->new;
-    my $req = HTTP::Request->new ( GET => $link );
-    $ua->timeout (15);
-    $ua->agent( "MTBlogroll/$VERSION" );
-    my $result = $ua->request( $req );
-    return '' unless $result->is_success;
-    return $result->content;
-}
-
 sub debug {
     my $err = shift;
     my $mark = shift || '>';
     print STDERR "$mark $err\n" if $DEBUG;
 }
 
-#sub brpath {
-#    
-#    my $app = shift;
-#    return $app->{__brpath} if exists $app->{__brpath};
-#    my $brpath = File::Spec->catdir($app->path,'plugins','Protect');
-#    $app->{__brpath} = $brpath;
-#    
-#}
-#
 sub uri { my $app = shift; $app->app_path . $app->script; }
-#
-#sub brscript {
-#    return 'mt-protect.cgi';
-#}
 
 sub plugin {
 	return MT::Plugin::Protect->instance;
+}
+
+sub in_array() {
+    my $val = shift(@_);
+    foreach my $elem (@_) {
+        if($val eq $elem) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 1; 

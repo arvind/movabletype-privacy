@@ -99,7 +99,7 @@ function submitForm(f, mode) {
     </div>
 </div>		
 		
-<h4><label class="protect-header-label"><input <TMPL_IF NAME=IS_OPENID>checked="checked"</TMPL_IF> type="checkbox" name="openid_protection" value="OpenID" onclick="toggleProtectPrefs(this,'openid_prefs'); return true"> <MT_TRANS phrase="OpenID Protection"></label></h4>
+<h4><label class="protect-header-label"><input <TMPL_IF NAME=IS_OPENID>checked="checked"</TMPL_IF> type="checkbox" name="protection" value="OpenID" onclick="toggleProtectPrefs(this,'openid_prefs'); return true"> <MT_TRANS phrase="OpenID Protection"></label></h4>
 		
 <div id="openid_prefs" class="setting" style="display: <TMPL_IF NAME=IS_OPENID>block<TMPL_ELSE>none</TMPL_IF>;">
     <div class="label">

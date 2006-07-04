@@ -21,6 +21,7 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 	doc_link        => "http://plugins.movalog.com/protect/manual",
 	schema_version  => $SCHEMA_VERSION,
 	object_classes  => [ 'Protect::Groups', 'Protect::Object' ],
+	l10n_class 	    => 'Protect::L10N',
     app_action_links => {
         'MT::App::CMS' => {
             'list_entries' => {
@@ -67,6 +68,8 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		'MT::App::CMS::AppTemplateSource.edit_category' => sub { require Protect::CMS; Protect::CMS::_edit_category(@_); },
 		'MT::App::CMS::AppTemplateParam.edit_category' => sub { require Protect::CMS; Protect::CMS::_param(@_, 'category'); },
 		'MT::Category::post_save' => sub { require Protect::CMS; Protect::CMS::post_save(@_); },
+		'MT::App::CMS::AppTemplateSource.entry_table' => sub { require Protect::CMS; Protect::CMS::_list_entry(@_); },
+		'MT::App::CMS::AppTemplateParam.list_entry' => sub { require Protect::CMS; Protect::CMS::_list_entry_param(@_); },
 		'Protect::CMS::AppTemplateParam.edit' => sub { require Protect::CMS; Protect::CMS::_param(@_, 'blog'); }
 	},
 	container_tags => {
@@ -82,6 +85,10 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 # Allows external access to plugin object: MT::Plugin::Protect->instance
 sub instance {
 	$plugin;
+}
+
+sub version {
+	$VERSION;
 }
 
 sub include {
@@ -436,15 +443,6 @@ sub blog_protected {
 # EOT
 # } 
 # 
-sub tkgroup {
-    my $plugin = shift;
-    my ($app) = @_;
-	
-	my $q = $app->{query};
-	my $author_ids = join ',', $q->param('id');
-	$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=groups&author_id='. $author_ids);
-}
-
 
 
 1;

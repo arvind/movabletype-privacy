@@ -1,52 +1,12 @@
 <TMPL_INCLUDE name="header.tmpl">
 <script type="text/javascript">
 <!--
-function enableFilterButton() {
-    getByID("filter-button").style.display = "inline";
-}
-function toggleFilter() {
-    var filterActive = getByID("filter-active");
-    if (filterActive.style.display == "none") {
-        filterActive.style.display = "block";
-        getByID("filter-select").style.display = "none";
-    } else {
-        filterActive.style.display = "none";
-        getByID("filter-select").style.display = "block";
-    }
-}
-
-function setFilterCol(choice) {
-    getByID('filter-select').className = "filter-" + choice;
-    if (choice == 'none')
-        getByID('filter-mode').selectedIndex = 0;
-    else {
-        getByID('filter-mode').selectedIndex = 1;
-        var fld = getByID('filter-col');
-        if (choice == 'status')
-            fld.selectedIndex = 0;
-        else if (choice == 'category_id')
-            fld.selectedIndex = 1;
-        else if (choice == 'author_id')
-            fld.selectedIndex = 2;
-        col_span = getByID("filter-text-col");
-        if (fld.selectedIndex > -1 && col_span)
-            col_span.innerHTML = '<strong>' +
-                fld.options[fld.selectedIndex].text + '</strong>';
-    }
-}
-
 var tableSelect;
 function init()
 {
-<TMPL_UNLESS NAME=IS_POWER_EDIT>
 	// setup
 	tableSelect = new TC.TableSelect( "selector" );
 	tableSelect.rowSelect = true;
-</TMPL_UNLESS>
-
-	setFilterCol(<TMPL_IF NAME=FILTER>'<TMPL_VAR NAME=FILTER>'<TMPL_ELSE>'none'</TMPL_IF>);<TMPL_IF NAME=FILTER>
-	setFilterVal('<TMPL_VAR NAME=FILTER_VAL>');
-</TMPL_IF>
 }
 
 TC.attachLoadEvent( init );
@@ -59,11 +19,11 @@ TC.attachLoadEvent( init );
 <p class="message"><TMPL_VAR NAME=MESSAGE></p>
 </TMPL_IF>
 
-<p class="page-desc"><MT_TRANS phrase="Protection Groups are a way for you to quickly assign permissions. They save you time so that you don't have to keep entering the same user names over and over again"></p>
+<p class="page-desc"><MT_TRANS phrase="Protection Groups allow you to define sets of any number of people who often garner the same permissions. The protection group -- and hence all of the people in it -- can be granted access to an entry as easily as one person. For all intents and purposes, protection groups are like email aliases in that you only send an email to only one address and yet many can receive it"></p>
 
 <div class="tabs">
 <ul>
-<li class="yah"><a href="?__mode=tk_groups"><MT_TRANS phrase="Protection Groups"></a></li>
+<li class="yah"><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=tk_groups"><MT_TRANS phrase="Protection Groups"></a></li>
 <li class="special">
 <img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="Create New Entry">" width="9" height="9" />
 <a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=groups&add=1"><MT_TRANS phrase="Create New Group"></a>
@@ -88,7 +48,6 @@ TC.attachLoadEvent( init );
     <th class="cb"><input type="checkbox" name="id-head" value="all" class="select" /></th>
         <th><MT_TRANS phrase="Name"></th>
         <th><MT_TRANS phrase="Description"></th>
-        <th><MT_TRANS phrase="Type"></th>
         <th><MT_TRANS phrase="Members"></th>
     </tr>
 </thead>   
@@ -99,8 +58,7 @@ TC.attachLoadEvent( init );
     <td class="cb"><input type="checkbox" name="id" value="<TMPL_VAR NAME=ID>" class="select" /></td>
         <td><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=groups&id=<TMPL_VAR NAME=ID>&edit=1"><TMPL_VAR NAME=LABEL></a></td>
         <td><TMPL_VAR NAME=DESCRIPTION></td>  
-        <td><TMPL_VAR NAME=TYPE></td>  
-        <td><TMPL_VAR NAME=MEMBER_COUNT></a></td>                   
+        <td><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&_type=groups&id=<TMPL_VAR NAME=ID>&edit=1"><TMPL_VAR NAME=MEMBER_COUNT> <MT_TRANS phrase="members"></a></td>                   
         
     </tr>
 
