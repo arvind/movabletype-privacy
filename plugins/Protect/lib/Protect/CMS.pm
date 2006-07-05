@@ -468,21 +468,23 @@ sub _param {
     }
 	require Protect::Object;
 	my $data = Protect::Object->load({ blog_id => $blog_id, object_id => $obj_id, object_datasource => $datasource });
-	$param->{is_password} = $data->password;
-	$param->{is_typekey} = $data->typekey_users;
-	$param->{is_livejournal} = $data->livejournal_users;
-	$param->{is_openid} = $data->openid_users;
-	my(@typekey_users, @livejournal_users, @openid_users);
-	push @typekey_users, {'tk_user' => $_ }
-		foreach split /,/, $data->typekey_users;
-	push @livejournal_users, {'lj_user' => $_ }
-		foreach split /,/, $data->livejournal_users;	
-	push @openid_users, {'oi_user' => $_ }
-		foreach split /,/, $data->openid_users;	
-	$param->{password} = $data->password;	
-	$param->{typekey_users} = \@typekey_users;
-	$param->{livejournal_users} = \@livejournal_users;
-	$param->{openid_users} = \@openid_users;
+	if($data) {
+		$param->{is_password} = $data->password;
+		$param->{is_typekey} = $data->typekey_users;
+		$param->{is_livejournal} = $data->livejournal_users;
+		$param->{is_openid} = $data->openid_users;
+		my(@typekey_users, @livejournal_users, @openid_users);
+		push @typekey_users, {'tk_user' => $_ }
+			foreach split /,/, $data->typekey_users;
+		push @livejournal_users, {'lj_user' => $_ }
+			foreach split /,/, $data->livejournal_users;	
+		push @openid_users, {'oi_user' => $_ }
+			foreach split /,/, $data->openid_users;	
+		$param->{password} = $data->password;	
+		$param->{typekey_users} = \@typekey_users;
+		$param->{livejournal_users} = \@livejournal_users;
+		$param->{openid_users} = \@openid_users;
+	}
 }
 
 sub post_save {
@@ -493,18 +495,35 @@ sub post_save {
 	my $blog_id = $q->param('blog_id');
 	return
 		if (!$q->param('protect_beacon'));
+		
 	my @protections = $q->param('protection');
+	my $password = 	in_array('Password', @protections) ? $q->param('password') : '';
+	my $typekey_users = in_array('Typekey', @protections) ? $q->param('typekey_users') : '';
+	my $livejournal_users = in_array('LiveJournal', @protections) ? $q->param('livejournal_users') : '';
+	my $openid_users = in_array('OpenID', @protections) ? $q->param('openid_users') : '';
+	
 	require Protect::Object;
 	unless($data = Protect::Object->load({ blog_id => $blog_id, object_id   => $obj->id, object_datasource => $obj->datasource })){
 		$data = Protect::Object->new;
 		$data->blog_id($blog_id);
 		$data->object_id($obj->id);
 		$data->object_datasource($obj->datasource);
+		if(ref($obj) eq 'MT::Entry' && $obj->category){
+			my $category = $obj->category;
+			my $category_protection = Protect::Object->load({ blog_id => $blog_id, object_id => $category->id, object_datasource=> $category->datasource});
+			if($category_protection) {
+				$password = $category_protection->password if !$password;
+				$typekey_users = $typekey_users ? join ',', $typekey_users, $category_protection->typekey_users : $category_protection->typekey_users;
+				$livejournal_users = $livejournal_users ? join ',', $livejournal_users, $category_protection->livejournal_users : $category_protection->livejournal_users;
+				$openid_users = $openid_users ? join ',', $openid_users, $category_protection->openid_users : $category_protection->openid_users;
+			}
+		}
 	}
-	in_array('Password', @protections) ? $data->password($q->param('password')) : $data->password('');
-	in_array('Typekey', @protections) ? $data->typekey_users($q->param('typekey_users')) : $data->typekey_users('');
-	in_array('LiveJournal', @protections) ? $data->livejournal_users($q->param('livejournal_users')) : $data->livejournal_users('');
-	in_array('OpenID', @protections) ? $data->openid_users($q->param('openid_users')) : $data->openid_users('');
+	
+	$data->password($password);
+	$data->typekey_users($typekey_users);
+	$data->livejournal_users($livejournal_users);
+	$data->openid_users($openid_users);	
 	$data->save or
 		die $data->errstr; 
 }
