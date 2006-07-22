@@ -7,12 +7,13 @@ use MT::Object;
 @Protect::Groups::ISA = qw( MT::Object );
 __PACKAGE__->install_properties({
     column_defs => {
-        'id' => 'integer not null auto_increment',
-        'label' => 'string(100) not null', 
-        'description' => 'text',
+    'id' => 'integer not null auto_increment',
+    'label' => 'string(100) not null', 
+    'description' => 'text',
 		'typekey_users' => 'text',
 		'livejournal_users' => 'text',
-		'openid_users' => 'text'		
+		'openid_users' => 'text',
+		'data' => 'blob'		
     },
     indexes => {
         id => 1,

@@ -62,15 +62,15 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		}
 	},
 	callbacks => {
-		'MT::App::CMS::AppTemplateSource.edit_entry' => sub { require Protect::CMS; Protect::CMS::_edit_entry(@_); },
-		'MT::App::CMS::AppTemplateParam.edit_entry'  => sub { require Protect::CMS; Protect::CMS::_param(@_, 'entry'); },
-		'MT::Entry::post_save' => sub { require Protect::CMS; Protect::CMS::post_save(@_); },
-		'MT::App::CMS::AppTemplateSource.edit_category' => sub { require Protect::CMS; Protect::CMS::_edit_category(@_); },
-		'MT::App::CMS::AppTemplateParam.edit_category' => sub { require Protect::CMS; Protect::CMS::_param(@_, 'category'); },
-		'MT::Category::post_save' => sub { require Protect::CMS; Protect::CMS::post_save(@_); },
-		'MT::App::CMS::AppTemplateSource.entry_table' => sub { require Protect::CMS; Protect::CMS::_list_entry(@_); },
-		'MT::App::CMS::AppTemplateParam.list_entry' => sub { require Protect::CMS; Protect::CMS::_list_entry_param(@_); },
-		'Protect::CMS::AppTemplateParam.edit' => sub { require Protect::CMS; Protect::CMS::_param(@_, 'blog'); }
+		'MT::App::CMS::AppTemplateSource.edit_entry' => sub { require Protect::Transformer; Protect::Transformer::_edit_entry(@_); },
+		'MT::App::CMS::AppTemplateParam.edit_entry'  => sub { require Protect::Transformer; Protect::Transformer::_param(@_, 'entry'); },
+		'MT::Entry::post_save' => sub { require Protect::Transformer; Protect::Transformer::post_save(@_); },
+		'MT::App::CMS::AppTemplateSource.edit_category' => sub { require Protect::Transformer; Protect::Transformer::_edit_category(@_); },
+		'MT::App::CMS::AppTemplateParam.edit_category' => sub { require Protect::Transformer; Protect::Transformer::_param(@_, 'category'); },
+		'MT::Category::post_save' => sub { require Protect::Transformer; Protect::Transformer::post_save(@_); },
+		'MT::App::CMS::AppTemplateSource.entry_table' => sub { require Protect::Transformer; Protect::Transformer::_list_entry(@_); },
+		'MT::App::CMS::AppTemplateParam.list_entry' => sub { require Protect::Transformer; Protect::Transformer::_list_entry_param(@_); },
+		'Protect::CMS::AppTemplateParam.edit' => sub { require Protect::Transformer; Protect::Transformer::_param(@_, 'blog'); }
 	},
 	container_tags => {
 		'EntryProtect'	=> \&protected,
