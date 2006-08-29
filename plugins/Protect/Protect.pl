@@ -98,6 +98,8 @@ sub version {
 }
 
 sub init {
+	my $plugin = shift;
+	$plugin->SUPER::init(@_);
 	MT->config->PluginSchemaVersion({})
 	unless MT->config->PluginSchemaVersion;
 }
