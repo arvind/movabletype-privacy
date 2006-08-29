@@ -30,10 +30,10 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 	l10n_class 	    => 'Protect::L10N',
     app_action_links => {
         'MT::App::CMS' => {
-            'list_entries' => {
-                link => 'mt-protect.cgi?__mode=list_entries',
-                link_text => 'List Protected Entries'
-            },
+#            'list_entries' => {
+#                link => 'mt-protect.cgi?__mode=list_entries',
+#                link_text => 'List Protected Entries'
+#            },
             'list_commenters' => {
                 link => 'mt-protect.cgi?__mode=tk_groups',
                 link_text => 'List Protection Groups'

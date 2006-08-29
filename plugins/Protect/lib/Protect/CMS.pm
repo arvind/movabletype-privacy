@@ -372,14 +372,5 @@ sub plugin {
 	return MT::Plugin::Protect->instance;
 }
 
-sub in_array() {
-    my $val = shift(@_);
-    foreach my $elem (@_) {
-        if($val eq $elem) {
-            return 1;
-        }
-    }
-    return 0;
-}
 
 1;

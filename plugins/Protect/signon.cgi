@@ -131,50 +131,42 @@ sub verify {
     my $q = $app->{query};
 	my $plugin = MT::Plugin::Protect->instance;
 	my $type = $q->param('_type');
+	my $obj_type = $q->param('obj_type');
+	my $obj_id = $q->param('id');
 	require MT::Blog;
 	my $blog = MT::Blog->load($q->param('blog_id'));
-	my $url = $blog->site_url;
-    $url .= '/' unless $url =~ m!/$!;
 	my $entry;
 	my $allow = 0;
 	require Protect::Object;
-    my $obj = Protect::Object->load({ blog_id => $blog->id, object_datasource => $q->param('obj_type'), object_id => $q->param('id') })
-        or return $app->error('Invalid '.$q->param('obj_type').' id '. $q->param('id') .' in verification');
-	my $rand = $plugin->get_config_value('rand');
-	if(!$rand) {
-		$rand = $app->_rand;
-		$plugin->set_config_value('rand', $rand);
-	}
+    my $obj = Protect::Object->load({ blog_id => $blog->id, object_datasource => $obj_type, object_id => $obj_id })
+        or return $app->error('Invalid '.$obj_type.' id '. $obj_id .' in verification');
 	if($type eq 'password') {
 		if($q->param('password') eq $obj->password) {
 			$allow = 1;
 		}
 	} else {
 	    my $csr = $app->_get_csr;
-
 	    if(my $setup_url = $csr->user_setup_url( post_grant => 'return' )) {
 	        return $app->redirect($setup_url);
 	    } elsif(my $vident = $csr->verified_identity) {
 			my $profile = $app->_get_profile_data($vident, $blog->id);
 			if($type eq 'typekey') {
-				my @typekey = $obj->typekey_users;
+				my @typekey = split /,/, $obj->typekey_users;
 				if(in_array($profile->{nickname}, @typekey)) {
 					$allow = 1;
 				}
 			} elsif($type eq 'livejournal') {
-				my @livejournal = $obj->livejournal_users;
+				my @livejournal = split /,/, $obj->livejournal_users;
 				if(in_array($profile->{nickname}, @livejournal)) {
 					$allow = 1;
 				}				
 			} elsif($type eq 'openid') {
-				my @openid = $obj->openid_users;
+				my @openid = split /,/, $obj->openid_users;
 				if(in_array($vident->url, @openid)) {
 					$allow = 1;
 				}				
-			}
-	        
-       
-	          ## TODO: fake email to circumvent requirement
+			}   
+         ## TODO: fake email to circumvent requirement
 	        #$app->_make_commenter_session($session_id, '', $author->name, $profile->{nickname});
 	    } elsif($q->param('openid.mode') eq 'cancel') {
 	        ## Cancelled!
@@ -182,8 +174,35 @@ sub verify {
 	    }
 	}
 	if($allow) {
-		die 'Yes';
+		## Now issue the cookie, we'll check the domains of this script and the bog
+		## If they match, let the script issue the cookie - more secure
+		## Else redirect to the php script which will issue the cookie
 		
+		my ($cgihost, $bloghost);
+    my $path = MT::ConfigMgr->instance->CGIPath;
+    $path .= '/' unless $path =~ m!/$!;
+    if ($path =~ m!^https?://([^/:]+)(:\d+)?/!) {
+        $cgihost = $_[1]->{exclude_port} ? $1 : $1 . ($2 || '');
+    }
+    $path = $blog->site_url;
+    if ($path =~ m!^https?://([^/:]+)(:\d+)?/!) {
+        $bloghost = $_[1]->{exclude_port} ? $1 : $1 . ($2 || '');
+    } 
+    
+    if($cgihost eq $bloghost) {
+			$app->bake_cookie(
+				-name => $obj_type.$obj_id, 
+				-value => 1,
+			  -expires => '+1d'
+			);
+			return 'Yes';		    	
+    } else {
+			my $rand = $app->_rand;
+			$plugin->set_config_value('rand', $rand);   	
+			my $url = $blog->site_url;
+		  $url .= '/' unless $url =~ m!/$!;
+		  $app->redirect($url.'mt-protect.php?rand='.$rand.'&obj_type='.$obj_type.'&obj_id='.$obj_id.'&blog_id='.$blog->id);
+    }           				
 	}
     return $app->error("Error");
 }
