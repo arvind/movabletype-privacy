@@ -21,6 +21,12 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 	doc_link        => "http://plugins.movalog.com/protect/manual",
 	schema_version  => $SCHEMA_VERSION,
 	object_classes  => [ 'Protect::Groups', 'Protect::Object' ],
+	upgrade_functions => {
+        'convert_data' => {
+            version_limit => 2.0,   # runs for schema_version < 2.0
+            code => \&convert_data
+        }
+    },
 	l10n_class 	    => 'Protect::L10N',
     app_action_links => {
         'MT::App::CMS' => {
@@ -89,6 +95,54 @@ sub instance {
 
 sub version {
 	$VERSION;
+}
+
+sub init {
+	MT->config->PluginSchemaVersion({})
+	unless MT->config->PluginSchemaVersion;
+}
+
+sub convert_data {
+	require Protect::Protect;
+	require Protect::Object;
+	require Protect::Groups;
+	my $objs_iter = Protect::Protect->load_iter();
+	while (my $orig_obj = $objs_iter->()) {
+		my $obj = Protect::Object->new;
+		$obj->blog_id($orig_obj->blog_id);
+		$obj->object_id($orig_obj->entry_id);
+		$obj->object_datasource('entry');
+		if(!$orig_obj->entry_id) {
+			$obj->object_datasource('blog');
+			$obj->object_id($orig_obj->blog_id);
+		}
+		if($orig_obj->type eq 'Password') {
+			$obj->password($orig_obj->data);
+		} else {
+			my $users = $orig_obj->data;
+			$users = join ',', @$users;
+			if($orig_obj->type eq 'Typekey') {
+				$obj->typekey_users($users);
+			} elsif($orig_obj->type eq 'OpenID') {
+				$obj->openid_users($users);
+			}
+		}
+		$obj->save or die $obj->errstr;
+		$orig_obj->remove or die $orig_obj->errstr;
+	}
+	
+	my $groups_iter = Protect::Groups->load_iter();
+	while (my $group = $groups_iter->()) {
+		my $users = $group->data;
+		$users = join ',', @$users;		
+		if($group->type eq 'Typekey') {
+			$group->typekey_users($users);
+		} elsif($group->type eq 'OpenID') {
+			$group->openid_users($users);
+		}
+		$group->type('');
+		$group->save or die $group->errstr;
+	}
 }
 
 sub include {

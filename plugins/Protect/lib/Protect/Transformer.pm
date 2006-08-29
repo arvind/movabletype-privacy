@@ -91,7 +91,7 @@ sub _list_entry_param {
 	require Protect::Object;
 	foreach my $entry (@$entries) {
 		my $data = Protect::Object->load({ blog_id => $blog_id, object_id => $entry->{id}, object_datasource => 'entry' });
-		if($data && ($data->password || $data->typekey_users || $data->livejournal_users || $data->openid_usres)) {
+		if($data && ($data->password || $data->typekey_users || $data->livejournal_users || $data->openid_users)) {
 			$entry->{entry_protected} = 1;
 		}
 	}
