@@ -177,24 +177,25 @@ sub post_save {
 		$data->blog_id($blog_id);
 		$data->object_id($obj->id);
 		$data->object_datasource($obj->datasource);
-		if(ref($obj) eq 'MT::Entry' && $obj->category){
-			my $category = $obj->category;
-			my $category_protection = Protect::Object->load({ blog_id => $blog_id, object_id => $category->id, object_datasource=> $category->datasource});
-			if($category_protection) {
-				$password = $category_protection->password if !$password;
-				$typekey_users = $typekey_users ? join ',', $typekey_users, $category_protection->typekey_users : $category_protection->typekey_users;
-				$livejournal_users = $livejournal_users ? join ',', $livejournal_users, $category_protection->livejournal_users : $category_protection->livejournal_users;
-				$openid_users = $openid_users ? join ',', $openid_users, $category_protection->openid_users : $category_protection->openid_users;
-			}
-		}
 	}
-	
+	if(ref($obj) eq 'MT::Entry' && $obj->category){
+		my $category = $obj->category;
+		my $category_protection = Protect::Object->load({ blog_id => $blog_id, object_id => $category->id, object_datasource=> $category->datasource});
+		if($category_protection) {
+			$password = $category_protection->password if !$password;
+			$typekey_users = $typekey_users ? join ',', $typekey_users, $category_protection->typekey_users : $category_protection->typekey_users;
+			$livejournal_users = $livejournal_users ? join ',', $livejournal_users, $category_protection->livejournal_users : $category_protection->livejournal_users;
+			$openid_users = $openid_users ? join ',', $openid_users, $category_protection->openid_users : $category_protection->openid_users;
+		}
+	}	
 	$data->password($password);
 	$data->typekey_users($typekey_users);
 	$data->livejournal_users($livejournal_users);
 	$data->openid_users($openid_users);	
-	$data->save or
-		die $data->errstr; 
+	if($password || $typekey_users || $livejournal_users || $openid_users) {
+		$data->save or
+			die $data->errstr; 
+	}
 }
 
 #####################################################################

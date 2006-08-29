@@ -1,27 +1,37 @@
 package Protect::Template::ContextHandlers;
 
 sub protect {
-	my ($ctx, $args, $cond) = @_;
+	my ($type, $ctx, $args, $cond) = @_;
 	my $plugin = MT::Plugin::Protect->instance;
 	my $blog_id = $ctx->stash('blog_id');
     my $builder = $ctx->stash ('builder');
     my $tokens = $ctx->stash ('tokens');
     defined (my $out = $builder->build ($ctx, $tokens, $cond))
-      or return $ctx->error ($ctx->errstr);
-	
-	my $obj = $ctx->stash('entry') || $ctx->stash('category') || $ctx->stash('blog');
+      or return $ctx->error ($builder->errstr);
 
-	return $ctx->error(MT->translate("The '[_1]' tag can only be used within the context of an entry, category or blog", 'MTProtect'))
+	my $obj = $ctx->stash('protect_obj');
+	if(!$obj) {
+		if($type eq 'category') {
+			$obj = $ctx->stash('category') || $ctx->stash('archive_category');
+		} else {
+			$obj = $ctx->stash($type);
+		}
+		$ctx->stash('protect_obj', $obj);
+	}
+	return $ctx->_no_protect_obj('MT'.$ctx->stash('tag'), $type)
 		if !$obj;
-	my $type = $obj->datasource;
-	
-	require Protect::Object;
-	my $protected = Protect::Object->load({ blog_id => $blog_id, object_datasource => $type, object_id => $obj->id });
+		
+	my $protected = $ctx->stash('protected_obj');
+	if(!$protected) {
+		require Protect::Object;
+		$protected = Protect::Object->load({ blog_id => $blog_id, object_datasource => $type, object_id => $obj->id });
+		$ctx->stash('protected_obj', $protected);
+	}
 	return $out if !$protected;
 	
 	my $protect_text = $plugin->get_config_value('protect_text', 'blog:'.$blog_id);
 	$tokens = $builder->compile($ctx, $protect_text)
-        or return $ctx->error($build->errstr);
+        or return $ctx->error($builder->errstr);
 	defined(my $protect_text_out = $builder->build($ctx, $tokens))
     	or die $builder->errstr;
 	my $text = "<?php\n";
@@ -34,18 +44,61 @@ sub protect {
 
 sub protect_obj_id {
 	my ($ctx) = @_;
-	my $obj = $ctx->stash('entry') || $ctx->stash('category') || $ctx->stash('blog');
-	return $ctx->error(MT->translate("The '[_1]' tag can only be used within the context of an entry, category or blog", 'MTProtectObjectID'))
+	my $obj = $ctx->stash('protect_obj');
+	return $ctx->_no_protect_obj('MTProtectObjectID')
 		if !$obj;	
 	return $obj->id;
 }
 
 sub protect_obj_type {
 	my ($ctx) = @_;	
-	my $obj = $ctx->stash('entry') || $ctx->stash('category') || $ctx->stash('blog');
-	return $ctx->error(MT->translate("The '[_1]' tag can only be used within the context of an entry, category or blog", 'MTProtect'))
+	my $obj = $ctx->stash('protect_obj');
+	return $ctx->_no_protect_obj('MTProtectObjectType')
 		if !$obj;	
 	return $obj->datasource;
+}
+
+sub is_password {
+	my ($ctx) = @_;
+	my $protected = $ctx->stash('protected_obj') or
+		return $ctx->_no_protected_obj('MTIfPasswordProtected');
+	return $protected->password;		
+}
+
+sub is_typekey {
+	my ($ctx) = @_;
+	my $protected = $ctx->stash('protected_obj') or
+		return $ctx->_no_protected_obj('MTIfPasswordProtected');
+	return $protected->typekey_users;		
+}
+
+sub is_livejournal {
+	my ($ctx) = @_;
+	my $protected = $ctx->stash('protected_obj') or
+		return $ctx->_no_protected_obj('MTIfPasswordProtected');
+	return $protected->livejournal_users;		
+}
+
+sub is_openid {
+	my ($ctx) = @_;
+	my $protected = $ctx->stash('protected_obj') or
+		return $ctx->_no_protected_obj('MTIfPasswordProtected');
+	return $protected->openid_users;		
+}
+
+package MT::Template::Context;
+
+sub _no_protect_obj {
+    return $_[0]->error(MT->translate(
+        "You used an '[_1]' tag outside of the context of an [_2]",
+        $_[1], $_[2]));	
+}
+
+sub _no_protected_obj {
+    return $_[0]->error(MT->translate(
+        "You used an '[_1]' tag outside of the context of a protected asset; " .
+        "perhaps you mistakenly placed it outside of an 'MTProtect' container?",
+        $_[1]));	
 }
 
 1;

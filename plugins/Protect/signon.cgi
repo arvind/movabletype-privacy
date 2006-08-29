@@ -180,7 +180,7 @@ sub verify {
 	        #$app->_make_commenter_session($session_id, '', $author->name, $profile->{nickname});
 	    } elsif($q->param('openid.mode') eq 'cancel') {
 	        ## Cancelled!
-	        return $app->redirect(referer());
+	        return $app->redirect($ENV{HTTP_REFERER});
 	    }
 	}
 	if($allow) {
@@ -206,13 +206,13 @@ sub verify {
 				-path => '/',
 			    -expires => '+1d'
 			);
-			return 'Yes';		    	
+			return $app->redirect($ENV{HTTP_REFERER});		    	
 	    } else {
 			my $rand = $app->_rand;
 			$plugin->set_config_value('rand', $rand);   	
 			my $url = $blog->site_url;
 			$url .= '/' unless $url =~ m!/$!;
-			$app->redirect($url.'mt-protect.php?rand='.$rand.'&obj_type='.$obj_type.'&obj_id='.$obj_id.'&blog_id='.$blog->id);
+			return $app->redirect($url.'mt-protect.php?rand='.$rand.'&obj_type='.$obj_type.'&obj_id='.$obj_id.'&blog_id='.$blog->id);
 	    }           				
 	}
     return $app->error($app->translate('Sorry you do not have'));
