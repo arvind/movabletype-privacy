@@ -1,12 +1,5 @@
-<TMPL_INCLUDE name="header_global.tmpl">
-<TMPL_IF NAME=CBLOG>
-<p class="message"><MT_TRANS phrase="Protection was"> <TMPL_IF NAME=INSTALLED><i><MT_TRANS phrase="installed"></i></TMPL_IF><TMPL_IF NAME=UNINSTALLED><i><MT_TRANS phrase="uninstalled"></i></TMPL_IF> <MT_TRANS phrase="from"> <TMPL_VAR NAME=CBLOG></p>
-</TMPL_IF>
- <p><MT_TRANS phrase="Listed below are each of the blogs that you have installed on your system.  Following the blog name is the status of protections for that blog.  After the status of the blog is a link that will perform the opposite function for you.  For instance, if protection is disabled, you will see a link that will enable it for you.  Likewise, if protection is enabled, you will instead see the option to disable it."></p>
- <ul style="list-style-type: none;">
- <TMPL_LOOP NAME=BLOG_LOOP>
-     <li><p><a href="<TMPL_VAR NAME=MTSCRIPT_URL>?__mode=menu&blog_id=<TMPL_VAR NAME=BLOG_ID>" style="text-decoration: none;"><TMPL_VAR NAME=BLOG_NAME></a><br /><MT_TRANS phrase="Protection is"> <TMPL_IF NAME=BLOG_INSTALLED><MT_TRANS phrase="Enabled:"> <a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=install&_type=uninstall&cblog_id=<TMPL_VAR NAME=BLOG_ID>" style="text-decoration: none;"><MT_TRANS phrase="Disable"></a><TMPL_ELSE><MT_TRANS phrase="Disabled:"> <a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=install&_type=install&cblog_id=<TMPL_VAR NAME=BLOG_ID>" style="text-decoration: none;"><MT_TRANS phrase="Enable"></a></TMPL_IF></p></li>
- </TMPL_LOOP>
- </ul>
+<p><MT_TRANS phrase="The following will be displayed when an asset is protected"></p>
 
-<TMPL_INCLUDE name="footer_global.tmpl">
+<div class="setting">
+<textarea name="protect_text" id="protect_text" rows="10" cols="60"><TMPL_VAR NAME=PROTECT_TEXT ESCAPE=HTML></textarea>
+</div>

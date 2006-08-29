@@ -79,13 +79,101 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		'Protect::CMS::AppTemplateParam.edit' => sub { require Protect::Transformer; Protect::Transformer::_param(@_, 'blog'); }
 	},
 	container_tags => {
-		'EntryProtect'	=> \&protected,
-		'BlogProtect'	=> \&blog_protected,
+		# 'EntryProtect'	=> \&protected,
+		# 'BlogProtect'	=> \&blog_protected,
+		'Protect'		=> sub { require Protect::Template::ContextHandlers; Protect::Template::ContextHandlers::protect(@_);},
 		'IfProtected'	=> \&ifprotected
 	},
 	template_tags => {
-		'ProtectInclude' => \&include
+		'ProtectObjectID' => sub { require Protect::Template::ContextHandlers; Protect::Template::ContextHandlers::protect_obj_id(@_);},
+		'ProtectObjectType' => sub { require Protect::Template::ContextHandlers; Protect::Template::ContextHandlers::protect_obj_type(@_);}
+	},
+    settings => new MT::PluginSettings([
+        ['protect_text', { Default => q{<MTIgnore>
+#### Javascript to toggle the display of the various protection types
+</MTIgnore>
+<script type="text/javascript">
+<!--
+	function toggleProtect(type, id) {
+		var types = new Array('password', 'typekey', 'livejournal', 'openid');
+		for (var i = 0; i < types.length; i++) {
+			var el = document.getElementById(types[i] + '-' + id + '-protect');
+			if(el) el.style.display = 'none';
+		}
+		var el = document.getElementById(type + '-' + id + '-protect');
+		if(el) el.style.display = 'block';
 	}
+//-->
+</script>
+<p>This <MTProtectObjectType> has been protected</p>
+<p>
+	<MTIfPasswordProtected>
+		<a href="#" onclick="toggleProtect('password', '<MTProtectObjectID>');"><img src="<MTStaticWebPath>plugins/Protect/images/button-password.gif" alt="Enter Password" /></a>
+	</MTIfPasswordProtected>
+	
+	<MTIfTypekeyProtected>
+		<a href="#" onclick="toggleProtect('typekey', '<MTProtectObjectID>');"><img src="<MTStaticWebPath>plugins/Protect/images/button-typekey.gif" alt="Login via Typekey" /></a>
+	</MTIfTypekeyProtected>
+	
+	<MTIfLiveJournalProtected>
+		<a href="#" onclick="toggleProtect('livejournal', '<MTProtectObjectID>');"><img src="<MTStaticWebPath>plugins/Protect/images/button-livejournal.gif" alt="Login via LiveJournal" /></a>
+	</MTIfLiveJournalProtected>
+	
+	<MTIfOpenIDProtected>
+		<a href="#" onclick="toggleProtect('openid', '<MTProtectObjectID>');"><img src="<MTStaticWebPath>plugins/Protect/images/button-openid.gif" alt="Login via OpenID" /></a>
+	</MTIfOpenIDProtected>
+</p>
+
+<form action="<MTCGIPath>plugins/Protect/signon.cgi" method="post" id="password-protect">
+	<input type="hidden" name="__mode" value="verify" />
+	<input type="hidden" name="blog_id" value="<MTBlogID>" />
+	<input type="hidden" name="id" value="<MTProtectObjectID>" />
+	<input type="hidden" name="_type" value="<MTProtectObjectType>" />
+	
+	<MTIfPasswordProtected>
+		<div id="password-<MTProtectObjectID>-protect" style="display:none;">
+			<p>This <MTProtectObjectType> has been password protected. Enter the password below to view the <MTProtectObjectType>:</p>
+			<p>
+				<label>Password: <input type="text" name="password" value="" /></label> 
+				<input type="submit" name="submit" value="Submit" id="submit" />
+			</p>
+		</div>
+	</MTIfPasswordProtected>
+	
+	<MTIfTypekeyProtected>
+		<div id="typekey-<MTProtectObjectID>-protect" style="display:none;">
+			<p>This <MTProtectObjectType> has been Typekey protected. Enter your Typekey username below to view the <MTProtectObjectType>:</p>
+			<p>
+				<label>Typekey Username: <input type="text" name="tk_user" value="" style="background: white url(<MTStaticWebPath>plugins/Protect/images/input-typekey.gif) no-repeat; padding-left: 22px;" /></label> 
+				<input type="submit" name="submit" value="Submit" id="submit" />
+			</p>
+		</div>
+	</MTIfTypekeyProtected>
+	
+	<MTIfLiveJournalProtected>
+		<div id="livejournal-<MTProtectObjectID>-protect" style="display:none;">
+			<p>This <MTProtectObjectType> has been LiveJournal protected. Enter your LiveJournal username below to view the <MTProtectObjectType>:</p>
+			<p>
+				<label>LiveJournal Username: <input type="text" name="lj_user" value="" style="background: white url(<MTStaticWebPath>plugins/Protect/images/input-livejournal.gif) no-repeat; padding-left: 22px;" /></label> 
+				<input type="submit" name="submit" value="Submit" id="submit" />
+			</p>
+		</div>
+	</MTIfLiveJournalProtected>	
+	
+	<MTIfOpenIDProtected>
+		<div id="openid-<MTProtectObjectID>-protect" style="display:none;">
+			<p>This <MTProtectObjectType> has been OpenID protected. Enter your OpenID URL below to view the <MTProtectObjectType>:</p>
+			<p>
+				<label>OpenID Username: <input type="text" name="openid_url" value="" style="background: white url(<MTStaticWebPath>plugins/Protect/images/input-openid.gif) no-repeat; padding-left: 22px;" /></label> 
+				<input type="submit" name="submit" value="Submit" id="submit" />
+			</p>
+		</div>
+	</MTIfOpenIDProtected>	
+	
+</form>
+} }]
+    ]),
+	config_template => 'config.tmpl'
 }));
 
 # Allows external access to plugin object: MT::Plugin::Protect->instance
@@ -102,6 +190,22 @@ sub init {
 	$plugin->SUPER::init(@_);
 	MT->config->PluginSchemaVersion({})
 	unless MT->config->PluginSchemaVersion;
+}
+
+sub apply_default_settings {
+  my ($plugin, $data, $scope_id) = @_;
+  if ($scope_id eq 'system') {
+    return $plugin->SUPER::apply_default_settings($data, $scope_id);
+  } else {
+    my $sys;
+    for my $setting (@{$plugin->{'settings'}}) {
+      my $key = $setting->[0];
+      next if exists($data->{$key});
+        # don't load system settings unless we need to
+      $sys ||= $plugin->get_config_obj('system')->data;
+      $data->{$key} = $sys->{$key};
+    }
+  }
 }
 
 sub convert_data {

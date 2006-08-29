@@ -470,7 +470,6 @@ sub verified_identity {
 
         my $ua  = $self->ua;
         my $res = $ua->request($req);
-
         # uh, some failure, let's go into dumb mode?
         return $self->_fail("naive_verify_failed_network") unless $res && $res->is_success;
 
