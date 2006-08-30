@@ -198,6 +198,18 @@ sub post_save {
 	}
 }
 
+sub _header {
+	my ($eh, $app, $tmpl) = @_;
+	my $plugin = MT::Plugin::Protect->instance;
+	my $link = $app->base.$app->path.$plugin->envelope.'/mt-protect.cgi';
+	my $old = q{<li><a<TMPL_IF NAME=NAV_AUTHORS> class="here"</TMPL_IF> id="nav-authors" title="<MT_TRANS phrase="List Authors">" href="<TMPL_VAR NAME=MT_URL>?__mode=list_authors"><MT_TRANS phrase="Authors"></a></li>};
+	$old = quotemeta($old);
+	my $new = <<HTML;
+<li><a style="background-image: url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/icon-groups.gif);" <TMPL_IF NAME=NAV_GROUPS> class="here"</TMPL_IF> id="nav-groups" title="<MT_TRANS phrase="Privacy Groups">" href="$link?__mode=groups"><MT_TRANS phrase="Privacy Groups"></a></li>
+HTML
+	$$tmpl =~ s/($old)/$1\n$new\n/;
+}
+
 #####################################################################
 # UTILITY SUBROUTINES
 #####################################################################

@@ -2,16 +2,17 @@
 
 <h2><span class="weblog-title-highlight"><TMPL_VAR NAME=BLOG_NAME ESCAPE=HTML>:</span> <MT_TRANS phrase="Protect"> <TMPL_VAR NAME=ASSET></h2>
 
-<TMPL_IF NAME=MESSAGE>
-<p class="message"><TMPL_VAR NAME=MESSAGE></p>
-</TMPL_IF>
-
 <p class="page-desc"><MT_TRANS phrase="You can protect this blog so only certain people can view its contents. You can do this one of two ways. The first is using a simple password that people will have to enter to see the post. The alternative is to use Typekey so access is based on their identity. Using Typekey is the recommended method as it ensures that only those allowed can access the post, passwords can always be leaked!"></p>
+
+<TMPL_IF NAME=SAVED>
+<div class="message"><MT_TRANS phrase="Your privacy changes have been saved">.</div>
+</TMPL_IF>
 
 <form method="post" action="<TMPL_VAR NAME=SCRIPT_URL>">
   <input type="hidden" name="__mode" value="save" />
   <input type="hidden" name="_type" value="blog" />
   <input type="hidden" name="blog_id" value="<TMPL_VAR NAME=BLOG_ID>" />
+  <input type="hidden" name="return_args" value="<TMPL_VAR NAME=RETURN_ARGS ESCAPE=HTML>" />
   <input type="hidden" name="magic_token" value="<TMPL_VAR NAME=MAGIC_TOKEN>" />
   
 <TMPL_INCLUDE NAME="protect.tmpl">

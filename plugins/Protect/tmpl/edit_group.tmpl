@@ -15,6 +15,9 @@ function toggleProtectPrefs (c, div) {
 function submitForm(f, mode) {
     if (f.elements["__mode"] && mode)
         f.elements["__mode"].value = mode;
+	tkusers.onAddSubmit('click');
+	ljusers.onAddSubmit('click');
+	oiusers.onAddSubmit('click');
 	f.elements["typekey_users"].value = tkusers.taglist.tags;
 	f.elements["livejournal_users"].value = ljusers.taglist.tags;
 	f.elements["openid_users"].value = oiusers.taglist.tags; 
@@ -28,10 +31,13 @@ function submitForm(f, mode) {
 <script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/event.js"></script>
 <script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/tag-widget.js"></script>
 
-<h2><span class="weblog-title-highlight"><MT_TRANS phrase="Protection Group">:</span> <TMPL_IF NAME=ID><TMPL_VAR NAME=LABEL><TMPL_ELSE><MT_TRANS phrase="New Protection Group"></TMPL_IF></h2>
 
-<TMPL_IF NAME=MESSAGE>
-<p class="message"><TMPL_VAR NAME=MESSAGE></p>
+<h2><span class="weblog-title-highlight"><TMPL_IF NAME=BLOG_ID><TMPL_VAR NAME=BLOG_NAME ESCAPE=HTML><TMPL_ELSE><MT_TRANS phrase="System-wide"></TMPL_IF>:</span> <MT_TRANS phrase="Privacy Groups">: <TMPL_IF NAME=ID><TMPL_VAR NAME=LABEL><TMPL_ELSE><MT_TRANS phrase="New Protection Group"></TMPL_IF></h2>
+
+<p><MT_TRANS phrase="Use this page to edit the attributes of the privacy group"> <TMPL_VAR NAME=LABEL>.</p>
+
+<TMPL_IF NAME=SAVED>
+<div class="message"><MT_TRANS phrase="Your privacy group changes have been saved">.</div>
 </TMPL_IF>
 
 <fieldset>
@@ -39,6 +45,8 @@ function submitForm(f, mode) {
 <input type="hidden" name="__mode" value="save" />
 <input type="hidden" name="_type" value="groups" />
 <input type="hidden" name="id" value="<TMPL_VAR NAME=ID>" />
+<input type="hidden" name="return_args" value="<TMPL_VAR NAME=RETURN_ARGS ESCAPE=HTML>" />
+<input type="hidden" name="magic_token" value="<TMPL_VAR NAME=MAGIC_TOKEN>" />
 <input type="hidden" name="protect_beacon" value="1" id="protect_beacon" />
 <input type="hidden" name="typekey_users" value="" id="typekey_users" />
 <input type="hidden" name="livejournal_users" value="" id="livejournal_users" />
@@ -130,9 +138,8 @@ function submitForm(f, mode) {
     </div>
 </div>
 
-<div align="center">
 <input type="submit" value="<MT_TRANS phrase="Save">" onclick="submitForm(this.form);"/>
-</div>
+<input accesskey="x" onclick="doRemoveItems(this.form, '<MT_TRANS phrase="group">', '<MT_TRANS phrase="groups">', false, { 'return_args': '__mode=groups' }); return true" type="button" value="<MT_TRANS phrase="Delete">" title="<MT_TRANS phrase="Delete this group (x)">" />
 
 </form>
 </fieldset>

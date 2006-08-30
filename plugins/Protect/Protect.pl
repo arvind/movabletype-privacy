@@ -34,10 +34,10 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 #                link => 'mt-protect.cgi?__mode=list_entries',
 #                link_text => 'List Protected Entries'
 #            },
-            'list_commenters' => {
-                link => 'mt-protect.cgi?__mode=tk_groups',
-                link_text => 'List Protection Groups'
-            },
+            # 'list_commenters' => {
+            #     link => 'mt-protect.cgi?__mode=tk_groups',
+            #     link_text => 'List Protection Groups'
+            # },
             'blog' => {
                 link => 'mt-protect.cgi?__mode=edit',
                 link_text => 'Protect Blog'
@@ -76,7 +76,8 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		'MT::Category::post_save' => sub { require Protect::Transformer; Protect::Transformer::post_save(@_); },
 		'MT::App::CMS::AppTemplateSource.entry_table' => sub { require Protect::Transformer; Protect::Transformer::_list_entry(@_); },
 		'MT::App::CMS::AppTemplateParam.list_entry' => sub { require Protect::Transformer; Protect::Transformer::_list_entry_param(@_); },
-		'Protect::CMS::AppTemplateParam.edit' => sub { require Protect::Transformer; Protect::Transformer::_param(@_, 'blog'); }
+		'Protect::CMS::AppTemplateParam.edit' => sub { require Protect::Transformer; Protect::Transformer::_param(@_, 'blog'); },
+		'*::AppTemplateSource'  => sub { require Protect::Transformer; Protect::Transformer::_header(@_); }
 	},
 	container_tags => {
 		# 'EntryProtect'	=> \&protected,
@@ -112,7 +113,7 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 	}
 //-->
 </script>
-<p>This <MTProtectObjectType> has been protected</p>
+<p>This is a private <MTProtectObjectType>. To view it, please choose one of the options below and follow the steps.</p>
 <p>
 	<MTIfPasswordProtected>
 		<a href="#" onclick="toggleProtect('password', '<MTProtectObjectID>');"><img src="<MTStaticWebPath>plugins/Protect/images/button-password.gif" alt="Enter Password" /></a>
@@ -139,7 +140,7 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 	
 	<MTIfPasswordProtected>
 		<div id="password-<MTProtectObjectID>-protect" style="display:none;">
-			<p>This <MTProtectObjectType> has been password protected. Enter the password below to view the <MTProtectObjectType>:</p>
+			<p>Enter the password below to view this <MTProtectObjectType>:</p>
 			<p>
 				<label>Password: <input type="text" name="password" value="" /></label> 
 				<input type="submit" name="submit" value="Submit" id="submit" />
@@ -149,7 +150,7 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 	
 	<MTIfTypekeyProtected>
 		<div id="typekey-<MTProtectObjectID>-protect" style="display:none;">
-			<p>This <MTProtectObjectType> has been Typekey protected. Enter your Typekey username below to view the <MTProtectObjectType>:</p>
+			<p>Enter your Typekey username below to view this <MTProtectObjectType>:</p>
 			<p>
 				<label>Typekey Username: <input type="text" name="tk_user" value="" style="background: white url(<MTStaticWebPath>plugins/Protect/images/input-typekey.gif) no-repeat; padding-left: 22px;" /></label> 
 				<input type="submit" name="submit" value="Submit" id="submit" />
@@ -159,7 +160,7 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 	
 	<MTIfLiveJournalProtected>
 		<div id="livejournal-<MTProtectObjectID>-protect" style="display:none;">
-			<p>This <MTProtectObjectType> has been LiveJournal protected. Enter your LiveJournal username below to view the <MTProtectObjectType>:</p>
+			<p>Enter your LiveJournal username below to view this <MTProtectObjectType>:</p>
 			<p>
 				<label>LiveJournal Username: <input type="text" name="lj_user" value="" style="background: white url(<MTStaticWebPath>plugins/Protect/images/input-livejournal.gif) no-repeat; padding-left: 22px;" /></label> 
 				<input type="submit" name="submit" value="Submit" id="submit" />
@@ -169,7 +170,7 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 	
 	<MTIfOpenIDProtected>
 		<div id="openid-<MTProtectObjectID>-protect" style="display:none;">
-			<p>This <MTProtectObjectType> has been OpenID protected. Enter your OpenID URL below to view the <MTProtectObjectType>:</p>
+			<p>Enter your OpenID URL below to view this <MTProtectObjectType>:</p>
 			<p>
 				<label>OpenID Username: <input type="text" name="openid_url" value="" style="background: white url(<MTStaticWebPath>plugins/Protect/images/input-openid.gif) no-repeat; padding-left: 22px;" /></label> 
 				<input type="submit" name="submit" value="Submit" id="submit" />

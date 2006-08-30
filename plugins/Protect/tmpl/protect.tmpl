@@ -19,6 +19,9 @@ function reveal_password () {
 function submitForm(f, mode) {
     if (f.elements["__mode"] && mode)
         f.elements["__mode"].value = mode;
+	tkusers.onAddSubmit('click');
+	ljusers.onAddSubmit('click');
+	oiusers.onAddSubmit('click');
 	f.elements["typekey_users"].value = tkusers.taglist.tags;
 	f.elements["livejournal_users"].value = ljusers.taglist.tags;
 	f.elements["openid_users"].value = oiusers.taglist.tags; 
@@ -107,7 +110,7 @@ function group(id) {
     </div>
     <div class="field">
         <input name="password" id="password" value="<TMPL_VAR NAME=PASSWORD ESCAPE=HTML>" type="password" />
-  		<p><a href="#" onclick="reveal_password();"><MT_TRANS phrase="Reveal password"></a></p>
+  		<p><a href="javascript:void(0);" onclick="reveal_password();"><MT_TRANS phrase="Reveal password"></a></p>
     </div>
 </div>		
 		

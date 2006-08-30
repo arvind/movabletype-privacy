@@ -1,0 +1,75 @@
+<TMPL_INCLUDE name="header.tmpl">
+<script type="text/javascript">
+<!--
+var tableSelect;
+function init()
+{
+	// setup
+	tableSelect = new TC.TableSelect( "selector" );
+	tableSelect.rowSelect = true;
+}
+
+TC.attachLoadEvent( init );
+// -->
+</script>
+<div id="list-entry">
+<h2><span class="weblog-title-highlight"><TMPL_IF NAME=BLOG_ID><TMPL_VAR NAME=BLOG_NAME ESCAPE=HTML><TMPL_ELSE><MT_TRANS phrase="System-wide"></TMPL_IF>:</span> <MT_TRANS phrase="Privacy Groups"></h2>
+
+<p class="page-desc"><MT_TRANS phrase="Privacy Groups allow you to define sets of any number of people who often garner the same permissions. The privacy group -- and hence all of the people in it -- can be granted access to an asset as easily as one person. For all intents and purposes, privacy groups are like email aliases in that you only send an email to only one address and yet many can receive it"></p>
+
+<TMPL_IF NAME=SAVED_DELETED>
+<div class="message"><MT_TRANS phrase="The selected group(s) has been deleted from the database."></div>
+</TMPL_IF>
+
+<div class="tabs">
+<ul>
+<li class="yah"><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=groups"><MT_TRANS phrase="Privacy Groups"></a></li>
+<li class="special">
+<img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="Create New Entry">" width="9" height="9" />
+<a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&amp;_type=groups"><MT_TRANS phrase="Create New Group"></a>
+</li>
+</ul>
+</div>
+
+<TMPL_IF EMPTY>
+<div class="message"><MT_TRANS phrase="No groups could be found">.</div>
+<TMPL_ELSE>
+
+<div class="list" id="selector">
+<form method="get" action="<TMPL_VAR NAME=SCRIPT_URL>">
+<input type="hidden" name="__mode" value="delete" />
+<input type="hidden" name="_type" value="groups" />  
+<input type="hidden" name="return_args" value="<TMPL_VAR NAME=RETURN_ARGS ESCAPE=HTML>" />
+<input type="hidden" name="magic_token" value="<TMPL_VAR NAME=MAGIC_TOKEN>" />
+
+<table cellspacing="0" class="compact">
+<thead>
+    <tr>
+    <th class="cb"><input type="checkbox" name="id-head" value="all" class="select" /></th>
+        <th><MT_TRANS phrase="Name"></th>
+        <th><MT_TRANS phrase="Description"></th>
+        <th><MT_TRANS phrase="Members"></th>
+    </tr>
+</thead>   
+<tbody>    
+<TMPL_LOOP NAME=LOOP>
+
+    <tr class="<TMPL_IF NAME=ENTRY_ODD>odd<TMPL_ELSE>even</TMPL_IF>">
+    <td class="cb"><input type="checkbox" name="id" value="<TMPL_VAR NAME=ID>" class="select" /></td>
+    <td><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&amp;_type=groups&amp;id=<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=LABEL></a></td>
+    <td><TMPL_VAR NAME=DESCRIPTION></td>  
+    <td><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&amp;_type=groups&amp;id=<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=MEMBER_COUNT> <MT_TRANS phrase="members"></a></td>                          
+    </tr>
+</TMPL_LOOP>
+</tbody>
+    </table>
+<div class="list-actions">
+<div class="button-bar">
+<input type="button" onclick="doRemoveItems(this.form, 'group', 'groups')" name="delete_entries" value="<MT_TRANS phrase="Delete">" accesskey="d" title="Delete selected groups (d)" />
+</div>     
+</div>        
+</form>
+</div>
+</TMPL_IF>
+</div>
+<TMPL_INCLUDE name="footer.tmpl">
