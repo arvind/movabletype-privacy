@@ -159,8 +159,8 @@ sub save {
 
 	if($type eq 'blog') {
 		my $blog = MT::Blog->load($blog_id);
-		require Protect::Transformer;
-		Protect::Transformer::post_save($app, $blog);
+		require Protect::App;
+		Protect::App::post_save($app, $blog);
     } elsif($type eq 'groups') {
 		require Protect::Groups;
  		my $group = Protect::Groups->load($id);

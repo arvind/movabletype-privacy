@@ -1,4 +1,105 @@
-package Protect::Transformer;
+package Protect::App;
+
+sub convert_data {
+	my $plugin = MT::Plugin::Protect->instance;
+	
+	require Protect::Protect;
+	require Protect::Object;
+	require Protect::Groups;
+	my $objs_iter = Protect::Protect->load_iter();
+	while (my $orig_obj = $objs_iter->()) {
+		my $obj = Protect::Object->new;
+		$obj->blog_id($orig_obj->blog_id);
+		$obj->object_id($orig_obj->entry_id);
+		$obj->object_datasource('entry');
+		if(!$orig_obj->entry_id) {
+			$obj->object_datasource('blog');
+			$obj->object_id($orig_obj->blog_id);
+		}
+		if($orig_obj->type eq 'Password') {
+			$obj->password($orig_obj->data);
+		} else {
+			my $users = $orig_obj->data;
+			$users = join ',', @$users;
+			if($orig_obj->type eq 'Typekey') {
+				$obj->typekey_users($users);
+			} elsif($orig_obj->type eq 'OpenID') {
+				$obj->openid_users($users);
+			}
+		}
+		$obj->save or die $obj->errstr;
+		$orig_obj->remove or die $orig_obj->errstr;
+	}
+	
+	my $groups_iter = Protect::Groups->load_iter();
+	while (my $group = $groups_iter->()) {
+		my $users = $group->data;
+		$users = join ',', @$users;		
+		if($group->type eq 'Typekey') {
+			$group->typekey_users($users);
+		} elsif($group->type eq 'OpenID') {
+			$group->openid_users($users);
+		}
+		$group->type('');
+		$group->save or die $group->errstr;
+	}
+}
+
+sub load_php_file {
+	my $plugin = MT::Plugin::Protect->instance;
+	
+    require MT::FileMgr;
+	require MT::Template; 
+	require MT::WeblogPublisher;
+    my $filemgr = MT::FileMgr->new('Local')
+        or return $app->error(MT::FileMgr->errstr);
+	my $pub = MT::WeblogPublisher->new;
+	
+    my $mt_protect_php = $filemgr->get_data(File::Spec->catfile($plugin->{full_path},"mt-protect.php"))
+		or die $plugin->translate("Unable to get mt-password.php from plugin folder. File Manager gave the error: [_1].", $filemgr->errstr);
+
+	require MT::Blog;
+	my $iter = MT::Blog->load_iter;
+	while (my $blog = $iter->()) {
+		my $tmpl = MT::Template->load({ name => 'MT Protect Bootstrapper', blog_id => $blog->id });
+		if(!$tmpl) {
+			$tmpl = MT::Template->new;
+			$tmpl->set_values({
+				'blog_id' => $blog->id,
+				'name' => 'MT Protect Bootstrapper',
+				'type' => 'index',
+				'outfile' => 'mt-protect.php',
+				'rebuild_me' => 1
+			});			
+		}
+		$tmpl->text($mt_protect_php);
+		$tmpl->save or die $tmpl->errstr;
+		$pub->rebuild_indexes(Blog => $blog, Template => $tmpl, Force => 1)
+			or die $pub->errstr;
+	}
+}
+
+sub default_template_filter {
+	my ($eh, $tmpls) = @_;
+	my $plugin = MT::Plugin::Protect->instance;
+	
+    require MT::FileMgr;
+    my $filemgr = MT::FileMgr->new('Local')
+        or return $app->error(MT::FileMgr->errstr);
+	
+    my $mt_protect_php = $filemgr->get_data(File::Spec->catfile($plugin->{full_path},"mt-protect.php"))
+		or die $plugin->translate("Unable to get mt-password.php from plugin folder. File Manager gave the error: [_1].", $filemgr->errstr);
+	
+	my $tmpl = {
+		'type' => 'index',
+        'name' => 'MT Protect Bootstrapper',
+        'outfile' => 'mt-protect.php',
+		'rebuild_me' => '1',
+		'text' => $mt_protect_php
+	};
+	
+	push @$tmpls, $tmpl;
+}
 
 sub _edit_entry {
 	my($eh, $app, $tmpl) = @_;

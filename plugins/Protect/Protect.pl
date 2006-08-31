@@ -1,5 +1,5 @@
 # Protect - A plugin for Movable Type.
-# Copyright (c) 2006, Arvind.
+# Copyright (c) 2005-2006, Arvind Satyanarayan.
 
 package MT::Plugin::Protect;
 
@@ -23,25 +23,17 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 	object_classes  => [ 'Protect::Groups', 'Protect::Object' ],
 	upgrade_functions => {
         'convert_data' => {
-            version_limit => 2.0,   # runs for schema_version < 2.0
-            code => \&convert_data
+            version_limit => 2.0,
+            code => sub { require Protect::App; Protect::App::convert_data(@_); },
         },
 		'mt_protect_php_file' => {
 			version_limit => 2.0, 
-			code => \&php_file
+			code => sub { require Protect::App; Protect::App::load_php_file(@_); },
 		}
     },
 	l10n_class 	    => 'Protect::L10N',
     app_action_links => {
         'MT::App::CMS' => {
-#            'list_entries' => {
-#                link => 'mt-protect.cgi?__mode=list_entries',
-#                link_text => 'List Protected Entries'
-#            },
-            # 'list_commenters' => {
-            #     link => 'mt-protect.cgi?__mode=tk_groups',
-            #     link_text => 'List Protection Groups'
-            # },
             'blog' => {
                 link => 'mt-protect.cgi?__mode=edit',
                 link_text => 'Protect Blog'
@@ -58,34 +50,22 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 					$app->redirect($app->path . 'plugins/Protect/mt-protect.cgi?__mode=edit&_type=groups&author_id='. join ',', $app->param('id'));
 				}				
 			},
-			# 'entry' => {
-			#                 key => "set_protection",
-			#                 label => "Protect Entries",
-			#                 code => sub { $plugin->protect_entries(@_) },
-			# 	condition => sub { my $app = MT->instance; $app->mode eq 'list_entries' }				
-			# },
-			# 'blog' => {
-			#                 key => "set_protection",
-			#                 label => "Protect Blog(s)",
-			#                 code => sub { $plugin->protect_blogs(@_) }				
-			# }
 		}
 	},
 	callbacks => {
-		'MT::App::CMS::AppTemplateSource.edit_entry' => sub { require Protect::Transformer; Protect::Transformer::_edit_entry(@_); },
-		'MT::App::CMS::AppTemplateParam.edit_entry'  => sub { require Protect::Transformer; Protect::Transformer::_param(@_, 'entry'); },
-		'MT::Entry::post_save' => sub { require Protect::Transformer; Protect::Transformer::post_save(@_); },
-		'MT::App::CMS::AppTemplateSource.edit_category' => sub { require Protect::Transformer; Protect::Transformer::_edit_category(@_); },
-		'MT::App::CMS::AppTemplateParam.edit_category' => sub { require Protect::Transformer; Protect::Transformer::_param(@_, 'category'); },
-		'MT::Category::post_save' => sub { require Protect::Transformer; Protect::Transformer::post_save(@_); },
-		'MT::App::CMS::AppTemplateSource.entry_table' => sub { require Protect::Transformer; Protect::Transformer::_list_entry(@_); },
-		'MT::App::CMS::AppTemplateParam.list_entry' => sub { require Protect::Transformer; Protect::Transformer::_list_entry_param(@_); },
-		'Protect::CMS::AppTemplateParam.edit' => sub { require Protect::Transformer; Protect::Transformer::_param(@_, 'blog'); },
-		'*::AppTemplateSource'  => sub { require Protect::Transformer; Protect::Transformer::_header(@_); }
+		'MT::App::CMS::AppTemplateSource.edit_entry' => sub { require Protect::App; Protect::App::_edit_entry(@_); },
+		'MT::App::CMS::AppTemplateParam.edit_entry'  => sub { require Protect::App; Protect::App::_param(@_, 'entry'); },
+		'MT::Entry::post_save' => sub { require Protect::App; Protect::App::post_save(@_); },
+		'MT::App::CMS::AppTemplateSource.edit_category' => sub { require Protect::App; Protect::App::_edit_category(@_); },
+		'MT::App::CMS::AppTemplateParam.edit_category' => sub { require Protect::App; Protect::App::_param(@_, 'category'); },
+		'MT::Category::post_save' => sub { require Protect::App; Protect::App::post_save(@_); },
+		'MT::App::CMS::AppTemplateSource.entry_table' => sub { require Protect::App; Protect::App::_list_entry(@_); },
+		'MT::App::CMS::AppTemplateParam.list_entry' => sub { require Protect::App; Protect::App::_list_entry_param(@_); },
+		'Protect::CMS::AppTemplateParam.edit' => sub { require Protect::App; Protect::App::_param(@_, 'blog'); },
+		'*::AppTemplateSource'  => sub { require Protect::App; Protect::App::_header(@_); },
+		'DefaultTemplateFilter'  => sub { require Protect::App; Protect::App::default_template_filter(@_); }
 	},
 	container_tags => {
-		# 'EntryProtect'	=> \&protected,
-		# 'BlogProtect'	=> \&blog_protected,
 		'BlogProtect'		=> sub { require Protect::Template::ContextHandlers; Protect::Template::ContextHandlers::protect('blog', @_);},
 		'EntryProtect'		=> sub { require Protect::Template::ContextHandlers; Protect::Template::ContextHandlers::protect('entry', @_);},		
 		'CategoryProtect'		=> sub { require Protect::Template::ContextHandlers; Protect::Template::ContextHandlers::protect('category', @_);},		
@@ -197,6 +177,7 @@ sub version {
 	$VERSION;
 }
 
+# Corrects bug in MT 3.31/2 <http://groups.yahoo.com/group/mt-dev/message/962>
 sub init {
 	my $plugin = shift;
 	$plugin->SUPER::init(@_);
@@ -204,6 +185,7 @@ sub init {
 	unless MT->config->PluginSchemaVersion;
 }
 
+# Blog settings default to system settings (hence blog settings override system)
 sub apply_default_settings {
   my ($plugin, $data, $scope_id) = @_;
   if ($scope_id eq 'system') {
@@ -218,81 +200,6 @@ sub apply_default_settings {
       $data->{$key} = $sys->{$key};
     }
   }
-}
-
-sub convert_data {
-	require Protect::Protect;
-	require Protect::Object;
-	require Protect::Groups;
-	my $objs_iter = Protect::Protect->load_iter();
-	while (my $orig_obj = $objs_iter->()) {
-		my $obj = Protect::Object->new;
-		$obj->blog_id($orig_obj->blog_id);
-		$obj->object_id($orig_obj->entry_id);
-		$obj->object_datasource('entry');
-		if(!$orig_obj->entry_id) {
-			$obj->object_datasource('blog');
-			$obj->object_id($orig_obj->blog_id);
-		}
-		if($orig_obj->type eq 'Password') {
-			$obj->password($orig_obj->data);
-		} else {
-			my $users = $orig_obj->data;
-			$users = join ',', @$users;
-			if($orig_obj->type eq 'Typekey') {
-				$obj->typekey_users($users);
-			} elsif($orig_obj->type eq 'OpenID') {
-				$obj->openid_users($users);
-			}
-		}
-		$obj->save or die $obj->errstr;
-		$orig_obj->remove or die $orig_obj->errstr;
-	}
-	
-	my $groups_iter = Protect::Groups->load_iter();
-	while (my $group = $groups_iter->()) {
-		my $users = $group->data;
-		$users = join ',', @$users;		
-		if($group->type eq 'Typekey') {
-			$group->typekey_users($users);
-		} elsif($group->type eq 'OpenID') {
-			$group->openid_users($users);
-		}
-		$group->type('');
-		$group->save or die $group->errstr;
-	}
-}
-
-sub php_file {
-    require MT::FileMgr;
-	require MT::Template; 
-	require MT::WeblogPublisher;
-    my $filemgr = MT::FileMgr->new('Local')
-        or return $app->error(MT::FileMgr->errstr);
-	my $pub = MT::WeblogPublisher->new;
-	
-    my $mt_protect_php = $filemgr->get_data(File::Spec->catfile($plugin->{full_path},"mt-protect.php"))
-		or die $plugin->translate("Unable to get mt-password.php from plugin folder. File Manager gave the error: [_1].", $filemgr->errstr);
-
-	require MT::Blog;
-	my $iter = MT::Blog->load_iter;
-	while (my $blog = $iter->()) {
-		my $tmpl = MT::Template->load({ name => 'MT Protect Bootstrapper' });
-		if(!$tmpl) {
-			$tmpl = MT::Template->new;
-			$tmpl->set_values({
-				blog_id => $blog->id,
-				name => 'MT Protect Bootstrapper',
-				type => 'index',
-				outfile => 'mt-protect.php',
-				rebuild_me => 0
-			});			
-		}
-		$tmpl->text($mt_protect_php);
-		$tmpl->save or die $tmpl->errstr;
-		$pub->rebuild_indexes(Blog => $blog, Template => $tmpl, Force => 1)
-			or die $pub->errstr;
-	}
 }
 
 1;
