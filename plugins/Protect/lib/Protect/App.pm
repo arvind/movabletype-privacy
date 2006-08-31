@@ -1,5 +1,20 @@
 package Protect::App;
 
+sub config {
+    my $config = {};
+	my $plugin = MT::Plugin::Protect->instance;
+    if ($plugin) {
+        require MT::Request;
+        my ($scope) = (@_);
+        $config = MT::Request->instance->cache('protect_config_'.$scope);
+        if (!$config) {
+            $config = $plugin->get_config_hash($scope);
+            MT::Request->instance->cache('protect_config_'.$scope, $config);
+        }
+    }
+    $config;
+}
+
 sub convert_data {
 	my $plugin = MT::Plugin::Protect->instance;
 	
@@ -205,6 +220,8 @@ sub _param {
 	my $blog_id = $q->param('blog_id');
 	my $obj_id = $q->param('id') || $blog_id;
 	my $auth_prefs = $app->user->entry_prefs;
+	my $config = config('blog:'.$blog_id);
+	
     if (my $delim = chr($auth_prefs->{tag_delim})) {
         if ($delim eq ',') {
             $param->{'auth_pref_tag_delim_comma'} = 1;
@@ -215,6 +232,7 @@ sub _param {
         }
         $param->{'auth_pref_tag_delim'} = $delim;
     }
+
 	require Protect::Object;
 	my $data = Protect::Object->load({ blog_id => $blog_id, object_id => $obj_id, object_datasource => $datasource });
 	if($data) {
@@ -243,18 +261,22 @@ sub _param {
 		my @livejournal_users = split /,/, $group->livejournal_users;	
 		my @openid_users = split /,/, $group->openid_users;			
 		push @group_data, {
-			  id => $group->id,
-	      label => $group->label,
-	      description => $group->description,
-				typekey_users => \@typekey_users,
-				livejournal_users => \@livejournal_users,
-				openid_users => \@openid_users
+		  	id => $group->id,
+	      	label => $group->label,
+	      	description => $group->description,
+			typekey_users => \@typekey_users,
+			livejournal_users => \@livejournal_users,
+			openid_users => \@openid_users
 
 		};
 	} 
 	require JSON;
 	$param->{protection_groups} = JSON::objToJson(\@group_data);
 	$param->{protection_groups_loop} = \@group_data;
+	foreach my $field (keys (%$config)) {
+		next unless $field =~ m/show_/;
+		$param->{$field} = $config->{$field};
+	}
 }
 
 sub post_save {

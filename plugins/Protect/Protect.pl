@@ -81,6 +81,11 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		'IfOpenIDProtected' => sub { require Protect::Template::ContextHandlers; Protect::Template::ContextHandlers::is_openid(@_);}
 	},
     settings => new MT::PluginSettings([
+		['show_password', { Default => 1 }],
+		['show_third_party', { Default => 0 }],
+		['show_typekey', { Default => 0 }],
+		['show_livejournal', { Default => 0 }],
+		['show_openid', { Default => 0 }],
         ['protect_text', { Default => q{<MTIgnore>
 #### Javascript to toggle the display of the various protection types
 </MTIgnore>

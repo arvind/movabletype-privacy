@@ -1,5 +1,45 @@
+<script type="text/javascript">
+<!--
+function toggleCheckboxes(c) {
+	var tk = document.getElementById('show_typekey');
+	var lj = document.getElementById('show_livejournal');
+	var oi = document.getElementById('show_openid');
+	if(c.checked == true) {
+		tk.checked = true;
+		lj.checked = true;
+		oi.checked = true;
+		getByID('openid-advanced').style.display = 'block';
+	} else if(c.checked == false) {
+		tk.checked = false;
+		lj.checked = false;
+		oi.checked = false;
+		getByID('openid-advanced').style.display = 'none';
+	}
+}
+//-->
+</script>
 <p><MT_TRANS phrase="The following will be displayed when an asset is protected"></p>
 
 <div class="setting">
 <textarea name="protect_text" id="protect_text" rows="10" cols="60"><TMPL_VAR NAME=PROTECT_TEXT ESCAPE=HTML></textarea>
+</div>
+
+<div class="setting">
+<div class="label"><MT_TRANS phrase="Show Fields:"></div>
+<div class="field">
+<ul>
+<li><input type="checkbox" name="show_password" id="show_password" value="1" <TMPL_IF NAME=SHOW_PASSWORD>checked="checked"</TMPL_IF> /> <MT_TRANS phrase="Password Protection"></li>
+
+<li><input type="checkbox" name="show_third_party" id="show_third_party" value="1" <TMPL_IF NAME=SHOW_THIRD_PARTY>checked="checked"</TMPL_IF> onclick="toggleCheckboxes(this);" /> <MT_TRANS phrase="3rd Party Authentication"> 
+<ul id="openid-advanced" class="openid-advanced"<TMPL_UNLESS NAME=SHOW_THIRD_PARTY> style="display:none;"</TMPL_UNLESS>>	
+	
+<li><input type="checkbox" name="show_typekey" id="show_typekey" value="1" <TMPL_IF NAME=SHOW_TYPEKEY>checked="checked"</TMPL_IF> /> <MT_TRANS phrase="Typekey Protection"></li>
+
+<li><input type="checkbox" name="show_livejournal" id="show_livejournal" value="1" <TMPL_IF NAME=SHOW_LIVEJOURNAL>checked="checked"</TMPL_IF> /> <MT_TRANS phrase="LiveJournal Protection"></li>
+
+<li><input type="checkbox" name="show_openid" id="show_openid" value="1" <TMPL_IF NAME=SHOW_OPENID>checked="checked"</TMPL_IF> /> <MT_TRANS phrase="OpenID Protection"></li>
+	
+</ul></li>
+</ul>
+</div>
 </div>
