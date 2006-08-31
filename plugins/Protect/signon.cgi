@@ -55,8 +55,26 @@ sub init {
     $app;
 }
 
+my %API = (
+    entry   => 'MT::Entry',
+    blog => 'MT::Blog',
+    category => 'MT::Category',
+);
+
 sub oops {
     "<h1>Here be dragons.</h1>";
+}
+
+sub _load_driver_for {
+    my $app = shift;
+    my($type) = @_;
+    my $class = $API{$type} or
+        return $app->error($app->translate("Unknown object type [_1]",
+            $type));
+    eval "use $class;";
+    return $app->error($app->translate(
+        "Loading object driver [_1] failed: [_2]", $class, $@)) if $@;
+    $class;
 }
 
 sub _get_csr {
@@ -139,14 +157,35 @@ sub verify {
 	my $obj_type = $q->param('_type');
 	my $obj_id = $q->param('id');
 	my $blog_id = $q->param('blog_id');
+	my $class = $app->_load_driver_for($obj_type);
+	my $obj = $class->load($obj_id);
+	
 	require MT::Blog;
 	my $blog = MT::Blog->load($blog_id);
 	my $allow = 0;
+	my $redirect = $blog->site_url;
+	
 	require Protect::Object;
-    my $obj = Protect::Object->load({ blog_id => $blog->id, object_datasource => $obj_type, object_id => $obj_id })
+    my $protected = Protect::Object->load({ blog_id => $blog->id, object_datasource => $obj_type, object_id => $obj_id })
         or return $app->error('Invalid '.$obj_type.' id '. $obj_id .' in verification');
+
+	if($obj_type eq 'entry') {
+		$redirect = $obj->permalink;
+	} elsif($obj_type eq 'category') {
+		my $at = $blog->archive_type;
+		if($at =~ /Category/) {
+			require MT::Category;
+			require MT::Util;
+		    my $arch = $blog->archive_url;
+		    $arch .= '/' unless $arch =~ m!/$!;
+		    $arch = $arch . MT::Util::archive_file_for(undef, $blog, 'Category', $obj);
+		    $arch = MT::Util::strip_index($arch, $blog);	
+			$redirect = $arch;
+		}
+	} 
+	
 	if($q->param('password')) {
-		if($q->param('password') eq $obj->password) {
+		if($q->param('password') eq $protected->password) {
 			$allow = 1;
 		}
 	} else {
@@ -155,32 +194,31 @@ sub verify {
 			$app->signon;
 		}
 		$csr->verified_identity or die $csr->errcode;
+		
 	    if(my $setup_url = $csr->user_setup_url( post_grant => 'return' )) {
 	        return $app->redirect($setup_url);
 	    } elsif(my $vident = $csr->verified_identity) {
 			my $profile = $app->_get_profile_data($vident, $blog->id);
 			if($q->param('tk_user')) {
-				my @typekey = split /,/, $obj->typekey_users;
+				my @typekey = split /,/, $protected->typekey_users;
 				if(in_array($profile->{nickname}, @typekey)) {
 					return 'hello';
 					$allow = 1;
 				}
 			} elsif($q->param('lj_user')) {
-				my @livejournal = split /,/, $obj->livejournal_users;
+				my @livejournal = split /,/, $protected->livejournal_users;
 				if(in_array($profile->{nickname}, @livejournal)) {
 					$allow = 1;
 				}				
 			} elsif($q->param('openid_url')) {
-				my @openid = split /,/, $obj->openid_users;
+				my @openid = split /,/, $protected->openid_users;
 				if(in_array($vident->url, @openid)) {
 					$allow = 1;
 				}				
 			}   
-         ## TODO: fake email to circumvent requirement
-	        #$app->_make_commenter_session($session_id, '', $author->name, $profile->{nickname});
 	    } elsif($q->param('openid.mode') eq 'cancel') {
 	        ## Cancelled!
-	        return $app->redirect($ENV{HTTP_REFERER});
+	        return $app->redirect($redirect);
 	    }
 	}
 	if($allow) {
@@ -206,13 +244,13 @@ sub verify {
 				-path => '/',
 			    -expires => '+1d'
 			);
-			return $app->redirect($ENV{HTTP_REFERER});		    	
+			return $app->redirect($redirect);		    	
 	    } else {
 			my $rand = $app->_rand;
 			$plugin->set_config_value('rand', $rand);   	
 			my $url = $blog->site_url;
 			$url .= '/' unless $url =~ m!/$!;
-			return $app->redirect($url.'mt-protect.php?rand='.$rand.'&obj_type='.$obj_type.'&obj_id='.$obj_id.'&blog_id='.$blog->id);
+			return $app->redirect($url.'mt-protect.php?rand='.$rand.'&obj_type='.$obj_type.'&obj_id='.$obj_id.'&blog_id='.$blog->id.'&redirect='.$redirect);
 	    }           				
 	}
     return $app->error($app->translate('Sorry you do not have'));

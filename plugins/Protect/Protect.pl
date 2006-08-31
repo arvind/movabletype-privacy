@@ -25,7 +25,11 @@ MT->add_plugin($plugin = __PACKAGE__->new({
         'convert_data' => {
             version_limit => 2.0,   # runs for schema_version < 2.0
             code => \&convert_data
-        }
+        },
+		'mt_protect_php_file' => {
+			version_limit => 2.0, 
+			code => \&php_file
+		}
     },
 	l10n_class 	    => 'Protect::L10N',
     app_action_links => {
@@ -256,6 +260,38 @@ sub convert_data {
 		}
 		$group->type('');
 		$group->save or die $group->errstr;
+	}
+}
+
+sub php_file {
+    require MT::FileMgr;
+	require MT::Template; 
+	require MT::WeblogPublisher;
+    my $filemgr = MT::FileMgr->new('Local')
+        or return $app->error(MT::FileMgr->errstr);
+	my $pub = MT::WeblogPublisher->new;
+	
+    my $mt_protect_php = $filemgr->get_data(File::Spec->catfile($plugin->{full_path},"mt-protect.php"))
+		or die $plugin->translate("Unable to get mt-password.php from plugin folder. File Manager gave the error: [_1].", $filemgr->errstr);
+
+	require MT::Blog;
+	my $iter = MT::Blog->load_iter;
+	while (my $blog = $iter->()) {
+		my $tmpl = MT::Template->load({ name => 'MT Protect Bootstrapper' });
+		if(!$tmpl) {
+			$tmpl = MT::Template->new;
+			$tmpl->set_values({
+				blog_id => $blog->id,
+				name => 'MT Protect Bootstrapper',
+				type => 'index',
+				outfile => 'mt-protect.php',
+				rebuild_me => 0
+			});			
+		}
+		$tmpl->text($mt_protect_php);
+		$tmpl->save or die $tmpl->errstr;
+		$pub->rebuild_indexes(Blog => $blog, Template => $tmpl, Force => 1)
+			or die $pub->errstr;
 	}
 }
 
