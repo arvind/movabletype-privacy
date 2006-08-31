@@ -180,35 +180,62 @@ HTML
 	$$tmpl =~ s/$old/$new/;
 }
 
+sub _edit_categories {
+	my($eh, $app, $tmpl) = @_;
+	my($old, $new);
+	my $plugin = MT::Plugin::Protect->instance;
+
+	$old = qq{<TMPL_VAR NAME=CATEGORY_LABEL></a>};
+	$old = quotemeta($old);
+	$new = qq{<TMPL_IF NAME=PROTECTED>&nbsp;&nbsp;<a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=view&amp;_type=category&amp;blog_id=<TMPL_VAR NAME=BLOG_ID>&amp;id=<TMPL_VAR NAME=CATEGORY_ID>#protect"><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/protected.gif" alt="<MT_TRANS phrase="Category Protected">"  /></TMPL_IF>};
+	$$tmpl =~ s/($old)/$1\n$new\n/;	
+}
+
 sub _list_entry {
 	my($eh, $app, $tmpl) = @_;
 	my($old, $new);
 	my $plugin = MT::Plugin::Protect->instance;
-	# $old = qq{<th id="en-title"><MT_TRANS phrase="Title"></th>};
-	# $old = quotemeta($old);
-	# $new = qq{<TMPL_UNLESS NAME=IS_POWER_EDIT><th id="en-protected">&nbsp;</th></TMPL_UNLESS>};
-	# $$tmpl =~ s/($old)/\n$new\n$1\n/;
-	
+
 	$old = qq{<TMPL_VAR NAME=TITLE_LONG>};
 	$old = quotemeta($old);
-	$new = qq{<TMPL_UNLESS NAME=IS_POWER_EDIT><TMPL_IF NAME=ENTRY_PROTECTED><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/protected.gif" alt="<MT_TRANS phrase="Entry Protected">"  /></a><TMPL_ELSE>&nbsp;</TMPL_IF></TMPL_UNLESS>};
+	$new = qq{<TMPL_UNLESS NAME=IS_POWER_EDIT><TMPL_IF NAME=PROTECTED><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/protected.gif" alt="<MT_TRANS phrase="Entry Protected">"  /></a><TMPL_ELSE>&nbsp;</TMPL_IF></TMPL_UNLESS>};
 	$$tmpl =~ s/($old)/$1\n$new\n/;	
 	
 	$old = qq{<TMPL_VAR NAME=TITLE_SHORT>};
 	$old = quotemeta($old);
-	$new = qq{<TMPL_UNLESS NAME=IS_POWER_EDIT><TMPL_IF NAME=ENTRY_PROTECTED></a>&nbsp;&nbsp;<a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=view&amp;_type=entry&amp;id=<TMPL_VAR NAME=ID>&amp;blog_id=<TMPL_VAR NAME=BLOG_ID>#protect"><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/protected.gif" alt="<MT_TRANS phrase="Entry Protected">"  /><TMPL_ELSE>&nbsp;</TMPL_IF></TMPL_UNLESS>};
+	$new = qq{<TMPL_UNLESS NAME=IS_POWER_EDIT><TMPL_IF NAME=PROTECTED></a>&nbsp;&nbsp;<a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=view&amp;_type=entry&amp;id=<TMPL_VAR NAME=ID>&amp;blog_id=<TMPL_VAR NAME=BLOG_ID>#protect"><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/protected.gif" alt="<MT_TRANS phrase="Entry Protected">"  /><TMPL_ELSE>&nbsp;</TMPL_IF></TMPL_UNLESS>};
 	$$tmpl =~ s/($old)/$1\n$new\n/;	
 }
 
-sub _list_entry_param {
-	my($eh, $app, $param, $tmpl) = @_;
-	my $blog_id = $app->param('blog_id');
-	my $entries = $param->{entry_table}[0]{object_loop};
+sub _system_list_blog {
+	my($eh, $app, $tmpl) = @_;
+	my($old, $new);
+	my $plugin = MT::Plugin::Protect->instance;
+	my $link = $app->base.$app->path.$plugin->envelope.'/mt-protect.cgi';
+	
+	$old = qq{<TMPL_VAR NAME=NAME ESCAPE=HTML></a>};
+	$old = quotemeta($old);
+	$new = qq{<TMPL_IF NAME=PROTECTED></a>&nbsp;&nbsp;<a href="$link?__mode=edit&amp;_type=blog&blog_id=<TMPL_VAR NAME=ID>#protect"><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/protected.gif" alt="<MT_TRANS phrase="Blog Protected">"  /></TMPL_IF>};
+	$$tmpl =~ s/($old)/$1\n$new\n/;	
+}
+
+sub _list_param {
+	my($eh, $app, $param, $tmpl, $type) = @_;
+	my $objs;
+	if($type eq 'entry') {
+		$objs = $param->{entry_table}[0]{object_loop};
+	} elsif($type eq 'category') {
+		$objs = $param->{category_loop};
+	} elsif($type eq 'blog') {
+		$objs = $param->{blog_loop};
+	}
 	require Protect::Object;
-	foreach my $entry (@$entries) {
-		my $data = Protect::Object->load({ blog_id => $blog_id, object_id => $entry->{id}, object_datasource => 'entry' });
-		if($data && ($data->password || $data->typekey_users || $data->livejournal_users || $data->openid_users)) {
-			$entry->{entry_protected} = 1;
+	foreach my $obj (@$objs) {
+		my $blog_id = $obj->{weblog_id} || $app->param('blog_id') || $obj->{id};
+		my $id = $obj->{id} || $obj->{category_id};
+		my $protected = Protect::Object->load({ blog_id => $blog_id, object_id => $id, object_datasource => $type });
+		if($protected && ($protected->password || $protected->typekey_users || $protected->livejournal_users || $protected->openid_users)) {
+			$obj->{"protected"} = 1;
 		}
 	}
 	
