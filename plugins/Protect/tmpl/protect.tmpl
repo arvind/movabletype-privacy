@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/styles.css" type="text/css" />
+<link rel="stylesheet" href="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/styles.css" type="text/css" />
 <script type="text/javascript">
 <!--
 var tkusers, ljusers, oiusers;
@@ -13,18 +13,19 @@ function toggleProtectPrefs (c, div) {
 }
 
 function reveal_password () {
-	alert('<MT_TRANS phrase="The password is">: ' + getByID('password').value);
+	alert('<MT_TRANS phrase="The password is">: ' + getByID('privacy_password').value);
 }
 
 function submitForm(f, mode) {
     if (f.elements["__mode"] && mode)
         f.elements["__mode"].value = mode;
-	tkusers.onAddSubmit('click');
-	ljusers.onAddSubmit('click');
-	oiusers.onAddSubmit('click');
-	f.elements["typekey_users"].value = tkusers.taglist.tags;
-	f.elements["livejournal_users"].value = ljusers.taglist.tags;
-	f.elements["openid_users"].value = oiusers.taglist.tags; 
+	<TMPL_IF NAME=SHOW_TYPEKEY>tkusers.onAddSubmit('click');f.elements["typekey_users"].value = tkusers.taglist.tags;</TMPL_IF>
+	<TMPL_IF NAME=SHOW_LIVEJOURNAL>ljusers.onAddSubmit('click');f.elements["livejournal_users"].value = ljusers.taglist.tags;</TMPL_IF>
+	<TMPL_IF NAME=SHOW_OPENID>oiusers.onAddSubmit('click');f.elements["openid_users"].value = oiusers.taglist.tags;</TMPL_IF> 
+	<TMPL_IF NAME=ALLOW_RECURSIVE>
+	var do_recursive = confirm('<MT_TRANS phrase="Apply this privacy recursively to all"><TMPL_IF NAME=IS_BLOG> <MT_TRANS phrase="entries and categories"></TMPL_IF><TMPL_IF NAME=IS_CATEGORY> <MT_TRANS phrase="entries"></TMPL_IF> <MT_TRANS phrase="within this"> <TMPL_VAR NAME=TYPE>');
+	f.elements["do_recursive"].value = do_recursive;
+	</TMPL_IF>
     f.submit();
 }
 
@@ -80,10 +81,10 @@ function group(id) {
 
 //-->
 </script>
-<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/yahoo.js"></script>
-<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/dom.js"></script>
-<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/event.js"></script>
-<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/tag-widget.js"></script>
+<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/js/yahoo.js"></script>
+<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/js/dom.js"></script>
+<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/js/event.js"></script>
+<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/js/tag-widget.js"></script>
 <TMPL_IF NAME=SHOW_THIRD_PARTY>
 <TMPL_IF NAME=PROTECTION_GROUPS_LOOP>
 <div id="protection_groups">
@@ -97,19 +98,19 @@ function group(id) {
 </TMPL_IF>
 </TMPL_IF>
 <fieldset>
+<input type="hidden" name="do_recursive" value="0" id="do_recursive" />
 <input type="hidden" name="protect_beacon" value="1" id="protect_beacon" />
 <input type="hidden" name="typekey_users" value="" id="typekey_users" />
 <input type="hidden" name="livejournal_users" value="" id="livejournal_users" />
 <input type="hidden" name="openid_users" value="" id="openid_users" />
 <TMPL_IF NAME=SHOW_PASSWORD>
 <h4><label class="protect-header-label"><input <TMPL_IF NAME=IS_PASSWORD>checked="checked"</TMPL_IF> type="checkbox" name="protection" onclick="toggleProtectPrefs(this,'password_prefs'); return true" value="Password"> <MT_TRANS phrase="Password Protection"></label></h4>
-		
 <div id="password_prefs" class="setting" style="display: <TMPL_IF NAME=IS_PASSWORD>block<TMPL_ELSE>none</TMPL_IF>;">
     <div class="label">
-        <label for="password"><MT_TRANS phrase="Password">:</label>
+        <label for="privacy_password"><MT_TRANS phrase="Password">:</label>
     </div>
     <div class="field">
-        <input name="password" id="password" value="<TMPL_VAR NAME=PASSWORD ESCAPE=HTML>" type="password" />
+        <input name="privacy_password" id="privacy_password" value="<TMPL_VAR NAME=PASSWORD ESCAPE=HTML>" type="password" />
   		<p><a href="javascript:void(0);" onclick="reveal_password();"><MT_TRANS phrase="Reveal password"></a></p>
     </div>
 </div>		

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <plugin version="1.0">
-  <name>MT Protect</name>
+  <name>Privacy</name>
   <version_url>http://plugins.movalog.com/plugin-manager.php?plugin=MT%20Protect</version_url>
   <sig>Protect/Protect.pl</sig>
   <files>
@@ -18,9 +18,9 @@
       <static>1</static>
     </file>
     <file>
-      <src>Protect/plugins/Protect/mt-protect.cgi</src>
+      <src>Protect/plugins/Privacy/privacy.cgi</src>
       <permissions>0755</permissions>
-      <destination>plugins/Protect/mt-protect.cgi</destination>
+      <destination>plugins/Privacy/privacy.cgi</destination>
     </file>
   </files>
   <uninstall>

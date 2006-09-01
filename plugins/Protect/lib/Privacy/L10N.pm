@@ -1,9 +1,9 @@
-# MT Protect plugin for Movable Type
+# Privacy plugin for Movable Type
 # Author: Arvind Satyanarayan (http://www.movalog.com)
 # Released under the Artistic License
 #
 
-package Protect::L10N;
+package Privacy::L10N;
 use strict;
 use base 'MT::Plugin::L10N';
 

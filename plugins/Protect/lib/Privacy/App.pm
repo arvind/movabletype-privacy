@@ -1,8 +1,10 @@
-package Protect::App;
+package Privacy::App;
+
+use MT::Util qw( start_background_task );
 
 sub config {
     my $config = {};
-	my $plugin = MT::Plugin::Protect->instance;
+	my $plugin = MT::Plugin::Privacy->instance;
     if ($plugin) {
         require MT::Request;
         my ($scope) = (@_);
@@ -16,14 +18,14 @@ sub config {
 }
 
 sub convert_data {
-	my $plugin = MT::Plugin::Protect->instance;
+	my $plugin = MT::Plugin::Privacy->instance;
 	
-	require Protect::Protect;
-	require Protect::Object;
-	require Protect::Groups;
-	my $objs_iter = Protect::Protect->load_iter();
+	require Privacy::Protect;
+	require Privacy::Object;
+	require Privacy::Groups;
+	my $objs_iter = Privacy::Protect->load_iter();
 	while (my $orig_obj = $objs_iter->()) {
-		my $obj = Protect::Object->new;
+		my $obj = Privacy::Object->new;
 		$obj->blog_id($orig_obj->blog_id);
 		$obj->object_id($orig_obj->entry_id);
 		$obj->object_datasource('entry');
@@ -46,7 +48,7 @@ sub convert_data {
 		$orig_obj->remove or die $orig_obj->errstr;
 	}
 	
-	my $groups_iter = Protect::Groups->load_iter();
+	my $groups_iter = Privacy::Groups->load_iter();
 	while (my $group = $groups_iter->()) {
 		my $users = $group->data;
 		$users = join ',', @$users;		
@@ -61,7 +63,7 @@ sub convert_data {
 }
 
 sub load_php_file {
-	my $plugin = MT::Plugin::Protect->instance;
+	my $plugin = MT::Plugin::Privacy->instance;
 	
     require MT::FileMgr;
 	require MT::Template; 
@@ -70,20 +72,20 @@ sub load_php_file {
         or return $app->error(MT::FileMgr->errstr);
 	my $pub = MT::WeblogPublisher->new;
 	
-    my $mt_protect_php = $filemgr->get_data(File::Spec->catfile($plugin->{full_path},"mt-protect.php"))
+    my $mt_protect_php = $filemgr->get_data(File::Spec->catfile($plugin->{full_path},"privacy.php"))
 		or die $plugin->translate("Unable to get mt-password.php from plugin folder. File Manager gave the error: [_1].", $filemgr->errstr);
 
 	require MT::Blog;
 	my $iter = MT::Blog->load_iter;
 	while (my $blog = $iter->()) {
-		my $tmpl = MT::Template->load({ name => 'MT Protect Bootstrapper', blog_id => $blog->id });
+		my $tmpl = MT::Template->load({ name => 'Privacy Bootstrapper', blog_id => $blog->id });
 		if(!$tmpl) {
 			$tmpl = MT::Template->new;
 			$tmpl->set_values({
 				'blog_id' => $blog->id,
-				'name' => 'MT Protect Bootstrapper',
+				'name' => 'Privacy Bootstrapper',
 				'type' => 'index',
-				'outfile' => 'mt-protect.php',
+				'outfile' => 'privacy.php',
 				'rebuild_me' => 1
 			});			
 		}
@@ -96,19 +98,19 @@ sub load_php_file {
 
 sub default_template_filter {
 	my ($eh, $tmpls) = @_;
-	my $plugin = MT::Plugin::Protect->instance;
+	my $plugin = MT::Plugin::Privacy->instance;
 	
     require MT::FileMgr;
     my $filemgr = MT::FileMgr->new('Local')
         or return $app->error(MT::FileMgr->errstr);
 	
-    my $mt_protect_php = $filemgr->get_data(File::Spec->catfile($plugin->{full_path},"mt-protect.php"))
+    my $mt_protect_php = $filemgr->get_data(File::Spec->catfile($plugin->{full_path},"privacy.php"))
 		or die $plugin->translate("Unable to get mt-password.php from plugin folder. File Manager gave the error: [_1].", $filemgr->errstr);
 	
 	my $tmpl = {
 		'type' => 'index',
-        'name' => 'MT Protect Bootstrapper',
-        'outfile' => 'mt-protect.php',
+        'name' => 'Privacy Bootstrapper',
+        'outfile' => 'privacy.php',
 		'rebuild_me' => '1',
 		'text' => $mt_protect_php
 	};
@@ -119,7 +121,7 @@ sub default_template_filter {
 sub _edit_entry {
 	my($eh, $app, $tmpl) = @_;
 	my($old, $new);
-	my $plugin = MT::Plugin::Protect->instance;
+	my $plugin = MT::Plugin::Privacy->instance;
 	my $edit_tmpl_path = File::Spec->catdir($plugin->{full_path},'tmpl','protect.tmpl');
 	
 	$old = <<HTML;
@@ -144,7 +146,7 @@ HTML
 
 <div class="field" id="protect">
 <div class="field-header">
-<label for="text_more"><MT_TRANS phrase="Protect Entry"></label>
+<label for="text_more"><MT_TRANS phrase="Make Entry Private"></label>
 </div>
 <div class="field-wrapper">
 
@@ -160,7 +162,7 @@ HTML
 sub _edit_category {
 	my($eh, $app, $tmpl) = @_;
 	my($old, $new);
-	my $plugin = MT::Plugin::Protect->instance;
+	my $plugin = MT::Plugin::Privacy->instance;
 	my $edit_tmpl_path = File::Spec->catdir($plugin->{full_path},'tmpl','protect.tmpl');
 	
 	$old = <<HTML;
@@ -183,39 +185,39 @@ HTML
 sub _edit_categories {
 	my($eh, $app, $tmpl) = @_;
 	my($old, $new);
-	my $plugin = MT::Plugin::Protect->instance;
+	my $plugin = MT::Plugin::Privacy->instance;
 
 	$old = qq{<TMPL_VAR NAME=CATEGORY_LABEL></a>};
 	$old = quotemeta($old);
-	$new = qq{<TMPL_IF NAME=PROTECTED>&nbsp;&nbsp;<a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=view&amp;_type=category&amp;blog_id=<TMPL_VAR NAME=BLOG_ID>&amp;id=<TMPL_VAR NAME=CATEGORY_ID>#protect"><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/protected.gif" alt="<MT_TRANS phrase="Category Protected">"  /></TMPL_IF>};
+	$new = qq{<TMPL_IF NAME=PROTECTED>&nbsp;&nbsp;<a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=view&amp;_type=category&amp;blog_id=<TMPL_VAR NAME=BLOG_ID>&amp;id=<TMPL_VAR NAME=CATEGORY_ID>#protect"><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/images/protected.gif" alt="<MT_TRANS phrase="Private Category">"  /></TMPL_IF>};
 	$$tmpl =~ s/($old)/$1\n$new\n/;	
 }
 
 sub _list_entry {
 	my($eh, $app, $tmpl) = @_;
 	my($old, $new);
-	my $plugin = MT::Plugin::Protect->instance;
+	my $plugin = MT::Plugin::Privacy->instance;
 
 	$old = qq{<TMPL_VAR NAME=TITLE_LONG>};
 	$old = quotemeta($old);
-	$new = qq{<TMPL_UNLESS NAME=IS_POWER_EDIT><TMPL_IF NAME=PROTECTED><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/protected.gif" alt="<MT_TRANS phrase="Entry Protected">"  /></a><TMPL_ELSE>&nbsp;</TMPL_IF></TMPL_UNLESS>};
+	$new = qq{<TMPL_UNLESS NAME=IS_POWER_EDIT><TMPL_IF NAME=PROTECTED><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/images/protected.gif" alt="<MT_TRANS phrase="Entry Protected">"  /></a><TMPL_ELSE>&nbsp;</TMPL_IF></TMPL_UNLESS>};
 	$$tmpl =~ s/($old)/$1\n$new\n/;	
 	
 	$old = qq{<TMPL_VAR NAME=TITLE_SHORT>};
 	$old = quotemeta($old);
-	$new = qq{<TMPL_UNLESS NAME=IS_POWER_EDIT><TMPL_IF NAME=PROTECTED></a>&nbsp;&nbsp;<a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=view&amp;_type=entry&amp;id=<TMPL_VAR NAME=ID>&amp;blog_id=<TMPL_VAR NAME=BLOG_ID>#protect"><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/protected.gif" alt="<MT_TRANS phrase="Entry Protected">"  /><TMPL_ELSE>&nbsp;</TMPL_IF></TMPL_UNLESS>};
+	$new = qq{<TMPL_UNLESS NAME=IS_POWER_EDIT><TMPL_IF NAME=PROTECTED></a>&nbsp;&nbsp;<a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=view&amp;_type=entry&amp;id=<TMPL_VAR NAME=ID>&amp;blog_id=<TMPL_VAR NAME=BLOG_ID>#protect"><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/images/protected.gif" alt="<MT_TRANS phrase="Private Entry">"  /><TMPL_ELSE>&nbsp;</TMPL_IF></TMPL_UNLESS>};
 	$$tmpl =~ s/($old)/$1\n$new\n/;	
 }
 
 sub _system_list_blog {
 	my($eh, $app, $tmpl) = @_;
 	my($old, $new);
-	my $plugin = MT::Plugin::Protect->instance;
-	my $link = $app->base.$app->path.$plugin->envelope.'/mt-protect.cgi';
+	my $plugin = MT::Plugin::Privacy->instance;
+	my $link = $app->base.$app->path.$plugin->envelope.'/privacy.cgi';
 	
 	$old = qq{<TMPL_VAR NAME=NAME ESCAPE=HTML></a>};
 	$old = quotemeta($old);
-	$new = qq{<TMPL_IF NAME=PROTECTED></a>&nbsp;&nbsp;<a href="$link?__mode=edit&amp;_type=blog&blog_id=<TMPL_VAR NAME=ID>#protect"><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/protected.gif" alt="<MT_TRANS phrase="Blog Protected">"  /></TMPL_IF>};
+	$new = qq{<TMPL_IF NAME=PROTECTED></a>&nbsp;&nbsp;<a href="$link?__mode=edit&amp;_type=blog&blog_id=<TMPL_VAR NAME=ID>#protect"><img src="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/images/protected.gif" alt="<MT_TRANS phrase="Private Blog">"  /></TMPL_IF>};
 	$$tmpl =~ s/($old)/$1\n$new\n/;	
 }
 
@@ -229,11 +231,11 @@ sub _list_param {
 	} elsif($type eq 'blog') {
 		$objs = $param->{blog_loop};
 	}
-	require Protect::Object;
+	require Privacy::Object;
 	foreach my $obj (@$objs) {
 		my $blog_id = $obj->{weblog_id} || $app->param('blog_id') || $obj->{id};
 		my $id = $obj->{id} || $obj->{category_id};
-		my $protected = Protect::Object->load({ blog_id => $blog_id, object_id => $id, object_datasource => $type });
+		my $protected = Privacy::Object->load({ blog_id => $blog_id, object_id => $id, object_datasource => $type });
 		if($protected && ($protected->password || $protected->typekey_users || $protected->livejournal_users || $protected->openid_users)) {
 			$obj->{"protected"} = 1;
 		}
@@ -260,9 +262,11 @@ sub _param {
         $param->{'auth_pref_tag_delim'} = $delim;
     }
 
-	require Protect::Object;
-	my $data = Protect::Object->load({ blog_id => $blog_id, object_id => $obj_id, object_datasource => $datasource });
+	require Privacy::Object;
+	my $data = Privacy::Object->load({ blog_id => $blog_id, object_id => $obj_id, object_datasource => $datasource });
 	if($data) {
+		$app->log($data->password);
+		
 		$param->{is_password} = $data->password;
 		$param->{is_typekey} = $data->typekey_users;
 		$param->{is_livejournal} = $data->livejournal_users;
@@ -280,8 +284,8 @@ sub _param {
 		$param->{openid_users} = \@openid_users;
 	}
 	my @group_data;
-	require Protect::Groups;
-	my $iter = Protect::Groups->load_iter(undef, { 'sort' => 'label', direction => 'ascend'});
+	require Privacy::Groups;
+	my $iter = Privacy::Groups->load_iter(undef, { 'sort' => 'label', direction => 'ascend'});
 	while (my $group = $iter->()) {
 		my(@typekey_users, @livejournal_users, @openid_users);
 		my @typekey_users = split /,/, $group->typekey_users;
@@ -300,6 +304,10 @@ sub _param {
 	require JSON;
 	$param->{protection_groups} = JSON::objToJson(\@group_data);
 	$param->{protection_groups_loop} = \@group_data;
+	$param->{allow_recursive} = 1 
+		if $datasource ne 'entry';
+	$param->{"is_$datasource"} = 1;
+	$param->{type} = $datasource;
 	foreach my $field (keys (%$config)) {
 		next unless $field =~ m/show_/;
 		$param->{$field} = $config->{$field};
@@ -316,28 +324,27 @@ sub post_save {
 		if (!$q->param('protect_beacon'));
 		
 	my @protections = $q->param('protection');
-	my $password = 	in_array('Password', @protections) ? $q->param('password') : '';
+	my $password = 	in_array('Password', @protections) ? $q->param('privacy_password') : '';
 	my $typekey_users = in_array('Typekey', @protections) ? $q->param('typekey_users') : '';
 	my $livejournal_users = in_array('LiveJournal', @protections) ? $q->param('livejournal_users') : '';
 	my $openid_users = in_array('OpenID', @protections) ? $q->param('openid_users') : '';
-	
-	require Protect::Object;
-	unless($data = Protect::Object->load({ blog_id => $blog_id, object_id   => $obj->id, object_datasource => $obj->datasource })){
-		$data = Protect::Object->new;
+	require Privacy::Object;
+	unless($data = Privacy::Object->load({ blog_id => $blog_id, object_id   => $obj->id, object_datasource => $obj->datasource })){
+		$data = Privacy::Object->new;
 		$data->blog_id($blog_id);
 		$data->object_id($obj->id);
 		$data->object_datasource($obj->datasource);
 	}
 	if(ref($obj) eq 'MT::Entry' && $obj->category){
 		my $category = $obj->category;
-		my $category_protection = Protect::Object->load({ blog_id => $blog_id, object_id => $category->id, object_datasource=> $category->datasource});
+		my $category_protection = Privacy::Object->load({ blog_id => $blog_id, object_id => $category->id, object_datasource=> $category->datasource});
 		if($category_protection) {
 			$password = $category_protection->password if !$password;
 			$typekey_users = $typekey_users ? join ',', $typekey_users, $category_protection->typekey_users : $category_protection->typekey_users;
 			$livejournal_users = $livejournal_users ? join ',', $livejournal_users, $category_protection->livejournal_users : $category_protection->livejournal_users;
 			$openid_users = $openid_users ? join ',', $openid_users, $category_protection->openid_users : $category_protection->openid_users;
 		}
-	}	
+	}
 	$data->password($password);
 	$data->typekey_users($typekey_users);
 	$data->livejournal_users($livejournal_users);
@@ -346,16 +353,69 @@ sub post_save {
 		$data->save or
 			die $data->errstr; 
 	}
+	if($q->param('do_recursive')) {
+		if(ref($obj) eq 'MT::Blog') {
+			start_background_task(sub {
+				require MT::Category;
+				my $cat_iter = MT::Category->load_iter({ blog_id => $blog_id });
+				while (my $cat = $cat_iter->()) {
+					my $protected = Privacy::Object->load({ blog_id => $blog_id, object_id => $cat->id, object_datasource => $cat->datasource});
+					if(!$protected) {
+						$protected = Privacy::Object->new;
+						$protected->blog_id($blog_id);
+						$protected->object_id($cat->id);
+						$protected->object_datasource($cat->datasource);					
+					}
+					$protected->password($password);
+					$protected->typekey_users($typekey_users);
+					$protected->livejournal_users($livejournal_users);
+					$protected->openid_users($openid_users);	
+					if($password || $typekey_users || $livejournal_users || $openid_users) {
+						$protected->save or
+							die $protected->errstr; 
+					}
+				}
+			});
+		}
+		if(ref($obj) eq 'MT::Blog' || ref($obj) eq 'MT::Category') {
+			start_background_task(sub {			
+				require MT::Entry;
+				my %args;
+				if(ref($obj) eq 'MT::Category') {
+				    $args{'join'} = [ 'MT::Placement', 'entry_id',
+				        { category_id => $obj->id } ];
+				}
+				my $entry_iter = MT::Entry->load_iter({ blog_id => $blog_id }, \%args);
+				while (my $entry = $entry_iter->()) {
+					my $protected = Privacy::Object->load({ blog_id => $blog_id, object_id => $entry->id, object_datasource => $entry->datasource});
+					if(!$protected) {
+						$protected = Privacy::Object->new;
+						$protected->blog_id($blog_id);
+						$protected->object_id($entry->id);
+						$protected->object_datasource($entry->datasource);					
+					}
+					$protected->password($password);
+					$protected->typekey_users($typekey_users);
+					$protected->livejournal_users($livejournal_users);
+					$protected->openid_users($openid_users);	
+					if($password || $typekey_users || $livejournal_users || $openid_users) {
+						$protected->save or
+							die $protected->errstr; 
+					}				
+				}
+			});
+		}
+	}	
 }
 
 sub _header {
 	my ($eh, $app, $tmpl) = @_;
-	my $plugin = MT::Plugin::Protect->instance;
-	my $link = $app->base.$app->path.$plugin->envelope.'/mt-protect.cgi';
+	my $plugin = MT::Plugin::Privacy->instance;
+	my $link = $app->base.$app->path.$plugin->envelope.'/privacy.cgi';
 	my $old = q{<li><a<TMPL_IF NAME=NAV_AUTHORS> class="here"</TMPL_IF> id="nav-authors" title="<MT_TRANS phrase="List Authors">" href="<TMPL_VAR NAME=MT_URL>?__mode=list_authors"><MT_TRANS phrase="Authors"></a></li>};
 	$old = quotemeta($old);
 	my $new = <<HTML;
-<li><a style="background-image: url(<TMPL_VAR NAME=STATIC_URI>plugins/Protect/images/icon-groups.gif);" <TMPL_IF NAME=NAV_GROUPS> class="here"</TMPL_IF> id="nav-groups" title="<MT_TRANS phrase="Privacy Groups">" href="$link?__mode=groups"><MT_TRANS phrase="Privacy Groups"></a></li>
+<li><a style="background-image: url(<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/images/icon-groups.gif);" <TMPL_IF NAME=NAV_GROUPS> class="here"</TMPL_IF> id="nav-groups" title="<MT_TRANS phrase="Privacy Groups">" href="$link?__mode=groups"><MT_TRANS phrase="Privacy Groups"></a></li>
 HTML
 	$$tmpl =~ s/($old)/$1\n$new\n/;
 }

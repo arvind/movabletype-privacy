@@ -32,7 +32,7 @@ unshift @INC, $PLUGIN_DIR . '/lib';
 };
 
 
-package Protect::OpenIDSignOn;
+package Privacy::OpenIDSignOn;
 
 use MT;
 use MT::App;
@@ -153,7 +153,7 @@ sub _get_profile_data {
 sub verify {
     my $app = shift;
     my $q = $app->{query};
-	my $plugin = MT::Plugin::Protect->instance;
+	my $plugin = MT::Plugin::Privacy->instance;
 	my $obj_type = $q->param('_type');
 	my $obj_id = $q->param('id');
 	my $blog_id = $q->param('blog_id');
@@ -165,8 +165,8 @@ sub verify {
 	my $allow = 0;
 	my $redirect = $blog->site_url;
 	
-	require Protect::Object;
-    my $protected = Protect::Object->load({ blog_id => $blog->id, object_datasource => $obj_type, object_id => $obj_id })
+	require Privacy::Object;
+    my $protected = Privacy::Object->load({ blog_id => $blog->id, object_datasource => $obj_type, object_id => $obj_id })
         or return $app->error('Invalid '.$obj_type.' id '. $obj_id .' in verification');
 
 	if($obj_type eq 'entry') {
@@ -250,7 +250,7 @@ sub verify {
 			$plugin->set_config_value('rand', $rand);   	
 			my $url = $blog->site_url;
 			$url .= '/' unless $url =~ m!/$!;
-			return $app->redirect($url.'mt-protect.php?rand='.$rand.'&obj_type='.$obj_type.'&obj_id='.$obj_id.'&blog_id='.$blog->id.'&redirect='.$redirect);
+			return $app->redirect($url.'privacy.php?rand='.$rand.'&obj_type='.$obj_type.'&obj_id='.$obj_id.'&blog_id='.$blog->id.'&redirect='.$redirect);
 	    }           				
 	}
     return $app->error($app->translate('Sorry you do not have'));
@@ -272,9 +272,9 @@ sub in_array() {
 package main;
 
 eval {
-    my $app = Protect::OpenIDSignOn->new( Config => $MT_DIR . 'mt.cfg',
+    my $app = Privacy::OpenIDSignOn->new( Config => $MT_DIR . 'mt.cfg',
                                           Directory => $MT_DIR )
-        or die Protect::OpenIDSignOn->errstr;
+        or die Privacy::OpenIDSignOn->errstr;
     local $SIG{__WARN__} = sub { $app->trace($_[0]) };
     $app->run;
 };

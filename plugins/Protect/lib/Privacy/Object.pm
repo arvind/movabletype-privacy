@@ -1,10 +1,10 @@
-package Protect::Object;
+package Privacy::Object;
 
 use strict;
 
 use MT::Blog;
 use MT::Object;
-@Protect::Object::ISA = qw( MT::Object );
+@Privacy::Object::ISA = qw( MT::Object );
 __PACKAGE__->install_properties({
     column_defs => {
         'id' => 'integer not null auto_increment',

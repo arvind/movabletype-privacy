@@ -1,27 +1,26 @@
-package Protect::Protect;
+package Privacy::Groups;
 use strict;
 
 use MT::Serialize;
 
 use MT::Object;
-@Protect::Protect::ISA = qw( MT::Object );
+@Privacy::Groups::ISA = qw( MT::Object );
 __PACKAGE__->install_properties({
-    columns => [
-        'id', 'blog_id', 'entry_id', 'type', 'data',
-    ],
-    indexes => {
-        blog_id => 1,
-        entry_id => 1,
-        type => 1,
-    },
     column_defs => {
-    		'id' => 'integer not null auto_increment',
-    		'blog_id' => 'integer not null',
-    		'entry_id' => 'integer not null',
-    		'type' => 'varchar(10) not null',
-        'data' => 'blob',
+	    'id' => 'integer not null auto_increment',
+	    'label' => 'string(100) not null', 
+	    'description' => 'text',
+		'type' => 'string(10)',  
+		'typekey_users' => 'text',
+		'livejournal_users' => 'text',
+		'openid_users' => 'text',
+		'data' => 'blob'		
     },
-    datasource => 'protect',
+    indexes => {
+        id => 1,
+        label => 1,
+    },
+    datasource => 'protect_groups',
     primary_key => 'id',
 });
 

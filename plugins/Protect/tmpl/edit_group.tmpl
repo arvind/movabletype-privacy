@@ -1,5 +1,5 @@
 <TMPL_INCLUDE NAME="header.tmpl">
-<link rel="stylesheet" href="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/styles.css" type="text/css" />
+<link rel="stylesheet" href="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/styles.css" type="text/css" />
 <script type="text/javascript">
 <!--
 var tkusers, ljusers, oiusers;
@@ -26,10 +26,10 @@ function submitForm(f, mode) {
 
 //-->
 </script>		
-<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/yahoo.js"></script>
-<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/dom.js"></script>
-<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/event.js"></script>
-<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Protect/js/tag-widget.js"></script>
+<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/js/yahoo.js"></script>
+<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/js/dom.js"></script>
+<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/js/event.js"></script>
+<script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/js/tag-widget.js"></script>
 
 
 <h2><span class="weblog-title-highlight"><TMPL_IF NAME=BLOG_ID><TMPL_VAR NAME=BLOG_NAME ESCAPE=HTML><TMPL_ELSE><MT_TRANS phrase="System-wide"></TMPL_IF>:</span> <MT_TRANS phrase="Privacy Groups">: <TMPL_IF NAME=ID><TMPL_VAR NAME=LABEL><TMPL_ELSE><MT_TRANS phrase="New Protection Group"></TMPL_IF></h2>

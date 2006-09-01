@@ -5,7 +5,7 @@
 # Copyright (C) 2005 Arvind Satyanarayan
 #
 
-package Protect::CMS;
+package Privacy::CMS;
 use strict;
 
 use vars qw( $DEBUG @ISA );
@@ -32,7 +32,7 @@ sub init
     $app->{state_params} = [
         '_type', 'id', 'blog_id', 'from'
     ];    
-    $app->{plugin_template_path} = File::Spec->catdir('plugins','Protect','tmpl');
+    $app->{plugin_template_path} = File::Spec->catdir('plugins','Privacy','tmpl');
     $app->{default_mode}   = 'edit';
     $app->{user_class}     = 'MT::Author';
     $app->{requires_login} = 1;
@@ -82,8 +82,8 @@ sub edit {
 	       }
 	       $param->{'auth_pref_tag_delim'} = $delim;
 	   }
-		require Protect::Groups;
-		my $group = Protect::Groups->load($id);
+		require Privacy::Groups;
+		my $group = Privacy::Groups->load($id);
 		if($group) {
 			$param->{is_typekey} = $group->typekey_users;
 			$param->{is_livejournal} = $group->livejournal_users;
@@ -124,8 +124,8 @@ sub edit {
 sub groups {
     my $app = shift;
     my $q = $app->{query};
-	require Protect::Groups;
-    my $iter = Protect::Groups->load_iter(undef, { 'sort' => 'label', direction => 'ascend'});
+	require Privacy::Groups;
+    my $iter = Privacy::Groups->load_iter(undef, { 'sort' => 'label', direction => 'ascend'});
     my (@data,$param);
     my $n_entries = 0; # the number of entries displayed on this page
     while (my $group = $iter->()) {
@@ -159,13 +159,13 @@ sub save {
 
 	if($type eq 'blog') {
 		my $blog = MT::Blog->load($blog_id);
-		require Protect::App;
-		Protect::App::post_save($app, $blog);
+		require Privacy::App;
+		Privacy::App::post_save($app, $blog);
     } elsif($type eq 'groups') {
-		require Protect::Groups;
- 		my $group = Protect::Groups->load($id);
+		require Privacy::Groups;
+ 		my $group = Privacy::Groups->load($id);
 		if(!$group) {
-			$group = Protect::Groups->new;
+			$group = Privacy::Groups->new;
 		}
     	my $names = $group->column_names;
 		my %values = map { $_ => scalar $q->param($_) } @$names;
@@ -187,9 +187,9 @@ sub delete
 
     my $type = $q->param('_type');
     if($type eq 'groups') {
-		require Protect::Groups;
+		require Privacy::Groups;
         foreach my $id ($q->param('id')) {
-            my $group = Protect::Groups->load($id);
+            my $group = Privacy::Groups->load($id);
             $group->remove or return $app->error("Error: " . $group->errstr);
         }       
     } 
@@ -210,7 +210,7 @@ sub debug {
 sub uri { my $app = shift; $app->app_path . $app->script . $app->uri_params(@_); }
 
 sub plugin {
-	return MT::Plugin::Protect->instance;
+	return MT::Plugin::Privacy->instance;
 }
 
 

@@ -1,8 +1,8 @@
-package Protect::Template::ContextHandlers;
+package Privacy::Template::ContextHandlers;
 
 sub protect {
 	my ($type, $ctx, $args, $cond) = @_;
-	my $plugin = MT::Plugin::Protect->instance;
+	my $plugin = MT::Plugin::Privacy->instance;
 	my $blog_id = $ctx->stash('blog_id');
     my $builder = $ctx->stash ('builder');
     my $tokens = $ctx->stash ('tokens');
@@ -23,8 +23,8 @@ sub protect {
 		
 	my $protected = $ctx->stash('protected_obj');
 	if(!$protected) {
-		require Protect::Object;
-		$protected = Protect::Object->load({ blog_id => $blog_id, object_datasource => $type, object_id => $obj->id });
+		require Privacy::Object;
+		$protected = Privacy::Object->load({ blog_id => $blog_id, object_datasource => $type, object_id => $obj->id });
 		$ctx->stash('protected_obj', $protected);
 	}
 	return $out if !$protected;
@@ -45,7 +45,7 @@ sub protect {
 sub protect_obj_id {
 	my ($ctx) = @_;
 	my $obj = $ctx->stash('protect_obj');
-	return $ctx->_no_protect_obj('MTProtectObjectID')
+	return $ctx->_no_protect_obj('MTPrivacyObjectID')
 		if !$obj;	
 	return $obj->id;
 }
@@ -53,7 +53,7 @@ sub protect_obj_id {
 sub protect_obj_type {
 	my ($ctx) = @_;	
 	my $obj = $ctx->stash('protect_obj');
-	return $ctx->_no_protect_obj('MTProtectObjectType')
+	return $ctx->_no_protect_obj('MTPrivacyObjectType')
 		if !$obj;	
 	return $obj->datasource;
 }
@@ -97,7 +97,7 @@ sub _no_protect_obj {
 sub _no_protected_obj {
     return $_[0]->error(MT->translate(
         "You used an '[_1]' tag outside of the context of a protected asset; " .
-        "perhaps you mistakenly placed it outside of an 'MTProtect' container?",
+        "perhaps you mistakenly placed it outside of an 'MTPrivacy' container?",
         $_[1]));	
 }
 
