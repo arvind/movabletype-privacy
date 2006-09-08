@@ -26,9 +26,9 @@ MT->add_plugin($plugin = __PACKAGE__->new({
             version_limit => 2.0,
             code => sub { require Privacy::App; Privacy::App::convert_data(@_); },
         },
-		'mt_protect_php_file' => {
+		'load_files' => {
 			version_limit => 2.0, 
-			code => sub { require Privacy::App; Privacy::App::load_php_file(@_); },
+			code => sub { require Privacy::App; Privacy::App::load_files(@_); },
 		}
     },
 	l10n_class 	    => 'Privacy::L10N',
@@ -67,7 +67,7 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		'MT::App::CMS::AppTemplateParam.system_list_blog' => sub { require Privacy::App; Privacy::App::_list_param(@_, 'blog'); },
 		'Privacy::CMS::AppTemplateParam.protect_blog' => sub { require Privacy::App; Privacy::App::_param(@_, 'blog'); },
 		'*::AppTemplateSource'  => sub { require Privacy::App; Privacy::App::_header(@_); },
-		'DefaultTemplateFilter'  => sub { require Privacy::App; Privacy::App::default_template_filter(@_); }
+		'DefaultTemplateFilter'  => sub { require Privacy::App; Privacy::App::load_files(@_); }
 	},
 	container_tags => {
 		'PrivateBlog'		=> sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::protect('blog', @_);},
@@ -89,90 +89,7 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		['show_third_party', { Default => 0 }],
 		['show_typekey', { Default => 0 }],
 		['show_livejournal', { Default => 0 }],
-		['show_openid', { Default => 0 }],
-        ['protect_text', { Default => q{<MTIgnore>
-#### Javascript to toggle the display of the various protection types
-</MTIgnore>
-<script type="text/javascript">
-<!--
-	function togglePrivacyTypes(type, id) {
-		var types = new Array('password', 'typekey', 'livejournal', 'openid');
-		for (var i = 0; i < types.length; i++) {
-			var el = document.getElementById(types[i] + '-' + id + '-protect');
-			if(el) el.style.display = 'none';
-		}
-		var el = document.getElementById(type + '-' + id + '-protect');
-		if(el) el.style.display = 'block';
-	}
-//-->
-</script>
-<p>This is a private <MTPrivateObjectType>. To view it, please choose one of the options below and follow the steps.</p>
-<p>
-	<MTIfPasswordProtected>
-		<a href="#" onclick="togglePrivacyTypes('password', '<MTPrivateObjectID>');"><img src="<MTStaticWebPath>plugins/Privacy/images/button-password.gif" alt="Enter Password" /></a>
-	</MTIfPasswordProtected>
-	
-	<MTIfTypekeyProtected>
-		<a href="#" onclick="togglePrivacyTypes('typekey', '<MTPrivateObjectID>');"><img src="<MTStaticWebPath>plugins/Privacy/images/button-typekey.gif" alt="Login via Typekey" /></a>
-	</MTIfTypekeyProtected>
-	
-	<MTIfLiveJournalProtected>
-		<a href="#" onclick="togglePrivacyTypes('livejournal', '<MTPrivateObjectID>');"><img src="<MTStaticWebPath>plugins/Privacy/images/button-livejournal.gif" alt="Login via LiveJournal" /></a>
-	</MTIfLiveJournalProtected>
-	
-	<MTIfOpenIDProtected>
-		<a href="#" onclick="togglePrivacyTypes('openid', '<MTPrivateObjectID>');"><img src="<MTStaticWebPath>plugins/Privacy/images/button-openid.gif" alt="Login via OpenID" /></a>
-	</MTIfOpenIDProtected>
-</p>
-
-<form action="<MTCGIPath>plugins/Privacy/signon.cgi" method="post" id="password-protect">
-	<input type="hidden" name="__mode" value="verify" />
-	<input type="hidden" name="blog_id" value="<MTBlogID>" />
-	<input type="hidden" name="id" value="<MTPrivateObjectID>" />
-	<input type="hidden" name="_type" value="<MTPrivateObjectType>" />
-	
-	<MTIfPasswordProtected>
-		<div id="password-<MTPrivateObjectID>-protect" style="display:none;">
-			<p>Enter the password below to view this <MTPrivateObjectType>:</p>
-			<p>
-				<label>Password: <input type="text" name="password" value="" /></label> 
-				<input type="submit" name="submit" value="Submit" id="submit" />
-			</p>
-		</div>
-	</MTIfPasswordProtected>
-	
-	<MTIfTypekeyProtected>
-		<div id="typekey-<MTPrivateObjectID>-protect" style="display:none;">
-			<p>Enter your Typekey username below to view this <MTPrivateObjectType>:</p>
-			<p>
-				<label>Typekey Username: <input type="text" name="tk_user" value="" style="background: white url(<MTStaticWebPath>plugins/Privacy/images/input-typekey.gif) no-repeat; padding-left: 22px;" /></label> 
-				<input type="submit" name="submit" value="Submit" id="submit" />
-			</p>
-		</div>
-	</MTIfTypekeyProtected>
-	
-	<MTIfLiveJournalProtected>
-		<div id="livejournal-<MTPrivateObjectID>-protect" style="display:none;">
-			<p>Enter your LiveJournal username below to view this <MTPrivateObjectType>:</p>
-			<p>
-				<label>LiveJournal Username: <input type="text" name="lj_user" value="" style="background: white url(<MTStaticWebPath>plugins/Privacy/images/input-livejournal.gif) no-repeat; padding-left: 22px;" /></label> 
-				<input type="submit" name="submit" value="Submit" id="submit" />
-			</p>
-		</div>
-	</MTIfLiveJournalProtected>	
-	
-	<MTIfOpenIDProtected>
-		<div id="openid-<MTPrivateObjectID>-protect" style="display:none;">
-			<p>Enter your OpenID URL below to view this <MTPrivateObjectType>:</p>
-			<p>
-				<label>OpenID Username: <input type="text" name="openid_url" value="" style="background: white url(<MTStaticWebPath>plugins/Privacy/images/input-openid.gif) no-repeat; padding-left: 22px;" /></label> 
-				<input type="submit" name="submit" value="Submit" id="submit" />
-			</p>
-		</div>
-	</MTIfOpenIDProtected>	
-	
-</form>
-} }]
+		['show_openid', { Default => 0 }]
     ]),
 	config_template => 'config.tmpl'
 }));
@@ -192,6 +109,15 @@ sub init {
 	$plugin->SUPER::init(@_);
 	MT->config->PluginSchemaVersion({})
 	unless MT->config->PluginSchemaVersion;
+}
+
+# Populates values for system templates
+sub init_request {
+    my $plugin = shift;
+    my ($app) = @_;
+	$plugin->SUPER::init_request(@_);
+	$MT::L10N::en_us::Lexicon{_SYSTEM_TEMPLATE_PRIVACY_LOGIN} = 'Shown when an asset is private';
+	$MT::L10N::en_us::Lexicon{_SYSTEM_TEMPLATE_PRIVACY_BARRED} = 'Shown when a reader logs in to view a private asset but is not explicitly allowed';
 }
 
 # Blog settings default to system settings (hence blog settings override system)

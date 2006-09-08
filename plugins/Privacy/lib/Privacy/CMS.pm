@@ -61,7 +61,7 @@ sub build_page {
 sub edit {
     my $app = shift;
     my $q = $app->{query};
-    my ($param, $tmpl, $entry, @typekey_data,@openid_data, $datasource);
+    my ($param, $tmpl, $entry, @typekey_data,@openid_data, $datasource, $group);
     my $blog_id = $q->param('blog_id');
     my $blog = MT::Blog->load($blog_id);
     my $id = $q->param('id');
@@ -83,8 +83,7 @@ sub edit {
 	       $param->{'auth_pref_tag_delim'} = $delim;
 	   }
 		require Privacy::Groups;
-		my $group = Privacy::Groups->load($id);
-		if($group) {
+		if($id && ($group = Privacy::Groups->load($id))) {
 			$param->{is_typekey} = $group->typekey_users;
 			$param->{is_livejournal} = $group->livejournal_users;
 			$param->{is_openid} = $group->openid_users;
@@ -112,9 +111,9 @@ sub edit {
 	    $tmpl = 'edit_group.tmpl';                
 	    $app->add_breadcrumb($app->plugin->translate("Protection Groups"),$app->uri(mode => 'groups'));
 	    $app->add_breadcrumb($app->plugin->translate("Add New Group"))
-			if !$group;
+			if !$id;
 	    $app->add_breadcrumb($group->label)
-			if $group;        
+			if $id;        
 	}
 	$param->{saved} = $q->param('saved');
 	$param->{return_args} ||= $app->make_return_args;

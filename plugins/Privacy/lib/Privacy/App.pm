@@ -1,6 +1,23 @@
 package Privacy::App;
 
-use MT::Util qw( start_background_task );
+use MT::Util qw( start_background_task dirify );
+
+my $templates = [
+          {
+            'outfile' => 'privacy.php',
+            'name' => 'Privacy: Bootstrapper',
+            'type' => 'index',
+            'rebuild_me' => '1'
+          },
+          {
+            'name' => 'Privacy: Login',
+            'type' => 'privacy_login',
+          },
+          {
+            'name' => 'Privacy: Not Allowed',
+            'type' => 'privacy_barred',
+          },
+        ];
 
 sub config {
     my $config = {};
@@ -62,60 +79,43 @@ sub convert_data {
 	}
 }
 
-sub load_php_file {
-	my $plugin = MT::Plugin::Privacy->instance;
-	
-    require MT::FileMgr;
-	require MT::Template; 
-	require MT::WeblogPublisher;
-    my $filemgr = MT::FileMgr->new('Local')
-        or return $app->error(MT::FileMgr->errstr);
-	my $pub = MT::WeblogPublisher->new;
-	
-    my $mt_protect_php = $filemgr->get_data(File::Spec->catfile($plugin->{full_path},"privacy.php"))
-		or die $plugin->translate("Unable to get mt-password.php from plugin folder. File Manager gave the error: [_1].", $filemgr->errstr);
-
-	require MT::Blog;
-	my $iter = MT::Blog->load_iter;
-	while (my $blog = $iter->()) {
-		my $tmpl = MT::Template->load({ name => 'Privacy Bootstrapper', blog_id => $blog->id });
-		if(!$tmpl) {
-			$tmpl = MT::Template->new;
-			$tmpl->set_values({
-				'blog_id' => $blog->id,
-				'name' => 'Privacy Bootstrapper',
-				'type' => 'index',
-				'outfile' => 'privacy.php',
-				'rebuild_me' => 1
-			});			
-		}
-		$tmpl->text($mt_protect_php);
-		$tmpl->save or die $tmpl->errstr;
-		$pub->rebuild_indexes(Blog => $blog, Template => $tmpl, Force => 1)
-			or die $pub->errstr;
-	}
-}
-
-sub default_template_filter {
+sub load_files {
 	my ($eh, $tmpls) = @_;
 	my $plugin = MT::Plugin::Privacy->instance;
+	local (*FIN, $/);
+    $/ = undef;
+    foreach my $tmpl (@$templates) {
+        my $file = File::Spec->catfile($plugin->{full_path}, 'tmpl', 'default_templates', dirify($tmpl->{name}).'.tmpl');
+        if ((-e $file) && (-r $file)) {
+            open FIN, "<$file"; my $data = <FIN>; close FIN;
+            $tmpl->{text} = $data;
+        } else {
+            die $plugin->translate("Couldn't find file '[_1]'", $file);
+        }
+		if(@$tmpls) {
+			push @$tmpls, $tmpl;
+		}
+    }
 	
-    require MT::FileMgr;
-    my $filemgr = MT::FileMgr->new('Local')
-        or return $app->error(MT::FileMgr->errstr);
-	
-    my $mt_protect_php = $filemgr->get_data(File::Spec->catfile($plugin->{full_path},"privacy.php"))
-		or die $plugin->translate("Unable to get mt-password.php from plugin folder. File Manager gave the error: [_1].", $filemgr->errstr);
-	
-	my $tmpl = {
-		'type' => 'index',
-        'name' => 'Privacy Bootstrapper',
-        'outfile' => 'privacy.php',
-		'rebuild_me' => '1',
-		'text' => $mt_protect_php
-	};
-	
-	push @$tmpls, $tmpl;
+	if(!@$tmpls) {
+		require MT::Blog;
+		my $iter = MT::Blog->load_iter;		
+		while (my $blog = $iter->()) {
+		    for my $val (@$templates) {
+		        $val->{name} = $plugin->translate($val->{name});
+		        $val->{text} = $plugin->translate_templatized($val->{text});
+		        my $tmpl = MT::Template->new;
+		        $tmpl->set_values($val);
+		        $tmpl->build_dynamic(0);
+		        $tmpl->blog_id($blog->id);
+		        $tmpl->save or
+		            return $app->error($plugin->translate(
+		                "Populating blog with template '[_1]' failed: [_2]", $val->{name},
+		                $tmpl->errstr));
+		    }			
+		}
+	}
+		
 }
 
 sub _edit_entry {
@@ -264,9 +264,7 @@ sub _param {
 
 	require Privacy::Object;
 	my $data = Privacy::Object->load({ blog_id => $blog_id, object_id => $obj_id, object_datasource => $datasource });
-	if($data) {
-		$app->log($data->password);
-		
+	if($obj_id && (my $data = Privacy::Object->load({ blog_id => $blog_id, object_id => $obj_id, object_datasource => $datasource }))) {
 		$param->{is_password} = $data->password;
 		$param->{is_typekey} = $data->typekey_users;
 		$param->{is_livejournal} = $data->livejournal_users;
@@ -316,7 +314,6 @@ sub _param {
 
 sub post_save {
 	my ($eh, $obj, $original) = @_;
-	my($data);
 	my $app = MT->instance;
 	my $q = $app->{query};
 	my $blog_id = $q->param('blog_id');
@@ -329,12 +326,15 @@ sub post_save {
 	my $livejournal_users = in_array('LiveJournal', @protections) ? $q->param('livejournal_users') : '';
 	my $openid_users = in_array('OpenID', @protections) ? $q->param('openid_users') : '';
 	require Privacy::Object;
-	unless($data = Privacy::Object->load({ blog_id => $blog_id, object_id   => $obj->id, object_datasource => $obj->datasource })){
-		$data = Privacy::Object->new;
-		$data->blog_id($blog_id);
-		$data->object_id($obj->id);
-		$data->object_datasource($obj->datasource);
+	my $data = Privacy::Object->load({ blog_id => $blog_id, object_id   => $obj->id, object_datasource => $obj->datasource });
+	if($data) {
+		$data->remove or die $data->errstr;
 	}
+	$data = Privacy::Object->new;
+	$data->blog_id($blog_id);
+	$data->object_id($obj->id);
+	$data->object_datasource($obj->datasource);
+
 	if(ref($obj) eq 'MT::Entry' && $obj->category){
 		my $category = $obj->category;
 		my $category_protection = Privacy::Object->load({ blog_id => $blog_id, object_id => $category->id, object_datasource=> $category->datasource});
@@ -360,12 +360,14 @@ sub post_save {
 				my $cat_iter = MT::Category->load_iter({ blog_id => $blog_id });
 				while (my $cat = $cat_iter->()) {
 					my $protected = Privacy::Object->load({ blog_id => $blog_id, object_id => $cat->id, object_datasource => $cat->datasource});
-					if(!$protected) {
-						$protected = Privacy::Object->new;
-						$protected->blog_id($blog_id);
-						$protected->object_id($cat->id);
-						$protected->object_datasource($cat->datasource);					
+					if($protected) {
+						$protected->remove or
+							die $protected->errstr;
 					}
+					$protected = Privacy::Object->new;
+					$protected->blog_id($blog_id);
+					$protected->object_id($cat->id);
+					$protected->object_datasource($cat->datasource);					
 					$protected->password($password);
 					$protected->typekey_users($typekey_users);
 					$protected->livejournal_users($livejournal_users);
@@ -388,20 +390,22 @@ sub post_save {
 				my $entry_iter = MT::Entry->load_iter({ blog_id => $blog_id }, \%args);
 				while (my $entry = $entry_iter->()) {
 					my $protected = Privacy::Object->load({ blog_id => $blog_id, object_id => $entry->id, object_datasource => $entry->datasource});
-					if(!$protected) {
-						$protected = Privacy::Object->new;
-						$protected->blog_id($blog_id);
-						$protected->object_id($entry->id);
-						$protected->object_datasource($entry->datasource);					
+					if($protected) {
+						$protected->remove or
+							die $protected->errstr;
 					}
+					$protected = Privacy::Object->new;
+					$protected->blog_id($blog_id);
+					$protected->object_id($entry->id);
+					$protected->object_datasource($entry->datasource);					
 					$protected->password($password);
 					$protected->typekey_users($typekey_users);
 					$protected->livejournal_users($livejournal_users);
 					$protected->openid_users($openid_users);	
-					if($password || $typekey_users || $livejournal_users || $openid_users) {
+					if($protected->id || $password || $typekey_users || $livejournal_users || $openid_users) {
 						$protected->save or
 							die $protected->errstr; 
-					}				
+					}		
 				}
 			});
 		}

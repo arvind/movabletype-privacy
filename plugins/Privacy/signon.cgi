@@ -104,11 +104,12 @@ sub signon {
 
     my $root = MT::ConfigMgr->instance->CGIPath;
 	my $qs = '?__mode=verify';
-	$qs .= "&$_=".$q->param($_)
-		foreach $q->param;
-	# for my $qparam ($q->param) {
-	# 	$qs .= "&$qparam=".$q->param($qparam);
-	# }
+	# $qs .= "&$_=".$q->param($_)
+	# 	foreach $q->param;
+	for my $qparam ($q->param) {
+		next if $qparam eq '__mode';
+		$qs .= "&$qparam=".$q->param($qparam);
+	}
     my $return_to = $app->base . $app->uri . $qs;
     my $check_url = $claimed_identity->check_url(
         return_to => $return_to,
@@ -189,10 +190,16 @@ sub verify {
 			$allow = 1;
 		}
 	} else {
-	    my $csr = $app->_get_csr;
 		if(!$q->param('openid.mode')) {
-			$app->signon;
+			my $qs = '?__mode=signon';
+			for my $qparam ($q->param) {
+				next if $qparam eq '__mode';
+				$qs .= "&$qparam=".$q->param($qparam);
+			}
+			return $app->redirect($app->uri.$qs);
 		}
+		
+		my $csr = $app->_get_csr;
 		$csr->verified_identity or die $csr->errcode;
 		
 	    if(my $setup_url = $csr->user_setup_url( post_grant => 'return' )) {
@@ -202,7 +209,6 @@ sub verify {
 			if($q->param('tk_user')) {
 				my @typekey = split /,/, $protected->typekey_users;
 				if(in_array($profile->{nickname}, @typekey)) {
-					return 'hello';
 					$allow = 1;
 				}
 			} elsif($q->param('lj_user')) {
@@ -250,10 +256,24 @@ sub verify {
 			$plugin->set_config_value('rand', $rand);   	
 			my $url = $blog->site_url;
 			$url .= '/' unless $url =~ m!/$!;
-			return $app->redirect($url.'privacy.php?rand='.$rand.'&obj_type='.$obj_type.'&obj_id='.$obj_id.'&blog_id='.$blog->id.'&redirect='.$redirect);
+			return $app->redirect($url.'privacy.php?rand='.$rand.'&obj_type='.$obj_type.'&id='.$obj_id.'&blog_id='.$blog->id.'&redirect='.$redirect);
 	    }           				
 	}
-    return $app->error($app->translate('Sorry you do not have'));
+	require MT::Template;
+	require MT::Template::Context;
+	my $ctx = MT::Template::Context->new;
+	$ctx->{__stash}{blog} = $blog;
+	$ctx->{__stash}{blog_id} = $blog_id;
+	$ctx->{__stash}{protected_obj} = $protected;
+	$ctx->{__stash}{"$obj_type"} = $obj;
+	$ctx->{__stash}{protect_obj} = $obj;
+	my $tmpl = MT::Template->load({ blog_id => $blog_id, type => 'privacy_barred'});
+    my %cond;
+    my $protect_text = $tmpl->build($ctx, \%cond);
+    $protect_text = $tmpl->errstr unless defined $protect_text;	
+	$app->{no_print_body} = 1;
+    $app->send_http_header;
+	$app->print($protect_text);
 }
 
 sub in_array() {

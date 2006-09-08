@@ -29,17 +29,29 @@ sub protect {
 	}
 	return $out if !$protected;
 	
-	my $protect_text = $plugin->get_config_value('protect_text', 'blog:'.$blog_id);
-	$tokens = $builder->compile($ctx, $protect_text)
-        or return $ctx->error($builder->errstr);
-	defined(my $protect_text_out = $builder->build($ctx, $tokens))
-    	or die $builder->errstr;
+	my $protect_text = $ctx->stash('protect_text'.$type.$obj->id);
+	
+	if(!$protect_text) {
+		require MT::Template;
+		my $tmpl = MT::Template->load({ blog_id => $blog_id, type => 'privacy_login'});
+	    my %cond;
+	    $protect_text = $tmpl->build($ctx, \%cond);
+	    $protect_text = $tmpl->errstr unless defined $protect_text;	
+		$ctx->stash('protect_text'.$type.$obj->id, $protect_text);
+	}
+	# my $protect_text = $plugin->get_config_value('protect_text', 'blog:'.$blog_id);
+	# $tokens = $builder->compile($ctx, $protect_text)
+	#         or return $ctx->error($builder->errstr);
+	# defined(my $protect_text_out = $builder->build($ctx, $tokens))
+	#     	or die $builder->errstr;
 	my $text = "<?php\n";
 	$text .= 'if($_COOKIE[\''.$type.$obj->id.'\']) { ?>'."\n";
 	$text .= $out;
 	$text .= "\n<?php } else { ?>\n";
-	$text .= $protect_text_out;
+	$text .= $protect_text;
 	$text .= "\n<?php } ?>";
+	
+	return $text;
 }
 
 sub protect_obj_id {
