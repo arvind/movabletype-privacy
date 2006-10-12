@@ -99,6 +99,7 @@ sub load_files {
 	
 	if(!@$tmpls) {
 		require MT::Blog;
+		require MT::Template;
 		my $iter = MT::Blog->load_iter;		
 		while (my $blog = $iter->()) {
 		    for my $val (@$templates) {
