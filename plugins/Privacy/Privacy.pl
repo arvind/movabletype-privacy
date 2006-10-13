@@ -36,7 +36,7 @@ MT->add_plugin($plugin = __PACKAGE__->new({
         'MT::App::CMS' => {
             'blog' => {
                 link => 'privacy.cgi?__mode=edit',
-                link_text => 'Make Blog Private'
+                link_text => 'Blog Privacy Settings'
             }
         }
     },
@@ -55,6 +55,7 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 	callbacks => {
 		'MT::App::CMS::AppTemplateSource.edit_entry' => sub { require Privacy::App; Privacy::App::_edit_entry(@_); },
 		'MT::App::CMS::AppTemplateParam.edit_entry'  => sub { require Privacy::App; Privacy::App::_param(@_, 'entry'); },
+		'MT::App::CMS::AppTemplateSource.entry_prefs' => sub { require Privacy::App; Privacy::App::_entry_prefs(@_); },
 		'MT::Entry::post_save' => sub { require Privacy::App; Privacy::App::post_save(@_); },
 		'MT::App::CMS::AppTemplateSource.edit_category' => sub { require Privacy::App; Privacy::App::_edit_category(@_); },
 		'MT::App::CMS::AppTemplateParam.edit_category' => sub { require Privacy::App; Privacy::App::_param(@_, 'category'); },

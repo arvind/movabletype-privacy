@@ -1,0 +1,19 @@
+<TMPL_INCLUDE NAME="header-popup.tmpl">
+
+<h2><span class="weblog-title-highlight"><TMPL_VAR NAME=BLOG_NAME ESCAPE=HTML>:</span> <MT_TRANS phrase="Privacy"></h2>
+
+<form method="post" action="<TMPL_VAR NAME=SCRIPT_URL>">
+<input type="hidden" name="__mode" value="do_recursive" />
+<input type="hidden" name="blog_id" value="<TMPL_VAR NAME=BLOG_ID>" />
+<input type="hidden" name="id" value="<TMPL_VAR NAME=ID>" />
+<input type="hidden" name="type" value="<TMPL_VAR NAME=TYPE>" />
+<input type="hidden" name="confirm" value="1" />
+
+<p><MT_TRANS phrase="Apply these privacy settings to:"></p>
+<p><input type="checkbox" name="entries" value="1" id="entries" /> <MT_TRANS phrase="All Entries"></p>
+<TMPL_IF NAME=TYPE_BLOG><p><input type="checkbox" name="categories" value="1" id="categories" /> <MT_TRANS phrase="All Categories"></p></TMPL_IF>
+
+<div>
+<input type="button" onclick="window.close()" value="<MT_TRANS phrase="Cancel">" />
+<input type="submit" value="<MT_TRANS phrase="Apply">" title="<MT_TRANS phrase="Apply">" />
+</div>

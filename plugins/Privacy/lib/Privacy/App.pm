@@ -144,10 +144,10 @@ sub _edit_entry {
 HTML
 	$old = quotemeta($old);
 	$new = <<HTML;
-
+<TMPL_IF NAME=DISP_PREFS_SHOW_PRIVACY>
 <div class="field" id="protect">
 <div class="field-header">
-<label for="text_more"><MT_TRANS phrase="Make Entry Private"></label>
+<label for="text_more"><MT_TRANS phrase="Privacy Settings"></label>
 </div>
 <div class="field-wrapper">
 
@@ -155,9 +155,30 @@ HTML
 
 </div>
 </div>
-
+<TMPL_ELSE>
+<input type="hidden" name="protect_beacon" value="2" id="protect_beacon" />
+</TMPL_IF>
 HTML
 	$$tmpl =~ s/($old)/$1\n$new\n/;
+}
+
+sub _entry_prefs {
+	my ($cb, $app, $template) = @_;
+	my ($old, $new);	
+	$old = qq{var customizable_fields = new Array('category'};	
+	$old = quotemeta($old);	
+	$new = qq{var customizable_fields = new Array('category','privacy',};
+	$$template =~ s/$old/$new/;	
+	
+	$old = qq{<TMPL_IF NAME=DISP_PREFS_SHOW_PING_URLS>custom_fields.push('ping-urls');</TMPL_IF>};
+	$old = quotemeta($old);
+	$new = qq{<TMPL_IF NAME=DISP_PREFS_SHOW_PRIVACY>custom_fields.push('privacy');</TMPL_IF>};
+	$$template =~ s/($old)/$1\n$new\n/;
+	
+	$old = qq{<li><label><input type="checkbox" name="custom_prefs" id="custom-prefs-keywords" value="keywords" onclick="setCustomFields(); return true"<TMPL_IF NAME=DISP_PREFS_SHOW_KEYWORDS> checked="checked"</TMPL_IF><TMPL_UNLESS NAME=DISP_PREFS_CUSTOM> disabled="disabled"</TMPL_UNLESS> class="cb" /> <MT_TRANS phrase="Keywords"></label></li>};
+	$old = quotemeta($old);
+	$new = qq{<li><label><input type="checkbox" name="custom_prefs" id="custom-prefs-privacy" value="privacy" onclick="setCustomFields(); return true"<TMPL_IF NAME=DISP_PREFS_SHOW_PRIVACY> checked="checked"</TMPL_IF><TMPL_UNLESS NAME=DISP_PREFS_CUSTOM> disabled="disabled"</TMPL_UNLESS> class="cb" /> <MT_TRANS phrase="Privacy Settings"></label></li>};
+	$$template =~ s/($old)/$1\n$new\n/;
 }
 
 sub _edit_category {
@@ -165,7 +186,6 @@ sub _edit_category {
 	my($old, $new);
 	my $plugin = MT::Plugin::Privacy->instance;
 	my $edit_tmpl_path = File::Spec->catdir($plugin->{full_path},'tmpl','protect.tmpl');
-	
 	$old = <<HTML;
 <p><label for="description"><MT_TRANS phrase="Description"></label> <a href="#" onclick="return openManual('categories', 'category_description')" class="help">?</a><br />
 <textarea name="description" id="description" rows="5" cols="72" class="wide"><TMPL_VAR NAME=DESCRIPTION ESCAPE=HTML></textarea></p>
@@ -181,6 +201,16 @@ HTML
 	$old = quotemeta($old);
 	$new = qq{<input accesskey="s" type="submit" value="<MT_TRANS phrase="Save">" title="<MT_TRANS phrase="Save this category (s)">" onclick="submitForm(this.form)" />};
 	$$tmpl =~ s/$old/$new/;
+	
+	$old = qq{<TMPL_INCLUDE NAME="rebuild-stub.tmpl">};
+	$old = quotemeta($old);
+	$new = <<HTML;
+<form class="inline" action="plugins/Privacy/privacy.cgi" onsubmit="return false;">
+<MT_TRANS phrase="These privacy settings can be recursively applied to all entries assigned to this category.">
+<input type="button" onclick="window.open('plugins/Privacy/privacy.cgi?__mode=do_recursive&amp;blog_id=<TMPL_VAR NAME=BLOG_ID>&amp;type=category&amp;id=<TMPL_VAR NAME=ID>', 'recursive', 'width=400,height=300,resizable=yes,scrollbars=yes')" name="rebuild-my-site" value="<MT_TRANS phrase="Recursively Apply Settings">" />
+</form>
+HTML
+	$$tmpl =~ s/($old)/$1\n$new\n/;
 }
 
 sub _edit_categories {
@@ -286,7 +316,6 @@ sub _param {
 	require Privacy::Groups;
 	my $iter = Privacy::Groups->load_iter(undef, { 'sort' => 'label', direction => 'ascend'});
 	while (my $group = $iter->()) {
-		my(@typekey_users, @livejournal_users, @openid_users);
 		my @typekey_users = split /,/, $group->typekey_users;
 		my @livejournal_users = split /,/, $group->livejournal_users;	
 		my @openid_users = split /,/, $group->openid_users;			
@@ -318,8 +347,9 @@ sub post_save {
 	my $app = MT->instance;
 	my $q = $app->{query};
 	my $blog_id = $q->param('blog_id');
-	return
-		if (!$q->param('protect_beacon'));
+	my $old_asset = !$q->param('id');
+	
+	return if (!$q->param('protect_beacon'));
 		
 	my @protections = $q->param('protection');
 	my $password = 	in_array('Password', @protections) ? $q->param('privacy_password') : '';
@@ -346,6 +376,17 @@ sub post_save {
 			$openid_users = $openid_users ? join ',', $openid_users, $category_protection->openid_users : $category_protection->openid_users;
 		}
 	}
+	
+	if(ref($obj) eq 'MT::Entry' || ref($obj) eq 'MT::Category'){
+		my $blog_protection = Privacy::Object->load({ blog_id => $blog_id, object_id => $blog_id, object_datasource=> 'blog' });
+		if($blog_protection) {
+			$password = $blog_protection->password if !$password;
+			$typekey_users = $typekey_users ? join ',', $typekey_users, $blog_protection->typekey_users : $blog_protection->typekey_users;
+			$livejournal_users = $livejournal_users ? join ',', $livejournal_users, $blog_protection->livejournal_users : $blog_protection->livejournal_users;
+			$openid_users = $openid_users ? join ',', $openid_users, $blog_protection->openid_users : $blog_protection->openid_users;
+		}
+	}	
+	
 	$data->password($password);
 	$data->typekey_users($typekey_users);
 	$data->livejournal_users($livejournal_users);
@@ -354,63 +395,6 @@ sub post_save {
 		$data->save or
 			die $data->errstr; 
 	}
-	if($q->param('do_recursive')) {
-		if(ref($obj) eq 'MT::Blog') {
-			start_background_task(sub {
-				require MT::Category;
-				my $cat_iter = MT::Category->load_iter({ blog_id => $blog_id });
-				while (my $cat = $cat_iter->()) {
-					my $protected = Privacy::Object->load({ blog_id => $blog_id, object_id => $cat->id, object_datasource => $cat->datasource});
-					if($protected) {
-						$protected->remove or
-							die $protected->errstr;
-					}
-					$protected = Privacy::Object->new;
-					$protected->blog_id($blog_id);
-					$protected->object_id($cat->id);
-					$protected->object_datasource($cat->datasource);					
-					$protected->password($password);
-					$protected->typekey_users($typekey_users);
-					$protected->livejournal_users($livejournal_users);
-					$protected->openid_users($openid_users);	
-					if($password || $typekey_users || $livejournal_users || $openid_users) {
-						$protected->save or
-							die $protected->errstr; 
-					}
-				}
-			});
-		}
-		if(ref($obj) eq 'MT::Blog' || ref($obj) eq 'MT::Category') {
-			start_background_task(sub {			
-				require MT::Entry;
-				my %args;
-				if(ref($obj) eq 'MT::Category') {
-				    $args{'join'} = [ 'MT::Placement', 'entry_id',
-				        { category_id => $obj->id } ];
-				}
-				my $entry_iter = MT::Entry->load_iter({ blog_id => $blog_id }, \%args);
-				while (my $entry = $entry_iter->()) {
-					my $protected = Privacy::Object->load({ blog_id => $blog_id, object_id => $entry->id, object_datasource => $entry->datasource});
-					if($protected) {
-						$protected->remove or
-							die $protected->errstr;
-					}
-					$protected = Privacy::Object->new;
-					$protected->blog_id($blog_id);
-					$protected->object_id($entry->id);
-					$protected->object_datasource($entry->datasource);					
-					$protected->password($password);
-					$protected->typekey_users($typekey_users);
-					$protected->livejournal_users($livejournal_users);
-					$protected->openid_users($openid_users);	
-					if($protected->id || $password || $typekey_users || $livejournal_users || $openid_users) {
-						$protected->save or
-							die $protected->errstr; 
-					}		
-				}
-			});
-		}
-	}	
 }
 
 sub _header {

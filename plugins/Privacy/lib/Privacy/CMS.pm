@@ -27,7 +27,7 @@ sub init
     'save'   => \&save,
     'groups' => \&groups,
     'delete' => \&delete,
-  
+  	'do_recursive' => \&recursive
     );
     $app->{state_params} = [
         '_type', 'id', 'blog_id', 'from'
@@ -195,6 +195,59 @@ sub delete
     $app->add_return_arg(saved_deleted => 1);
     $app->call_return;   
 }
+
+sub recursive {
+	my $app = shift;
+	my $q = $app->param;
+	my $blog_id = $q->param('blog_id');
+	my $type = $q->param('type');
+	my $param = {
+		type => $type,
+		id => $q->param('id')
+	};
+	$param->{"type_$type"} = 1;
+	if(!$q->param('confirm')) {
+		return $app->build_page('recursive-confirm.tmpl', $param);
+	} else {
+		$app->{no_print_body} = 1;
+		$app->send_http_header('text/html');
+		$app->print($app->build_page('recursive_start.tmpl'));
+		
+		eval {	
+			$q->param('protect_beacon', 1);
+			if(($type eq 'blog' || $type eq 'category') && $q->param('entries')) {
+				require MT::Entry;
+				my %args;
+				if($type eq 'category') {
+				    $args{'join'} = [ 'MT::Placement', 'entry_id',
+				        { category_id => $q->param('id') } ];
+				}
+				my $entry_iter = MT::Entry->load_iter({ blog_id => $blog_id }, \%args);
+				while (my $entry = $entry_iter->()) {
+					$app->print($app->translate("Applying privacy to entry '[_1]'\n", $entry->title));
+					$entry->save or die $entry->errstr;
+				}
+			}
+			if($type eq 'blog' && $q->param('categories')) {
+				require MT::Category;
+				my $cat_iter = MT::Category->load_iter({ blog_id => $blog_id });
+				while (my $cat = $cat_iter->()) {
+					$app->print($app->translate("Applying privacy to category '[_1]'\n", $cat->label));
+					$cat->save or die $cat->errstr;
+				}
+			}
+		};
+		
+		if (my $err = $@) {
+			$param->{error} = $err;
+	    } else {
+			$param->{import_success} = 1;
+		}
+		$app->print($app->build_page('recursive_end.tmpl', $param));		
+		
+	}
+}
+
 
 #####################################################################
 # UTILITY SUBROUTINES
