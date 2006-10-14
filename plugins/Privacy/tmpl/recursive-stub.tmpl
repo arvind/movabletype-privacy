@@ -1,0 +1,4 @@
+ <form class="inline" action="<TMPL_VAR NAME=SCRIPT_URL>" onsubmit="return false;">
+<MT_TRANS phrase="These privacy settings can be recursively applied to all entries"> <TMPL_IF NAME=IS_BLOG><MT_TRANS phrase="and categories in this blog."></TMPL_IF><TMPL_IF NAME=IS_CATEGORY><MT_TRANS phrase="in this category"></TMPL_IF>
+<input type="button" onclick="window.open('<TMPL_VAR NAME=PRIVACY_FULL_URL>?__mode=do_recursive&amp;blog_id=<TMPL_VAR NAME=BLOG_ID>&amp;type=<TMPL_IF NAME=IS_BLOG>blog</TMPL_IF><TMPL_IF NAME=IS_CATEGORY>category&amp;id=<TMPL_VAR NAME=ID></TMPL_IF>', 'recursive', 'width=400,height=300,resizable=yes,scrollbars=yes')" name="rebuild-my-site" value="<MT_TRANS phrase="Recursively Apply Settings">" />
+</form>

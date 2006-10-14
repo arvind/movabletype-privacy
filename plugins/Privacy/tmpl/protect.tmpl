@@ -22,10 +22,6 @@ function submitForm(f, mode) {
 	<TMPL_IF NAME=SHOW_TYPEKEY>tkusers.onAddSubmit('click');f.elements["typekey_users"].value = tkusers.taglist.tags;</TMPL_IF>
 	<TMPL_IF NAME=SHOW_LIVEJOURNAL>ljusers.onAddSubmit('click');f.elements["livejournal_users"].value = ljusers.taglist.tags;</TMPL_IF>
 	<TMPL_IF NAME=SHOW_OPENID>oiusers.onAddSubmit('click');f.elements["openid_users"].value = oiusers.taglist.tags;</TMPL_IF> 
-	<TMPL_IF NAME=ALLOW_RECURSIVE>
-	var do_recursive = confirm('<MT_TRANS phrase="Apply this privacy recursively to all"><TMPL_IF NAME=IS_BLOG> <MT_TRANS phrase="entries and categories"></TMPL_IF><TMPL_IF NAME=IS_CATEGORY> <MT_TRANS phrase="entries"></TMPL_IF> <MT_TRANS phrase="within this"> <TMPL_VAR NAME=TYPE>');
-	f.elements["do_recursive"].value = do_recursive;
-	</TMPL_IF>
     f.submit();
 }
 

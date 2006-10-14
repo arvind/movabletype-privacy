@@ -186,6 +186,7 @@ sub _edit_category {
 	my($old, $new);
 	my $plugin = MT::Plugin::Privacy->instance;
 	my $edit_tmpl_path = File::Spec->catdir($plugin->{full_path},'tmpl','protect.tmpl');
+	my $recursive_stub = File::Spec->catdir($plugin->{full_path},'tmpl','recursive-stub.tmpl');
 	$old = <<HTML;
 <p><label for="description"><MT_TRANS phrase="Description"></label> <a href="#" onclick="return openManual('categories', 'category_description')" class="help">?</a><br />
 <textarea name="description" id="description" rows="5" cols="72" class="wide"><TMPL_VAR NAME=DESCRIPTION ESCAPE=HTML></textarea></p>
@@ -205,10 +206,7 @@ HTML
 	$old = qq{<TMPL_INCLUDE NAME="rebuild-stub.tmpl">};
 	$old = quotemeta($old);
 	$new = <<HTML;
-<form class="inline" action="plugins/Privacy/privacy.cgi" onsubmit="return false;">
-<MT_TRANS phrase="These privacy settings can be recursively applied to all entries assigned to this category.">
-<input type="button" onclick="window.open('plugins/Privacy/privacy.cgi?__mode=do_recursive&amp;blog_id=<TMPL_VAR NAME=BLOG_ID>&amp;type=category&amp;id=<TMPL_VAR NAME=ID>', 'recursive', 'width=400,height=300,resizable=yes,scrollbars=yes')" name="rebuild-my-site" value="<MT_TRANS phrase="Recursively Apply Settings">" />
-</form>
+<TMPL_INCLUDE NAME="$recursive_stub">
 HTML
 	$$tmpl =~ s/($old)/$1\n$new\n/;
 }
@@ -277,6 +275,7 @@ sub _list_param {
 sub _param {
 	my($eh, $app, $param, $tmpl, $datasource) = @_;
 	my $q = $app->{query};
+	my $plugin = MT::Plugin::Privacy->instance;
 	my $blog_id = $q->param('blog_id');
 	my $obj_id = $q->param('id') || $blog_id;
 	my $auth_prefs = $app->user->entry_prefs;
@@ -332,7 +331,7 @@ sub _param {
 	require JSON;
 	$param->{protection_groups} = JSON::objToJson(\@group_data);
 	$param->{protection_groups_loop} = \@group_data;
-	$param->{allow_recursive} = 1 
+	$param->{allow_recursive} = $param->{allow_defaults} = 1 
 		if $datasource ne 'entry';
 	$param->{"is_$datasource"} = 1;
 	$param->{type} = $datasource;
@@ -340,6 +339,11 @@ sub _param {
 		next unless $field =~ m/show_/;
 		$param->{$field} = $config->{$field};
 	}
+	
+	(my $cgi_path = $app->config->AdminCGIPath || $app->config->CGIPath) =~ s|/$||;
+    my $plugin_page = ($cgi_path . '/' 
+                       . $plugin->envelope . '/privacy.cgi');
+	$param->{privacy_full_url} = $plugin_page;	
 }
 
 sub post_save {

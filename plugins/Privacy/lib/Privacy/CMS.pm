@@ -41,10 +41,11 @@ sub init
 }
 
 sub build_page {
-    
     my $app = shift;
     my $q = $app->{query};
     my($page, $param) = @_;
+	my $plugin = MT::Plugin::Privacy->instance;
+	(my $cgi_path = $app->config->AdminCGIPath || $app->config->CGIPath) =~ s|/$||;
     $param->{plugin_name} =  "Protect";
     $param->{blog_id} = $q->param('blog_id');
 	$param->{system_overview_nav} = 1
@@ -52,6 +53,9 @@ sub build_page {
     $param->{plugin_version} =  $app->plugin->version;
     $param->{plugin_author} =  "Arvind Satyanarayan";
     $param->{mtscript_url} =  $app->{mtscript_url};
+    my $plugin_page = ($cgi_path . '/' 
+                       . $plugin->envelope . '/privacy.cgi');
+	$param->{privacy_full_url} = $plugin_page;
     $param->{script_full_url} =  $app->base . $app->uri;
     $param->{mt_version} =  MT->VERSION;
     $param->{language_tag} =  $app->current_language;

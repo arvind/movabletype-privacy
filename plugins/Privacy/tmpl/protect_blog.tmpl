@@ -5,10 +5,7 @@
 <p class="page-desc"><MT_TRANS phrase="You can protect this blog so only certain people can view its contents. You can do this one of two ways. The first is using a simple password that people will have to enter to see the post. The alternative is to use Typekey so access is based on their identity. Using Typekey is the recommended method as it ensures that only those allowed can access the post, passwords can always be leaked!"></p>
 
 <TMPL_IF NAME=SAVED>
-<div class="message"><MT_TRANS phrase="Your privacy changes have been saved">. <form class="inline" action="<TMPL_VAR NAME=SCRIPT_URL>" onsubmit="return false;">
-<MT_TRANS phrase="These privacy settings can be recursively applied to all entries and categories in this blog.">
-<input type="button" onclick="window.open('<TMPL_VAR NAME=SCRIPT_URI>?__mode=do_recursive&amp;blog_id=<TMPL_VAR NAME=BLOG_ID>&amp;type=blog', 'recursive', 'width=400,height=300,resizable=yes,scrollbars=yes')" name="rebuild-my-site" value="<MT_TRANS phrase="Recursively Apply Settings">" />
-</form></div>
+<div class="message"><MT_TRANS phrase="Your privacy changes have been saved"> <TMPL_INCLUDE NAME="recursive-stub.tmpl"></div>
 </TMPL_IF>
 
 <form method="post" action="<TMPL_VAR NAME=SCRIPT_URL>">
