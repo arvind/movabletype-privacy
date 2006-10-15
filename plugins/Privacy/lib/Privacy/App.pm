@@ -125,6 +125,11 @@ sub _edit_entry {
 	my $plugin = MT::Plugin::Privacy->instance;
 	my $edit_tmpl_path = File::Spec->catdir($plugin->{full_path},'tmpl','protect.tmpl');
 	
+	$old = qq{doAddCategory(this)};
+	$old = quotemeta($old);
+	$new = qq{doAddCategoryDefaults(this)};
+	$$tmpl =~ s/$old/$new/;
+	
 	$old = <<HTML;
 <TMPL_IF NAME=DISP_PREFS_SHOW_TAGS>
 <div class="field" id="tag-field">
@@ -280,7 +285,7 @@ sub _param {
 	my $obj_id = $q->param('id') || $blog_id;
 	my $auth_prefs = $app->user->entry_prefs;
 	my $config = config('blog:'.$blog_id);
-	
+	my ($data, @group_data, @category_defaults, $blog_default);
     if (my $delim = chr($auth_prefs->{tag_delim})) {
         if ($delim eq ',') {
             $param->{'auth_pref_tag_delim_comma'} = 1;
@@ -293,7 +298,19 @@ sub _param {
     }
 
 	require Privacy::Object;
-	if($obj_id && (my $data = Privacy::Object->load({ blog_id => $blog_id, object_id => $obj_id, object_datasource => $datasource }))) {
+	require MT::PluginData;
+	if($q->param('id') || ($obj_id && $datasource eq 'blog')) {
+		$data = Privacy::Object->load({ blog_id => $blog_id, object_id => $obj_id, object_datasource => $datasource });
+	} elsif(!$q->param('id')) {
+		$blog_default = MT::PluginData->load({ plugin => 'Privacy', key => 'blog'.$blog_id });
+		if($blog_default) {
+			if(($datasource eq 'entry' && $blog_default->data->{entries}) || ($datasource eq 'category' && $blog_default->data->{categories})){
+				$data = Privacy::Object->load({ blog_id => $blog_id, object_id => $blog_id, object_datasource => 'blog' });
+			}		
+		}		
+	}
+	
+	if($data) {
 		$param->{is_private} = 1;
 		$param->{is_password} = $data->password;
 		$param->{is_typekey} = $data->typekey_users;
@@ -311,7 +328,25 @@ sub _param {
 		$param->{livejournal_users} = \@livejournal_users;
 		$param->{openid_users} = \@openid_users;
 	}
-	my @group_data;
+	
+	my $category_loop = $param->{category_loop};
+	foreach my $cat (@$category_loop) {
+		my $category_defaults = MT::PluginData->load({ plugin => 'Privacy', key => 'category'.$cat->{category_id} });
+		next unless $category_defaults;
+		my $protected_category = Privacy::Object->load({ blog_id => $blog_id, object_id => $cat->{category_id}, object_datasource => 'category' });
+		next unless $protected_category;
+		my @typekey_users = split /,/, $protected_category->typekey_users;
+		my @livejournal_users = split /,/, $protected_category->livejournal_users;	
+		my @openid_users = split /,/, $protected_category->openid_users;
+		push @category_defaults, {
+			id => $cat->{category_id},
+			password => $protected_category->password,
+			typekey_users => \@typekey_users,
+			livejournal_users => \@livejournal_users,
+			openid_users => \@openid_users			
+		};
+	}
+	
 	require Privacy::Groups;
 	my $iter = Privacy::Groups->load_iter(undef, { 'sort' => 'label', direction => 'ascend'});
 	while (my $group = $iter->()) {
@@ -331,15 +366,17 @@ sub _param {
 	require JSON;
 	$param->{protection_groups} = JSON::objToJson(\@group_data);
 	$param->{protection_groups_loop} = \@group_data;
+	$param->{category_defaults} = JSON::objToJson(\@category_defaults);
+	
 	if($datasource ne 'entry') {
 		$param->{allow_defaults} = 1;
 		require MT::PluginData;
 		my $default_config = MT::PluginData->load({ plugin => 'Privacy', key => 'blog'.$blog_id });
-		if($default_config && $datasource ne 'blog') {
+		if($default_config && $default_config->data->{entries} && $datasource ne 'blog') {
 			$param->{is_blog_override} = 1;
 			$param->{is_private} = 1;
 		} else {
-			$default_config = MT::PluginData->load({ plugin => 'Privacy', key => $datasource.$blog_id });
+			$default_config = MT::PluginData->load({ plugin => 'Privacy', key => $datasource.$obj_id });		
 		}		
 		if($default_config) {
 			$param->{is_entries} = $default_config->data->{entries};
@@ -378,52 +415,39 @@ sub post_save {
 	if($data) {
 		$data->remove or die $data->errstr;
 	}
+	
+	return unless $password || $typekey_users || $livejournal_users || $openid_users;
+	
 	$data = Privacy::Object->new;
 	$data->blog_id($blog_id);
 	$data->object_id($obj->id);
 	$data->object_datasource($obj->datasource);
-	
-	require MT::PluginData;
-	my $blog_default = MT::PluginData->load({ plugin => 'Privacy', key => 'blog'.$blog_id });
-	if($blog_default) {
-		if(((ref($obj) eq 'MT::Entry' && $blog_default->data->{entries}) || (ref($obj) eq 'MT::Category' && $blog_default->data->{categories})) && $new_asset){
-			my $blog_protection = Privacy::Object->load({ blog_id => $blog_id, object_id => $blog_id, object_datasource=> 'blog' });
-			if($blog_protection) {
-				$password = $blog_protection->password if !$password;
-				$typekey_users = $typekey_users ? join ',', $typekey_users, $blog_protection->typekey_users : $blog_protection->typekey_users;
-				$livejournal_users = $livejournal_users ? join ',', $livejournal_users, $blog_protection->livejournal_users : $blog_protection->livejournal_users;
-				$openid_users = $openid_users ? join ',', $openid_users, $blog_protection->openid_users : $blog_protection->openid_users;
-			}
-		}		
-	} else {
-		if(ref($obj) eq 'MT::Entry' && $obj->category){
-			my $category = $obj->category;
-			if(my $category_default = MT::PluginData->load({ plugin => 'Privacy', key => 'category'.$category->id })) {
-				if($category_default->data->{entries}) {
-					my $category_protection = Privacy::Object->load({ blog_id => $blog_id, object_id => $category->id, object_datasource=> $category->datasource});
-					if($category_protection) {
-						$password = $category_protection->password if !$password;
-						$typekey_users = $typekey_users ? join ',', $typekey_users, $category_protection->typekey_users : $category_protection->typekey_users;
-						$livejournal_users = $livejournal_users ? join ',', $livejournal_users, $category_protection->livejournal_users : $category_protection->livejournal_users;
-						$openid_users = $openid_users ? join ',', $openid_users, $category_protection->openid_users : $category_protection->openid_users;
-					}
+
+	if(ref($obj) eq 'MT::Category') {
+		require MT::PluginData;
+		my $blog_default = MT::PluginData->load({ plugin => 'Privacy', key => 'blog'.$blog_id });
+		if($blog_default) {
+			if($blog_default->data->{categories} && $new_asset){
+				my $blog_protection = Privacy::Object->load({ blog_id => $blog_id, object_id => $blog_id, object_datasource=> 'blog' });
+				if($blog_protection) {
+					$password = $blog_protection->password if !$password;
+					$typekey_users = $typekey_users ? join ',', $typekey_users, $blog_protection->typekey_users : $blog_protection->typekey_users;
+					$livejournal_users = $livejournal_users ? join ',', $livejournal_users, $blog_protection->livejournal_users : $blog_protection->livejournal_users;
+					$openid_users = $openid_users ? join ',', $openid_users, $blog_protection->openid_users : $blog_protection->openid_users;
 				}
-			}
-		}
+			}		
+		}	 
 	}
-	
-	
+		
 	$data->password($password);
 	$data->typekey_users($typekey_users);
 	$data->livejournal_users($livejournal_users);
 	$data->openid_users($openid_users);	
-	if($password || $typekey_users || $livejournal_users || $openid_users) {
-		$data->save or
-			die $data->errstr; 
-	}
+	$data->save or die $data->errstr;
 	
 	if(ref($obj) ne 'MT::Entry') {
 		my $default = MT::PluginData->get_by_key({ plugin => 'Privacy', key => $obj->datasource.$obj->id });
+
 		$default->data({
 			entries => ($q->param('entries') || 0),
 			categories => ($q->param('categories') || 0)

@@ -2,7 +2,77 @@
 <script type="text/javascript">
 <!--
 var tkusers, ljusers, oiusers;
-<TMPL_IF NAME=PROTECTION_GROUPS>var groupsJSON = <TMPL_VAR NAME=PROTECTION_GROUPS></TMPL_IF>;
+<TMPL_IF NAME=PROTECTION_GROUPS>var groupsJSON = <TMPL_VAR NAME=PROTECTION_GROUPS>;</TMPL_IF>
+<TMPL_IF NAME=CATEGORY_DEFAULTS>var categoryDefaultsJSON = <TMPL_VAR NAME=CATEGORY_DEFAULTS>;</TMPL_IF>
+
+function populatePrivacy(d, o) {
+	if(o == 'in') {
+		if(d.password) {
+			getByID('password_prefs').style.display = 'block';
+			getByID('password-checkbox').checked = 'checked';
+			getByID('privacy_password').value = d.password;
+		}		
+		if(d.typekey_users) {
+			getByID('typekey_prefs').style.display = 'block';
+			getByID('typekey-checkbox').checked = 'checked';
+			for (var i = 0; i < d.typekey_users.length; i++) 
+				tkusers.addTag(d.typekey_users[i]);
+		}
+		if(d.livejournal_users) {
+			getByID('livejournal_prefs').style.display = 'block';
+			getByID('livejournal-checkbox').checked = 'checked';
+			for (var i = 0; i < d.livejournal_users.length; i++) 
+				ljusers.addTag(d.livejournal_users[i]);
+		}	
+		if(d.openid_users) {
+			getByID('openid_prefs').style.display = 'block';
+			getByID('openid-checkbox').checked = 'checked';
+			for (var i = 0; i < d.openid_users.length; i++) 
+				oiusers.addTag(d.openid_users[i]);
+		}
+	} else {
+		if(d.password) {
+			getByID('privacy_password').value = '';
+		}		
+		if(d.typekey_users) {
+			for (var i = 0; i < d.typekey_users.length; i++) {
+				if(getByID('typekey-tag-' + d.typekey_users[i]))
+					tkusers.taglist.deleteTag(getByID('typekey-tag-' + d.typekey_users[i]));
+			}
+		}
+		if(d.livejournal_users) {
+			for (var i = 0; i < d.livejournal_users.length; i++) { 
+				if(getByID('livejournal-tag-' + d.livejournal_users[i]))
+					ljusers.taglist.deleteTag(getByID('livejournal-tag-' + d.livejournal_users[i]));
+			}
+		}	
+		if(d.openid_users) {
+			for (var i = 0; i < d.openid_users.length; i++) {
+				if(getByID('openid-tag-' + d.openid_users[i]))
+					oiusers.taglist.deleteTag(getByID('openid-tag-' + d.openid_users[i]));
+			}
+		}		
+	}
+}
+
+
+<TMPL_IF NAME=IS_ENTRY>
+function doAddCategoryDefaults (s) {
+	if (lastPrimaryCatId > 0) {
+		for (var i = 0; i < categoryDefaultsJSON.length; i++) {
+			if(categoryDefaultsJSON[i].id == lastPrimaryCatId)
+				populatePrivacy(categoryDefaultsJSON[i], 'out');
+		}
+	}
+	doAddCategory(s);
+	var id = s.options[s.selectedIndex].value;
+	for (var i = 0; i < categoryDefaultsJSON.length; i++) {
+		if(categoryDefaultsJSON[i].id == id)
+			populatePrivacy(categoryDefaultsJSON[i], 'in');
+	}	
+	lastPrimaryCatId = id;
+}
+</TMPL_IF>
 
 function toggleProtectPrefs (c, div) {
     var e = getByID(div);
@@ -37,44 +107,10 @@ function group(id) {
 			group = groupsJSON[i];
 	}
 	if(li.className.match('add')) {
-		if(group.typekey_users) {
-			getByID('typekey_prefs').style.display = 'block';
-			getByID('typekey-checkbox').checked = 'checked';
-			for (var i = 0; i < group.typekey_users.length; i++) 
-				tkusers.addTag(group.typekey_users[i]);
-		}
-		if(group.livejournal_users) {
-			getByID('livejournal_prefs').style.display = 'block';
-			getByID('livejournal-checkbox').checked = 'checked';
-			for (var i = 0; i < group.livejournal_users.length; i++) 
-				ljusers.addTag(group.livejournal_users[i]);
-		}	
-		if(group.openid_users) {
-			getByID('openid_prefs').style.display = 'block';
-			getByID('openid-checkbox').checked = 'checked';
-			for (var i = 0; i < group.openid_users.length; i++) 
-				oiusers.addTag(group.openid_users[i]);
-		}	
+		populatePrivacy(group, 'in');
 		li.className = 'remove';	
 	} else if(li.className.match('remove')) {
-		if(group.typekey_users) {
-			for (var i = 0; i < group.typekey_users.length; i++) {
-				if(getByID('typekey-tag-' + group.typekey_users[i]))
-					tkusers.taglist.deleteTag(getByID('typekey-tag-' + group.typekey_users[i]));
-			}
-		}
-		if(group.livejournal_users) {
-			for (var i = 0; i < group.livejournal_users.length; i++) { 
-				if(getByID('livejournal-tag-' + group.livejournal_users[i]))
-					ljusers.taglist.deleteTag(getByID('livejournal-tag-' + group.livejournal_users[i]));
-			}
-		}	
-		if(group.openid_users) {
-			for (var i = 0; i < group.openid_users.length; i++) {
-				if(getByID('openid-tag-' + group.openid_users[i]))
-					oiusers.taglist.deleteTag(getByID('openid-tag-' + group.openid_users[i]));
-			}
-		}	
+		populatePrivacy(group, 'out');	
 		li.className = 'add';		
 	}
 }
@@ -104,7 +140,7 @@ function group(id) {
 <input type="hidden" name="livejournal_users" value="" id="livejournal_users" />
 <input type="hidden" name="openid_users" value="" id="openid_users" />
 <TMPL_IF NAME=SHOW_PASSWORD>
-<h4><label class="protect-header-label"><input <TMPL_IF NAME=IS_PASSWORD>checked="checked"</TMPL_IF> type="checkbox" name="protection" onclick="toggleProtectPrefs(this,'password_prefs'); return true" value="Password"> <MT_TRANS phrase="Password Protection"></label></h4>
+<h4><label class="protect-header-label"><input id="password-checkbox" <TMPL_IF NAME=IS_PASSWORD>checked="checked"</TMPL_IF> type="checkbox" name="protection" onclick="toggleProtectPrefs(this,'password_prefs'); return true" value="Password"> <MT_TRANS phrase="Password Protection"></label></h4>
 <div id="password_prefs" class="setting" style="display: <TMPL_IF NAME=IS_PASSWORD>block<TMPL_ELSE>none</TMPL_IF>;">
     <div class="label">
         <label for="privacy_password"><MT_TRANS phrase="Password">:</label>

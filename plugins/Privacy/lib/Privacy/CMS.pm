@@ -219,6 +219,27 @@ sub recursive {
 		
 		eval {	
 			$q->param('protect_beacon', 1);
+			require Privacy::Object;
+			my $private_obj = Privacy::Object->load({ blog_id => $blog_id, object_datasource => $type, object_id => ($q->param('id') || $blog_id) });
+			
+			### IMPROVE, this is horrid!
+			
+			if($private_obj->password) {
+				$q->param('protection', 'Password');
+				$q->param('privacy_password', $private_obj->password);
+			}
+			if($private_obj->typekey_users) {
+				$q->param('protection','Typekey');
+				$q->param('typekey_users', $private_obj->typekey_users);
+			}
+			if($private_obj->livejournal_users) {
+				$q->param('protection','LiveJournal');
+				$q->param('livejournal_users', $private_obj->livejournal_users);
+			}		
+			if($private_obj->openid_users) {
+				$q->param('protection','OpenID');
+				$q->param('openid_users', $private_obj->openid_users);
+			}				
 			if(($type eq 'blog' || $type eq 'category') && $q->param('entries')) {
 				require MT::Entry;
 				my %args;
