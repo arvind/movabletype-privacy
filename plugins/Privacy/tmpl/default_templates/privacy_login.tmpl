@@ -4,13 +4,19 @@
 <script type="text/javascript">
 <!--
 function togglePrivacyTypes(type, id) {
-var types = new Array('password', 'typekey', 'livejournal', 'openid');
-for (var i = 0; i < types.length; i++) {
-	var el = document.getElementById(types[i] + '-' + id + '-protect');
-	if(el) el.style.display = 'none';
-}
-var el = document.getElementById(type + '-' + id + '-protect');
-if(el) el.style.display = 'block';
+	var types = new Array('password', 'typekey', 'livejournal', 'openid');
+	for (var i = 0; i < types.length; i++) {
+		var el = document.getElementById(types[i] + '-' + id);
+		if(el) el.style.display = 'none';
+	}
+	var el = document.getElementById(type + '-' + id);
+	if(el) el.style.display = 'block';
+
+	var submit_button = document.getElementById('submit-' + id);
+	if(submit_button) {
+		submit_button.style.display = 'block';
+		submit_button.name = type;
+	}
 }
 //-->
 </script>
@@ -40,43 +46,33 @@ if(el) el.style.display = 'block';
 <input type="hidden" name="_type" value="<MTPrivateObjectType>" />
 
 <MTIfPasswordProtected>
-<div id="password-<MTPrivateObjectID>-protect" style="display:none;">
+<div id="password-<MTPrivateObjectID>" style="display:none;">
 	<p><MT_TRANS phrase="Enter the password below to view this"> <MTPrivateObjectType>:</p>
-	<p>
-		<label><MT_TRANS phrase="Password">: <input type="text" name="password" value="" /></label> 
-		<input type="submit" name="submit" value="<MT_TRANS phrase="Submit">" id="submit" />
-	</p>
+	<p><label><MT_TRANS phrase="Password">: <input type="text" name="password_text" value="" /></label></p>
 </div>
 </MTIfPasswordProtected>
 
 <MTIfTypekeyProtected>
-<div id="typekey-<MTPrivateObjectID>-protect" style="display:none;">
+<div id="typekey-<MTPrivateObjectID>" style="display:none;">
 	<p><MT_TRANS phrase="Enter your Typekey username below to view this"> <MTPrivateObjectType>:</p>
-	<p>
-		<label><MT_TRANS phrase="Typekey Username (case sensitive)">: <input type="text" name="tk_user" value="" style="background: white url(<MTStaticWebPath>plugins/Privacy/images/input-typekey.gif) no-repeat; padding-left: 22px;" /></label> 
-		<input type="submit" name="submit" value="<MT_TRANS phrase="Submit">" id="submit" />
-	</p>
+	<p><label><MT_TRANS phrase="Typekey Username (case sensitive)">: <input type="text" name="tk_user" value="" style="background: white url(<MTStaticWebPath>plugins/Privacy/images/input-typekey.gif) no-repeat; padding-left: 22px;" /></label></p>
 </div>
 </MTIfTypekeyProtected>
 
 <MTIfLiveJournalProtected>
-<div id="livejournal-<MTPrivateObjectID>-protect" style="display:none;">
+<div id="livejournal-<MTPrivateObjectID>" style="display:none;">
 	<p><MT_TRANS phrase="Enter your LiveJournal username below to view this"> <MTPrivateObjectType>:</p>
-	<p>
-		<label><MT_TRANS phrase="LiveJournal Username (case sensitive)">: <input type="text" name="lj_user" value="" style="background: white url(<MTStaticWebPath>plugins/Privacy/images/input-livejournal.gif) no-repeat; padding-left: 22px;" /></label> 
-		<input type="submit" name="submit" value="<MT_TRANS phrase="Submit">" id="submit" />
-	</p>
+	<p><label><MT_TRANS phrase="LiveJournal Username (case sensitive)">: <input type="text" name="lj_user" value="" style="background: white url(<MTStaticWebPath>plugins/Privacy/images/input-livejournal.gif) no-repeat; padding-left: 22px;" /></label></p>
 </div>
 </MTIfLiveJournalProtected>	
 
 <MTIfOpenIDProtected>
-<div id="openid-<MTPrivateObjectID>-protect" style="display:none;">
+<div id="openid-<MTPrivateObjectID>" style="display:none;">
 	<p><MT_TRANS phrase="Enter your OpenID URL below to view this"> <MTPrivateObjectType>:</p>
-	<p>
-		<label><MT_TRANS phrase="OpenID Username">: <input type="text" name="openid_url" value="" style="background: white url(<MTStaticWebPath>plugins/Privacy/images/input-openid.gif) no-repeat; padding-left: 22px;" /></label> 
-		<input type="submit" name="submit" value="<MT_TRANS phrase="Submit">" id="submit" />
-	</p>
+	<p><label><MT_TRANS phrase="OpenID Username">: <input type="text" name="openid_url" value="" style="background: white url(<MTStaticWebPath>plugins/Privacy/images/input-openid.gif) no-repeat; padding-left: 22px;" /></label></p>
 </div>
 </MTIfOpenIDProtected>	
+
+<p><input type="submit" name="submit" value="<MT_TRANS phrase="Submit">" id="submit-<MTPrivateObjectID>" style="display:none;" /></p>
 
 </form>

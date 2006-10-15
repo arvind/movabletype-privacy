@@ -186,7 +186,7 @@ sub verify {
 	} 
 	
 	if($q->param('password')) {
-		if($q->param('password') eq $protected->password) {
+		if($q->param('password_text') eq $protected->password) {
 			$allow = 1;
 		}
 	} else {
@@ -200,23 +200,22 @@ sub verify {
 		}
 		
 		my $csr = $app->_get_csr;
-		$csr->verified_identity or die $csr->errcode;
-		
+	
 	    if(my $setup_url = $csr->user_setup_url( post_grant => 'return' )) {
 	        return $app->redirect($setup_url);
 	    } elsif(my $vident = $csr->verified_identity) {
 			my $profile = $app->_get_profile_data($vident, $blog->id);
-			if($q->param('tk_user')) {
+			if($q->param('typekey')) {
 				my @typekey = split /,/, $protected->typekey_users;
 				if(in_array($profile->{nickname}, @typekey)) {
 					$allow = 1;
 				}
-			} elsif($q->param('lj_user')) {
+			} elsif($q->param('livejournal')) {
 				my @livejournal = split /,/, $protected->livejournal_users;
 				if(in_array($profile->{nickname}, @livejournal)) {
 					$allow = 1;
 				}				
-			} elsif($q->param('openid_url')) {
+			} elsif($q->param('openid')) {
 				my @openid = split /,/, $protected->openid_users;
 				if(in_array($vident->url, @openid)) {
 					$allow = 1;
@@ -225,7 +224,10 @@ sub verify {
 	    } elsif($q->param('openid.mode') eq 'cancel') {
 	        ## Cancelled!
 	        return $app->redirect($redirect);
-	    }
+	    } else {
+		       die "Error validating identity: " . $csr->errcode;
+		  }
+	
 	}
 	if($allow) {
 		## Now issue the cookie, we'll check the domains of this script and the bog
@@ -247,8 +249,7 @@ sub verify {
 			$app->bake_cookie(
 				-name => $obj_type.$obj_id, 
 				-value => 1,
-				-path => '/',
-			    -expires => '+1d'
+				-path => '/'
 			);
 			return $app->redirect($redirect);		    	
 	    } else {
@@ -279,7 +280,7 @@ sub verify {
 sub in_array() {
     my $val = shift(@_);
     foreach my $elem (@_) {
-        if($val eq $elem) {
+        if(lc($val) =~ lc($elem)) {
             return 1;
         }
     }

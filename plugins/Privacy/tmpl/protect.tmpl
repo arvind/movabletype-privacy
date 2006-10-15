@@ -6,10 +6,14 @@ var tkusers, ljusers, oiusers;
 
 function toggleProtectPrefs (c, div) {
     var e = getByID(div);
-	if(e.style.display == 'none')
-    	e.style.display = 'block';
-	else	
-		e.style.display = 'none';
+	var d = getByID('default_prefs');
+	
+	if(c.checked == true) {
+		e.style.display = 'block';
+		d.style.display = 'block';
+	} else {
+		e.style.display = 'none';		
+	}
 }
 
 function reveal_password () {
@@ -186,6 +190,20 @@ function group(id) {
 			oiusers.render(); 
 		</script>
 		<p><MT_TRANS phrase="Enter OpenID urls here separated by"> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="commas"><TMPL_ELSE><MT_TRANS phrase="spaces"></TMPL_IF></p>
+    </div>
+</div>
+</TMPL_IF>
+
+<TMPL_IF NAME=ALLOW_DEFAULTS>
+<hr />
+<div id="default_prefs" class="setting" style="display: <TMPL_IF NAME=IS_PRIVATE>block<TMPL_ELSE>none</TMPL_IF>;">
+	<TMPL_IF NAME=IS_BLOG_OVERRIDE><div class="message"><MT_TRANS phrase="Privacy defaults have been set at the blog level"></div></TMPL_IF>
+    <div class="label">
+        <label for="defaults"><MT_TRANS phrase="Inhreit privacy for">:</label>
+    </div>
+    <div class="field">
+		<p><label><input type="checkbox" name="entries" value="1" id="entries"<TMPL_IF NAME=IS_ENTRIES> checked="checked"</TMPL_IF><TMPL_IF NAME=IS_BLOG_OVERRIDE> disabled="disabled"</TMPL_IF> /> <MT_TRANS phrase="New entries"></label><TMPL_IF NAME=IS_BLOG><br />
+		<label><input type="checkbox" name="categories" value="1" id="categories"<TMPL_IF NAME=IS_CATEGORIES> checked="checked"</TMPL_IF><TMPL_IF NAME=IS_BLOG_OVERRIDE> disabled="disabled"</TMPL_IF> /> <MT_TRANS phrase="New categories"></label></TMPL_IF></p>	
     </div>
 </div>
 </TMPL_IF>
