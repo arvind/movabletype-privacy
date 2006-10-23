@@ -8,7 +8,7 @@ use MT 3.3;   # requires MT 3.2 or later
 
 use base 'MT::Plugin';
 our $VERSION = '2.0';
-our $SCHEMA_VERSION = '2.0';
+our $SCHEMA_VERSION = '2.1';
 
 my $plugin;
 MT->add_plugin($plugin = __PACKAGE__->new({
@@ -67,6 +67,7 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		'MT::App::CMS::AppTemplateSource.system_list_blog' => sub { require Privacy::App; Privacy::App::_system_list_blog(@_); },
 		'MT::App::CMS::AppTemplateParam.system_list_blog' => sub { require Privacy::App; Privacy::App::_list_param(@_, 'blog'); },
 		'Privacy::CMS::AppTemplateParam.protect_blog' => sub { require Privacy::App; Privacy::App::_param(@_, 'blog'); },
+		'Privacy::CMS::AppTemplateParam.edit_group' => sub { require Privacy::App; Privacy::App::_param(@_, 'protect_groups'); },		
 		'*::AppTemplateSource'  => sub { require Privacy::App; Privacy::App::_header(@_); },
 		'DefaultTemplateFilter'  => sub { require Privacy::App; Privacy::App::load_files(@_); }
 	},

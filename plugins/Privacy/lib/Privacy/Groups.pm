@@ -11,9 +11,6 @@ __PACKAGE__->install_properties({
 	    'label' => 'string(100) not null', 
 	    'description' => 'text',
 		'type' => 'string(10)',  
-		'typekey_users' => 'text',
-		'livejournal_users' => 'text',
-		'openid_users' => 'text',
 		'data' => 'blob'		
     },
     indexes => {
@@ -54,5 +51,16 @@ __PACKAGE__->install_properties({
         }
     }
 }
+
+sub remove {
+    my $group = shift;
+    require Privacy::Object;
+    my @objs = Privacy::Object->load({ object_id => $group->id, object_datasource => $group->datasource });
+    for my $obj (@objs) {
+        $obj->remove or die $obj->errstr;
+    }
+    $group->SUPER::remove;
+}
+
 
 1;

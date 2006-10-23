@@ -24,8 +24,24 @@ sub protect {
 	my $protected = $ctx->stash('protected_obj');
 	if(!$protected) {
 		require Privacy::Object;
-		$protected = Privacy::Object->load({ blog_id => $blog_id, object_datasource => $type, object_id => $obj->id });
-		$ctx->stash('protected_obj', $protected);
+		my $terms = { blog_id => $blog_id, object_id => $obj->id, object_datasource => $datasource };
+	    my @types = qw(typekey livejournal openid);
+
+	    foreach my $type (@types) {
+				$terms->{type} = $type;
+	            my @users = Privacy::Object->load($terms);
+	            next unless @users;
+	            my @user_loop;
+	            push @user_loop, $_->credential for @users;
+	            $ctx->{__stash}{"${type}_users"} = \@user_loop;
+	    }
+	
+		$terms->{type} = 'password';
+		my $password = Privacy::Object->load($terms);
+		$ctx->{__stash}{password} = $password->credential
+			if $password;
+	
+		$ctx->stash('protected_obj', 1);
 	}
 	return $out if !$protected;
 	
@@ -74,28 +90,32 @@ sub is_password {
 	my ($ctx) = @_;
 	my $protected = $ctx->stash('protected_obj') or
 		return $ctx->_no_protected_obj('MTIfPasswordProtected');
-	return $protected->password;		
+	my $password = $ctx->stash('password');	
+	return $password;		
 }
 
 sub is_typekey {
 	my ($ctx) = @_;
 	my $protected = $ctx->stash('protected_obj') or
 		return $ctx->_no_protected_obj('MTIfPasswordProtected');
-	return $protected->typekey_users;		
+	my $typekey_users = $ctx->stash('typekey_users');	
+	return scalar @$typekey_users;		
 }
 
 sub is_livejournal {
 	my ($ctx) = @_;
 	my $protected = $ctx->stash('protected_obj') or
 		return $ctx->_no_protected_obj('MTIfPasswordProtected');
-	return $protected->livejournal_users;		
+	my $livejournal_users = $ctx->stash('livejournal_users');	
+	return scalar @$livejournal_users;	
 }
 
 sub is_openid {
 	my ($ctx) = @_;
 	my $protected = $ctx->stash('protected_obj') or
 		return $ctx->_no_protected_obj('MTIfPasswordProtected');
-	return $protected->openid_users;		
+	my $openid_users = $ctx->stash('openid_users');	
+	return scalar @$openid_users;		
 }
 
 package MT::Template::Context;

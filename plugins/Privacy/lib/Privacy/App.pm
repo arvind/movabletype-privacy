@@ -1,5 +1,6 @@
 package Privacy::App;
 
+use Data::Dumper;
 use MT::Util qw( start_background_task dirify );
 
 my $templates = [
@@ -42,40 +43,47 @@ sub convert_data {
 	require Privacy::Groups;
 	my $objs_iter = Privacy::Protect->load_iter();
 	while (my $orig_obj = $objs_iter->()) {
-		my $obj = Privacy::Object->new;
-		$obj->blog_id($orig_obj->blog_id);
-		$obj->object_id($orig_obj->entry_id);
-		$obj->object_datasource('entry');
+		my $defaults = {
+			blog_id => $orig_obj->blog_id,
+			object_id => $orig_obj->entry_id,
+			object_datasource => 'entry',
+			type => lc($orig_obj->type)
+		};
 		if(!$orig_obj->entry_id) {
-			$obj->object_datasource('blog');
-			$obj->object_id($orig_obj->blog_id);
+			$defaults->{object_datasource} = 'blog';
+			$defaults->{object_id} = $orig_obj->blog_id;
 		}
 		if($orig_obj->type eq 'Password') {
-			$obj->password($orig_obj->data);
+			my $obj = Privacy::Object->new;
+			$obj->set_values($defaults);
+			$obj->credential($orig_obj->data);
+			$obj->save or die $obj->errstr;
 		} else {
 			my $users = $orig_obj->data;
-			$users = join ',', @$users;
-			if($orig_obj->type eq 'Typekey') {
-				$obj->typekey_users($users);
-			} elsif($orig_obj->type eq 'OpenID') {
-				$obj->openid_users($users);
+			foreach (@$users) {
+				my $obj = Privacy::Object->new;
+				$obj->set_values($defaults);
+				$obj->credential($_);
+				$obj->save or die $obj->errstr;				
 			}
 		}
-		$obj->save or die $obj->errstr;
 		$orig_obj->remove or die $orig_obj->errstr;
 	}
 	
 	my $groups_iter = Privacy::Groups->load_iter();
 	while (my $group = $groups_iter->()) {
+		my $defaults = {
+			object_id => $group->id,
+			object_datasource => $group->datasource,
+			type => lc($group->type)
+		};
 		my $users = $group->data;
-		$users = join ',', @$users;		
-		if($group->type eq 'Typekey') {
-			$group->typekey_users($users);
-		} elsif($group->type eq 'OpenID') {
-			$group->openid_users($users);
+		foreach (@$users) {
+			my $obj = Privacy::Object->new;
+			$obj->set_values($defaults);
+			$obj->credential($_);
+			$obj->save or die $obj->errstr;				
 		}
-		$group->type('');
-		$group->save or die $group->errstr;
 	}
 }
 
@@ -269,10 +277,8 @@ sub _list_param {
 	foreach my $obj (@$objs) {
 		my $blog_id = $obj->{weblog_id} || $app->param('blog_id') || $obj->{id};
 		my $id = $obj->{id} || $obj->{category_id};
-		my $protected = Privacy::Object->load({ blog_id => $blog_id, object_id => $id, object_datasource => $type });
-		if($protected && ($protected->password || $protected->typekey_users || $protected->livejournal_users || $protected->openid_users)) {
-			$obj->{"protected"} = 1;
-		}
+		my @protected = Privacy::Object->load({ blog_id => $blog_id, object_id => $id, object_datasource => $type });
+		$obj->{"protected"} = scalar @protected;
 	}
 	
 }
@@ -281,11 +287,16 @@ sub _param {
 	my($eh, $app, $param, $tmpl, $datasource) = @_;
 	my $q = $app->{query};
 	my $plugin = MT::Plugin::Privacy->instance;
-	my $blog_id = $q->param('blog_id');
+	my $blog_id = $q->param('blog_id') || 0;
 	my $obj_id = $q->param('id') || $blog_id;
 	my $auth_prefs = $app->user->entry_prefs;
 	my $config = config('blog:'.$blog_id);
-	my ($data, @group_data, @category_defaults, $blog_default);
+	
+	if($q->param('_type') eq 'groups') {
+		$config = config('system');
+	}
+	
+	my ($terms, @group_data, @category_defaults, $blog_default);
     if (my $delim = chr($auth_prefs->{tag_delim})) {
         if ($delim eq ',') {
             $param->{'auth_pref_tag_delim_comma'} = 1;
@@ -300,68 +311,77 @@ sub _param {
 	require Privacy::Object;
 	require MT::PluginData;
 	if($q->param('id') || ($obj_id && $datasource eq 'blog')) {
-		$data = Privacy::Object->load({ blog_id => $blog_id, object_id => $obj_id, object_datasource => $datasource });
+		$terms = { blog_id => $blog_id, object_id => $obj_id, object_datasource => $datasource };
 	} elsif(!$q->param('id')) {
 		$blog_default = MT::PluginData->load({ plugin => 'Privacy', key => 'blog'.$blog_id });
 		if($blog_default) {
 			if(($datasource eq 'entry' && $blog_default->data->{entries}) || ($datasource eq 'category' && $blog_default->data->{categories})){
-				$data = Privacy::Object->load({ blog_id => $blog_id, object_id => $blog_id, object_datasource => 'blog' });
+				$terms = { blog_id => $blog_id, object_id => $blog_id, object_datasource => 'blog' };
 			}		
 		}		
 	}
 	
-	if($data) {
-		$param->{is_private} = 1;
-		$param->{is_password} = $data->password;
-		$param->{is_typekey} = $data->typekey_users;
-		$param->{is_livejournal} = $data->livejournal_users;
-		$param->{is_openid} = $data->openid_users;
-		my(@typekey_users, @livejournal_users, @openid_users);
-		push @typekey_users, {'tk_user' => $_ }
-			foreach split /,/, $data->typekey_users;
-		push @livejournal_users, {'lj_user' => $_ }
-			foreach split /,/, $data->livejournal_users;	
-		push @openid_users, {'oi_user' => $_ }
-			foreach split /,/, $data->openid_users;	
-		$param->{password} = $data->password;	
-		$param->{typekey_users} = \@typekey_users;
-		$param->{livejournal_users} = \@livejournal_users;
-		$param->{openid_users} = \@openid_users;
-	}
+	$param->{is_private} = 1;
+    my @types = qw(typekey livejournal openid);
+
+    foreach my $type (@types) {
+			$terms->{type} = $type;
+            my @users = Privacy::Object->load($terms);
+            next unless @users;
+            my @user_loop;
+            push @user_loop, { "${type}_user" => $_->credential } for @users;
+            $param->{"${type}_user_loop"} = \@user_loop;
+    }
+
+	$terms->{type} = 'password';
+	my $password = Privacy::Object->load($terms);
+	$param->{password} = $password->credential
+		if $password;
 	
 	my $category_loop = $param->{category_loop};
 	foreach my $cat (@$category_loop) {
 		my $category_defaults = MT::PluginData->load({ plugin => 'Privacy', key => 'category'.$cat->{category_id} });
 		next unless $category_defaults;
-		my $protected_category = Privacy::Object->load({ blog_id => $blog_id, object_id => $cat->{category_id}, object_datasource => 'category' });
-		next unless $protected_category;
-		my @typekey_users = split /,/, $protected_category->typekey_users;
-		my @livejournal_users = split /,/, $protected_category->livejournal_users;	
-		my @openid_users = split /,/, $protected_category->openid_users;
-		push @category_defaults, {
-			id => $cat->{category_id},
-			password => $protected_category->password,
-			typekey_users => \@typekey_users,
-			livejournal_users => \@livejournal_users,
-			openid_users => \@openid_users			
-		};
+		my $cat_terms = { blog_id => $blog_id, object_id => $cat->{category_id}, object_datasource => 'category' };
+
+		my $row = { id => $cat->{category_id} };
+		
+		foreach my $type (@types) {
+			$cat_terms->{type} = $type;
+			my @users = Privacy::Object->load($cat_terms);			
+			next unless @users;
+            my @user_loop;
+            push @user_loop, $_->credential for @users;
+            $row->{"${type}_users"} = \@user_loop;
+		}
+		
+		$cat_terms->{type} = 'password';
+		my $cat_password = Privacy::Object->load($cat_terms);
+		$row->{password} = $cat_password->credential
+			if $cat_password;
+		
+		push @category_defaults, $row;		
 	}
 	
 	require Privacy::Groups;
 	my $iter = Privacy::Groups->load_iter(undef, { 'sort' => 'label', direction => 'ascend'});
 	while (my $group = $iter->()) {
-		my @typekey_users = split /,/, $group->typekey_users;
-		my @livejournal_users = split /,/, $group->livejournal_users;	
-		my @openid_users = split /,/, $group->openid_users;			
-		push @group_data, {
+		my $row = { 
 		  	id => $group->id,
 	      	label => $group->label,
-	      	description => $group->description,
-			typekey_users => \@typekey_users,
-			livejournal_users => \@livejournal_users,
-			openid_users => \@openid_users
-
+	      	description => $group->description
 		};
+		
+		foreach my $type (@types) {
+			$cat_terms->{type} = $type;
+			my @users = Privacy::Object->load($cat_terms);			
+			next unless @users;
+            my @user_loop;
+            push @user_loop, $_->credential for @users;
+            $row->{"${type}_users"} = \@user_loop;
+		}
+		
+		push @group_data, $row;		
 	} 
 	require JSON;
 	$param->{protection_groups} = JSON::objToJson(\@group_data);
@@ -385,10 +405,13 @@ sub _param {
 	}
 	$param->{"is_$datasource"} = 1;
 	$param->{type} = $datasource;
+	
 	foreach my $field (keys (%$config)) {
 		next unless $field =~ m/show_/;
 		$param->{$field} = $config->{$field};
 	}
+	
+	
 	
 	(my $cgi_path = $app->config->AdminCGIPath || $app->config->CGIPath) =~ s|/$||;
     my $plugin_page = ($cgi_path . '/' 
@@ -400,51 +423,57 @@ sub post_save {
 	my ($eh, $obj, $original) = @_;
 	my $app = MT->instance;
 	my $q = $app->{query};
-	my $blog_id = $q->param('blog_id');
+	my $blog_id = $q->param('blog_id') || 0;
 	my $new_asset = !$q->param('id');
 	
 	return if (!$q->param('protect_beacon'));
-		
-	my @protections = $q->param('protection');
-	my $password = 	in_array('Password', @protections) ? $q->param('privacy_password') : '';
-	my $typekey_users = in_array('Typekey', @protections) ? $q->param('typekey_users') : '';
-	my $livejournal_users = in_array('LiveJournal', @protections) ? $q->param('livejournal_users') : '';
-	my $openid_users = in_array('OpenID', @protections) ? $q->param('openid_users') : '';
 	require Privacy::Object;
-	my $data = Privacy::Object->load({ blog_id => $blog_id, object_id   => $obj->id, object_datasource => $obj->datasource });
-	if($data) {
-		$data->remove or die $data->errstr;
+	
+	my @orig_privacy = Privacy::Object->load({ blog_id => $blog_id, object_id => $obj->id, object_datasource => $obj->datasource });
+	$_->remove or die $_->errstr foreach @orig_privacy;
+	
+	my @protections = $q->param('protection');
+	my $defaults = {
+		blog_id => $blog_id,
+		object_id => $obj->id,
+		object_datasource => $obj->datasource
+	};
+	
+	if(in_array('password', @protections)) {
+		my $prvt_obj = Privacy::Object->new;
+		$prvt_obj->set_values($defaults);
+		$prvt_obj->type('password');
+		$prvt_obj->credential($q->param('password'));
+		$prvt_obj->save or die $prvt_obj->errstr;
 	}
-	
-	return unless $password || $typekey_users || $livejournal_users || $openid_users;
-	
-	$data = Privacy::Object->new;
-	$data->blog_id($blog_id);
-	$data->object_id($obj->id);
-	$data->object_datasource($obj->datasource);
-
+	my @types = ('typekey', 'livejournal', 'openid');
+	foreach my $type (@types) {
+		if(in_array($type, @protections) || $q->param('_type') eq 'groups') {
+			foreach (split /,/, $q->param($type."_users")) {
+				my $prvt_obj = Privacy::Object->new;
+				$prvt_obj->set_values($defaults);
+				$prvt_obj->type($type);
+				$prvt_obj->credential($_);
+				$prvt_obj->save or die $prvt_obj->errstr;			
+			}
+		}
+	}
 	if(ref($obj) eq 'MT::Category') {
 		require MT::PluginData;
 		my $blog_default = MT::PluginData->load({ plugin => 'Privacy', key => 'blog'.$blog_id });
 		if($blog_default) {
 			if($blog_default->data->{categories} && $new_asset){
-				my $blog_protection = Privacy::Object->load({ blog_id => $blog_id, object_id => $blog_id, object_datasource=> 'blog' });
-				if($blog_protection) {
-					$password = $blog_protection->password if !$password;
-					$typekey_users = $typekey_users ? join ',', $typekey_users, $blog_protection->typekey_users : $blog_protection->typekey_users;
-					$livejournal_users = $livejournal_users ? join ',', $livejournal_users, $blog_protection->livejournal_users : $blog_protection->livejournal_users;
-					$openid_users = $openid_users ? join ',', $openid_users, $blog_protection->openid_users : $blog_protection->openid_users;
+				my @blog_protection = Privacy::Object->load({ blog_id => $blog_id, object_id => $blog_id, object_datasource=> 'blog' });
+				foreach my $privacy (@blog_protection) {
+					my $new_prvt = $privacy->clone();
+					$new_prvt->id(0);
+					$new_prvt->set_values($defaults);
+					$new_prvt->save or die $new_prvt->errstr;
 				}
 			}		
 		}	 
 	}
 		
-	$data->password($password);
-	$data->typekey_users($typekey_users);
-	$data->livejournal_users($livejournal_users);
-	$data->openid_users($openid_users);	
-	$data->save or die $data->errstr;
-	
 	if(ref($obj) ne 'MT::Entry') {
 		my $default = MT::PluginData->get_by_key({ plugin => 'Privacy', key => $obj->datasource.$obj->id });
 

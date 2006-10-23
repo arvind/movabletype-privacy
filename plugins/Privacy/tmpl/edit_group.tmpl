@@ -84,8 +84,8 @@ function submitForm(f, mode) {
 			tkusers.ALWAYS_SHOW_FORM = 1;
 			tkusers.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
 			tkusers.taglist.TAG_LINK_FORMAT = 'http://profile.typekey.com/';
-			<TMPL_LOOP NAME=TYPEKEY_USERS>
-			tkusers.addTag('<TMPL_VAR NAME=TK_USER>');
+			<TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
+			tkusers.addTag('<TMPL_VAR NAME=TYPEKEY_USER>');
 			</TMPL_LOOP>
 			tkusers.render(); 
 		</script>
@@ -107,8 +107,8 @@ function submitForm(f, mode) {
 			ljusers.ALWAYS_SHOW_FORM = 1;
 			ljusers.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
 			ljusers.taglist.TAG_LINK_FORMAT = 'http://www.livejournal.com/users/';
-			<TMPL_LOOP NAME=LIVEJOURNAL_USERS>
-			ljusers.addTag('<TMPL_VAR NAME=LJ_USER>');
+			<TMPL_LOOP NAME=LIVEJOURNAL_USER_LOOP>
+			ljusers.addTag('<TMPL_VAR NAME=LIVEJOURNAL_USER>');
 			</TMPL_LOOP>
 			ljusers.render(); 
 		</script>
@@ -129,8 +129,8 @@ function submitForm(f, mode) {
 			oiusers.ADD_LABEL = '<MT_TRANS phrase="Add">';
 			oiusers.ALWAYS_SHOW_FORM = 1;
 			oiusers.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
-			<TMPL_LOOP NAME=OPENID_USERS>
-			oiusers.addTag('<TMPL_VAR NAME=OI_USER>');
+			<TMPL_LOOP NAME=OPENID_USER_LOOP>
+			oiusers.addTag('<TMPL_VAR NAME=OPENID_USER>');
 			</TMPL_LOOP>			
 			oiusers.render(); 
 		</script>

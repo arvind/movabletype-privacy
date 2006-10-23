@@ -74,50 +74,42 @@ sub edit {
 		$tmpl = 'protect_blog.tmpl';
 		$app->add_breadcrumb($app->plugin->translate('Protect'));
 	} elsif($type eq 'groups') {
-		my(@typekey_users, @livejournal_users, @openid_users);
-		my $auth_prefs = $app->user->entry_prefs;
-	   if (my $delim = chr($auth_prefs->{tag_delim})) {
-	       if ($delim eq ',') {
-	           $param->{'auth_pref_tag_delim_comma'} = 1;
-	       } elsif ($delim eq ' ') {
-	           $param->{'auth_pref_tag_delim_space'} = 1;
-	       } else {
-	           $param->{'auth_pref_tag_delim_other'} = 1;
-	       }
-	       $param->{'auth_pref_tag_delim'} = $delim;
-	   }
 		require Privacy::Groups;
 		if($id && ($group = Privacy::Groups->load($id))) {
-			$param->{is_typekey} = $group->typekey_users;
-			$param->{is_livejournal} = $group->livejournal_users;
-			$param->{is_openid} = $group->openid_users;
-			push @typekey_users, {'tk_user' => $_ }
-				foreach split /,/, $group->typekey_users;
-			push @livejournal_users, {'lj_user' => $_ }
-				foreach split /,/, $group->livejournal_users;	
-			push @openid_users, {'oi_user' => $_ }
-				foreach split /,/, $group->openid_users;	
-		          $param->{id} = $group->id;
-		          $param->{label} = $group->label;
-		          $param->{description} = $group->description;				
+	          $param->{id} = $group->id;
+	          $param->{label} = $group->label;
+	          $param->{description} = $group->description;
 		}
-		for my $author_id (split /,/, $q->param('author_id')) {
-		 if($author_id ne 'undefined') {
-		    my $commenter = MT::Author->load($author_id);
-		   	    push @typekey_users, {'tk_user' => $commenter->name};
-		 }
-		}
-
-		$param->{typekey_users} = \@typekey_users;
-		$param->{livejournal_users} = \@livejournal_users;
-		$param->{openid_users} = \@openid_users;		
+		# require Privacy::Groups;
+		# if($id && ($group = Privacy::Groups->load($id))) {
+		# 	$param->{is_typekey} = $group->typekey_users;
+		# 	$param->{is_livejournal} = $group->livejournal_users;
+		# 	$param->{is_openid} = $group->openid_users;
+		# 	push @typekey_users, {'tk_user' => $_ }
+		# 		foreach split /,/, $group->typekey_users;
+		# 	push @livejournal_users, {'lj_user' => $_ }
+		# 		foreach split /,/, $group->livejournal_users;	
+		# 	push @openid_users, {'oi_user' => $_ }
+		# 		foreach split /,/, $group->openid_users;	
+		#           $param->{id} = $group->id;
+		#           $param->{label} = $group->label;
+		#           $param->{description} = $group->description;				
+		# }
+		# for my $author_id (split /,/, $q->param('author_id')) {
+		#  if($author_id ne 'undefined') {
+		#     my $commenter = MT::Author->load($author_id);
+		#    	    push @typekey_users, {'tk_user' => $commenter->name};
+		#  }
+		# }
+		# 
+		# $param->{typekey_users} = \@typekey_users;
+		# $param->{livejournal_users} = \@livejournal_users;
+		# $param->{openid_users} = \@openid_users;		
 		$param->{nav_groups} = 1;
 	    $tmpl = 'edit_group.tmpl';                
-	    $app->add_breadcrumb($app->plugin->translate("Protection Groups"),$app->uri(mode => 'groups'));
-	    $app->add_breadcrumb($app->plugin->translate("Add New Group"))
-			if !$id;
-	    $app->add_breadcrumb($group->label)
-			if $id;        
+	    $app->add_breadcrumb($app->plugin->translate("Privacy Groups"),$app->uri(mode => 'groups'));
+	    $app->add_breadcrumb($app->plugin->translate("Add New Group"))	if !$group;
+	    $app->add_breadcrumb($group->label)	if $group;        
 	}
 	$param->{saved} = $q->param('saved');
 	$param->{return_args} ||= $app->make_return_args;
@@ -128,6 +120,7 @@ sub groups {
     my $app = shift;
     my $q = $app->{query};
 	require Privacy::Groups;
+	require Privacy::Object;
     my $iter = Privacy::Groups->load_iter(undef, { 'sort' => 'label', direction => 'ascend'});
     my (@data,$param);
     my $n_entries = 0; # the number of entries displayed on this page
@@ -137,11 +130,8 @@ sub groups {
         	id => $group->id,
           	label => $group->label,
           	description => $group->description,
-			typekey_users => $group->typekey_users,
-			livejournal_users => $group->livejournal_users,
-			openid_users => $group->openid_users,
-          	entry_odd    => $n_entries % 2 ? 1 : 0,
-			member_count => scalar split ',', join ',', $group->typekey_users,$group->livejournal_users,$group->openid_users
+			member_count => Privacy::Object->count({ object_id => $group->id, object_datasource => $group->datasource }),
+          	entry_odd    => $n_entries % 2 ? 1 : 0
 	    };
 		push @data, $row;
   	}
@@ -175,6 +165,9 @@ sub save {
 		$group->set_values(\%values);
 		$group->save or
 			die $group->errstr;
+		$app->add_return_arg(id => $group->id);
+		require Privacy::App;
+		Privacy::App::post_save($app, $group);			
     }
     $app->add_return_arg(saved => 1);
     $app->call_return;
@@ -220,26 +213,9 @@ sub recursive {
 		eval {	
 			$q->param('protect_beacon', 1);
 			require Privacy::Object;
-			my $private_obj = Privacy::Object->load({ blog_id => $blog_id, object_datasource => $type, object_id => ($q->param('id') || $blog_id) });
-			
-			### IMPROVE, this is horrid!
-			
-			if($private_obj->password) {
-				$q->param('protection', 'Password');
-				$q->param('privacy_password', $private_obj->password);
-			}
-			if($private_obj->typekey_users) {
-				$q->param('protection','Typekey');
-				$q->param('typekey_users', $private_obj->typekey_users);
-			}
-			if($private_obj->livejournal_users) {
-				$q->param('protection','LiveJournal');
-				$q->param('livejournal_users', $private_obj->livejournal_users);
-			}		
-			if($private_obj->openid_users) {
-				$q->param('protection','OpenID');
-				$q->param('openid_users', $private_obj->openid_users);
-			}				
+
+			my @parent_prv = Privacy::Object->load({ blog_id => $blog_id, object_datasource => $type, object_id => ($q->param('id') || $blog_id) });
+						
 			if(($type eq 'blog' || $type eq 'category') && $q->param('entries')) {
 				require MT::Entry;
 				my %args;
@@ -250,7 +226,15 @@ sub recursive {
 				my $entry_iter = MT::Entry->load_iter({ blog_id => $blog_id }, \%args);
 				while (my $entry = $entry_iter->()) {
 					$app->print($app->translate("Applying privacy to entry '[_1]'\n", $entry->title));
-					$entry->save or die $entry->errstr;
+					foreach my $privacy (@parent_prv) {
+						my $new_prvt = $privacy->clone();
+						$new_prvt->set_values({
+							id => 0,
+							object_datasource => 'entry',
+							object_id => $entry->id
+						});
+						$new_prvt->save or die $new_prvt->errstr;
+					}
 				}
 			}
 			if($type eq 'blog' && $q->param('categories')) {
@@ -258,7 +242,15 @@ sub recursive {
 				my $cat_iter = MT::Category->load_iter({ blog_id => $blog_id });
 				while (my $cat = $cat_iter->()) {
 					$app->print($app->translate("Applying privacy to category '[_1]'\n", $cat->label));
-					$cat->save or die $cat->errstr;
+					foreach my $privacy (@parent_prv) {
+						my $new_prvt = $privacy->clone();
+						$new_prvt->set_values({
+							id => 0,
+							object_datasource => 'category',
+							object_id => $cat->id
+						});
+						$new_prvt->save or die $new_prvt->errstr;
+					}
 				}
 			}
 		};
