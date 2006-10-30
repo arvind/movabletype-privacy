@@ -1,11 +1,8 @@
-# Protect Movable Type Plugin
-#
-# $Id: $
-#
-# Copyright (C) 2005 Arvind Satyanarayan
-#
+# Privacy - A plugin for Movable Type.
+# Copyright (c) 2005-2006, Arvind Satyanarayan.
 
-package Privacy::CMS;
+
+package Privacy::App::CMS;
 use strict;
 
 use vars qw( $DEBUG @ISA );
@@ -80,31 +77,6 @@ sub edit {
 	          $param->{label} = $group->label;
 	          $param->{description} = $group->description;
 		}
-		# require Privacy::Groups;
-		# if($id && ($group = Privacy::Groups->load($id))) {
-		# 	$param->{is_typekey} = $group->typekey_users;
-		# 	$param->{is_livejournal} = $group->livejournal_users;
-		# 	$param->{is_openid} = $group->openid_users;
-		# 	push @typekey_users, {'tk_user' => $_ }
-		# 		foreach split /,/, $group->typekey_users;
-		# 	push @livejournal_users, {'lj_user' => $_ }
-		# 		foreach split /,/, $group->livejournal_users;	
-		# 	push @openid_users, {'oi_user' => $_ }
-		# 		foreach split /,/, $group->openid_users;	
-		#           $param->{id} = $group->id;
-		#           $param->{label} = $group->label;
-		#           $param->{description} = $group->description;				
-		# }
-		# for my $author_id (split /,/, $q->param('author_id')) {
-		#  if($author_id ne 'undefined') {
-		#     my $commenter = MT::Author->load($author_id);
-		#    	    push @typekey_users, {'tk_user' => $commenter->name};
-		#  }
-		# }
-		# 
-		# $param->{typekey_users} = \@typekey_users;
-		# $param->{livejournal_users} = \@livejournal_users;
-		# $param->{openid_users} = \@openid_users;		
 		$param->{nav_groups} = 1;
 	    $tmpl = 'edit_group.tmpl';                
 	    $app->add_breadcrumb($app->plugin->translate("Privacy Groups"),$app->uri(mode => 'groups'));

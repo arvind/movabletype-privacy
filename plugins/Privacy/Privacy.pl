@@ -9,6 +9,7 @@ use MT 3.3;   # requires MT 3.2 or later
 use base 'MT::Plugin';
 our $VERSION = '2.0';
 our $SCHEMA_VERSION = '2.1';
+use Data::Dumper;
 
 my $plugin;
 MT->add_plugin($plugin = __PACKAGE__->new({
@@ -32,6 +33,14 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		}
     },
 	l10n_class 	    => 'Privacy::L10N',
+	app_methods => {
+		'MT::App::CMS' => {
+			'privacy_test' => sub {
+				my $app = shift;
+				die Dumper($plugin);
+			}
+		}
+	},
     app_action_links => {
         'MT::App::CMS' => {
             'blog' => {
@@ -66,25 +75,22 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		'MT::App::CMS::AppTemplateParam.edit_categories' => sub { require Privacy::App; Privacy::App::_list_param(@_, 'category'); },		
 		'MT::App::CMS::AppTemplateSource.system_list_blog' => sub { require Privacy::App; Privacy::App::_system_list_blog(@_); },
 		'MT::App::CMS::AppTemplateParam.system_list_blog' => sub { require Privacy::App; Privacy::App::_list_param(@_, 'blog'); },
-		'Privacy::CMS::AppTemplateParam.protect_blog' => sub { require Privacy::App; Privacy::App::_param(@_, 'blog'); },
-		'Privacy::CMS::AppTemplateParam.edit_group' => sub { require Privacy::App; Privacy::App::_param(@_, 'protect_groups'); },		
+		'Privacy::App::CMS::AppTemplateParam.protect_blog' => sub { require Privacy::App; Privacy::App::_param(@_, 'blog'); },
+		'Privacy::App::CMS::AppTemplateParam.edit_group' => sub { require Privacy::App; Privacy::App::_param(@_, 'protect_groups'); },		
 		'*::AppTemplateSource'  => sub { require Privacy::App; Privacy::App::_header(@_); },
 		'DefaultTemplateFilter'  => sub { require Privacy::App; Privacy::App::load_files(@_); }
 	},
 	container_tags => {
-		'PrivateBlog'		=> sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::protect('blog', @_);},
-		'PrivateEntry'		=> sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::protect('entry', @_);},		
-		'PrivateCategory'		=> sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::protect('category', @_);},		
+		'PrivateBlog' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::private('blog', @_);},
+		'PrivateEntry' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::private('entry', @_);},		
+		'PrivateCategory' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::private('category', @_);},		
+		'PrivacyTypes' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_types(@_);}			
 	},
 	template_tags => {
-		'PrivateObjectID' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::protect_obj_id(@_);},
-		'PrivateObjectType' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::protect_obj_type(@_);}
-	},
-	conditional_tags => {
-		'IfPasswordProtected' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::is_password(@_);},
-		'IfTypekeyProtected' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::is_typekey(@_);},		
-		'IfLiveJournalProtected' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::is_livejournal(@_);},		
-		'IfOpenIDProtected' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::is_openid(@_);}
+		'PrivateObjectID' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::private_obj_id(@_);},
+		'PrivateObjectType' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::private_obj_type(@_);},
+		'PrivacyTypeName' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_type_name(@_);},
+		'PrivacyTypeText' =>  sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_type_text(@_);}
 	},
     settings => new MT::PluginSettings([
 		['show_password', { Default => 1 }],
@@ -137,6 +143,25 @@ sub apply_default_settings {
       $data->{$key} = $sys->{$key};
     }
   }
+}
+
+sub add_privacy_type {
+    my $privacy = shift;
+    my ($privacy_type) = @_;
+
+    Carp::croak 'privacy types require a string called "key"' 
+        unless ($privacy_type->{key}
+                && !(ref($privacy_type->{key})));
+    Carp::croak 'privacy types require a coderef called "signon_code"'
+        unless ($privacy_type->{signon_code} && 
+                (ref $privacy_type->{signon_code} eq 'CODE'));
+    Carp::croak 'privacy types require a string called "label"'
+        unless ($privacy_type->{label} && 
+                !(ref $privacy_type->{label}));
+
+    $privacy_type->{orig_label} = $privacy_type->{label};
+    $privacy_type->{plugin} = $MT::plugin_sig if $MT::plugin_sig && !$is_core;
+    push @{$plugin->{privacy_types}}, $privacy_type;
 }
 
 1;

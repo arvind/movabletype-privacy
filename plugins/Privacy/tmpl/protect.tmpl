@@ -7,51 +7,33 @@ var tkusers, ljusers, oiusers;
 
 function populatePrivacy(d, o) {
 	if(o == 'in') {
-		if(d.password) {
-			getByID('password_prefs').style.display = 'block';
-			getByID('password-checkbox').checked = 'checked';
-			getByID('password').value = d.password;
-		}		
-		if(d.typekey_users) {
-			getByID('typekey_users_prefs').style.display = 'block';
-			getByID('typekey_users-checkbox').checked = 'checked';
-			for (var i = 0; i < d.typekey_users.length; i++) 
-				tkusers.addTag(d.typekey_users[i]);
+		<TMPL_LOOP NAME=AUTH_LOOP>
+		<TMPL_IF NAME=SHOW>		
+		if(d.<TMPL_VAR NAME=KEY> || d.<TMPL_VAR NAME=KEY>_users) {
+			getByID('<TMPL_VAR NAME=KEY>_prefs').style.display = 'block';
+			getByID('<TMPL_VAR NAME=KEY>-checkbox').checked = 'checked';
+			<TMPL_IF NAME=SINGLE>
+			getByID('<TMPL_VAR NAME=KEY>').value = d.<TMPL_VAR NAME=KEY>;
+			<TMPL_ELSE>
+			for (var i = 0; i < d.<TMPL_VAR NAME=KEY>_users.length; i++) 
+				<TMPL_VAR NAME=KEY>.addTag(d.<TMPL_VAR NAME=KEY>_users[i]);			
+			</TMPL_IF>			
 		}
-		if(d.livejournal_users) {
-			getByID('livejournal_users_prefs').style.display = 'block';
-			getByID('livejournal_users-checkbox').checked = 'checked';
-			for (var i = 0; i < d.livejournal_users.length; i++) 
-				ljusers.addTag(d.livejournal_users[i]);
-		}	
-		if(d.openid_users) {
-			getByID('openid_users_prefs').style.display = 'block';
-			getByID('openid_users-checkbox').checked = 'checked';
-			for (var i = 0; i < d.openid_users.length; i++) 
-				oiusers.addTag(d.openid_users[i]);
-		}
+		</TMPL_IF></TMPL_LOOP>
 	} else {
-		if(d.password) {
-			getByID('password').value = '';
-		}		
-		if(d.typekey_users) {
-			for (var i = 0; i < d.typekey_users.length; i++) {
-				if(getByID('typekey-tag-' + d.typekey_users[i]))
-					tkusers.taglist.deleteTag(getByID('typekey-tag-' + d.typekey_users[i]));
-			}
+		<TMPL_LOOP NAME=AUTH_LOOP>
+		<TMPL_IF NAME=SHOW>		
+		if(d.<TMPL_VAR NAME=KEY> || d.<TMPL_VAR NAME=KEY>_users) {
+			<TMPL_IF NAME=SINGLE>
+			getByID('<TMPL_VAR NAME=KEY>').value = '';
+			<TMPL_ELSE>
+			for (var i = 0; i < d.<TMPL_VAR NAME=KEY>_users.length; i++) {
+				if(getByID('<TMPL_VAR NAME=KEY>-tag-' + d.<TMPL_VAR NAME=KEY>_users[i]))
+					<TMPL_VAR NAME=KEY>.taglist.deleteTag(getByID('<TMPL_VAR NAME=KEY>-tag-' + d.<TMPL_VAR NAME=KEY>_users[i]));
+			}		
+			</TMPL_IF>			
 		}
-		if(d.livejournal_users) {
-			for (var i = 0; i < d.livejournal_users.length; i++) { 
-				if(getByID('livejournal-tag-' + d.livejournal_users[i]))
-					ljusers.taglist.deleteTag(getByID('livejournal-tag-' + d.livejournal_users[i]));
-			}
-		}	
-		if(d.openid_users) {
-			for (var i = 0; i < d.openid_users.length; i++) {
-				if(getByID('openid-tag-' + d.openid_users[i]))
-					oiusers.taglist.deleteTag(getByID('openid-tag-' + d.openid_users[i]));
-			}
-		}		
+		</TMPL_IF></TMPL_LOOP>				
 	}
 }
 
@@ -93,9 +75,12 @@ function reveal_password () {
 function submitForm(f, mode) {
     if (f.elements["__mode"] && mode)
         f.elements["__mode"].value = mode;
-	<TMPL_IF NAME=SHOW_TYPEKEY>tkusers.onAddSubmit('click');f.elements["typekey_users"].value = tkusers.taglist.tags;</TMPL_IF>
-	<TMPL_IF NAME=SHOW_LIVEJOURNAL>ljusers.onAddSubmit('click');f.elements["livejournal_users"].value = ljusers.taglist.tags;</TMPL_IF>
-	<TMPL_IF NAME=SHOW_OPENID>oiusers.onAddSubmit('click');f.elements["openid_users"].value = oiusers.taglist.tags;</TMPL_IF> 
+	<TMPL_LOOP NAME=AUTH_LOOP>
+	<TMPL_IF NAME=SHOW><TMPL_UNLESS NAME=SINGLE>
+	<TMPL_VAR NAME=KEY>.onAddSubmit('click');
+	f.elements["<TMPL_VAR NAME=KEY>_users"].value = <TMPL_VAR NAME=KEY>.taglist.tags;
+	</TMPL_UNLESS></TMPL_IF>
+	</TMPL_LOOP>
     f.submit();
 }
 
@@ -136,102 +121,48 @@ function group(id) {
 <fieldset>
 <input type="hidden" name="do_recursive" value="0" id="do_recursive" />
 <input type="hidden" name="protect_beacon" value="1" id="protect_beacon" />
-<input type="hidden" name="typekey_users" value="" id="typekey_users" />
-<input type="hidden" name="livejournal_users" value="" id="livejournal_users" />
-<input type="hidden" name="openid_users" value="" id="openid_users" />
-<TMPL_IF NAME=SHOW_PASSWORD>
-<h4><label class="protect-header-label"><input id="password-checkbox" type="checkbox" name="protection" onclick="toggleProtectPrefs(this,'password_prefs'); return true" value="password" <TMPL_IF NAME=PASSWORD>checked="checked"</TMPL_IF>> <MT_TRANS phrase="Password Protection"></label></h4>
-<div id="password_prefs" class="setting" style="display: <TMPL_IF NAME=PASSWORD>block<TMPL_ELSE>none</TMPL_IF>;">
+
+<TMPL_LOOP NAME=AUTH_LOOP>
+<TMPL_IF NAME=SHOW>
+<h4><label class="protect-header-label"><input id="<TMPL_VAR NAME=KEY>-checkbox" type="checkbox" name="protection" onclick="toggleProtectPrefs(this,'<TMPL_VAR NAME=KEY>_prefs'); return true" value="<TMPL_VAR NAME=KEY>" <TMPL_IF NAME=IS_SELECTED>checked="checked"</TMPL_IF>> <TMPL_VAR NAME=LABEL></label></h4>
+
+<div id="<TMPL_VAR NAME=KEY>_prefs" class="setting" style="display: <TMPL_IF NAME=IS_SELECTED>block<TMPL_ELSE>none</TMPL_IF>;">
+	<TMPL_IF NAME=FIELD_LABEL>
     <div class="label">
-        <label for="password"><MT_TRANS phrase="Password">:</label>
+        <label for="password"><TMPL_VAR NAME=FIELD_LABEL>:</label>
     </div>
+	</TMPL_IF>
     <div class="field">
-        <input name="password" id="password" value="<TMPL_VAR NAME=PASSWORD ESCAPE=HTML>" type="password" />
-  		<p><a href="javascript:void(0);" onclick="reveal_password();"><MT_TRANS phrase="Reveal password"></a></p>
-    </div>
-</div>		
-</TMPL_IF>	
-<TMPL_IF NAME=SHOW_TYPEKEY>	
-<h4><label class="protect-header-label"><input id="typekey_users-checkbox" type="checkbox" name="protection" onclick="toggleProtectPrefs(this,'typekey_users_prefs'); return true" value="typekey"<TMPL_IF NAME=TYPEKEY_USER_LOOP> checked="checked"</TMPL_IF>> <MT_TRANS phrase="Typekey Protection"></label></h4>
-		
-<div id="typekey_users_prefs" class="setting" style="display: <TMPL_IF NAME=TYPEKEY_USER_LOOP>block<TMPL_ELSE>none</TMPL_IF>;">
-    <div class="label">
-        <label for="typekey"><MT_TRANS phrase="Enter Typekey Users">:</label>
-    </div>
-    <div class="field">
-		<div id="typekey" class="tc-tags tag-widget"></div>
+		<TMPL_IF NAME=SINGLE>
+		<input name="<TMPL_VAR NAME=KEY>" id="<TMPL_VAR NAME=KEY>" value="<TMPL_VAR NAME=CREDENTIAL ESCAPE=HTML>" type="text" />
+		<TMPL_ELSE>
+		<input type="hidden" name="<TMPL_VAR NAME=KEY>_users" value="" id="<TMPL_VAR NAME=KEY>_users" />
+		<div id="<TMPL_VAR NAME=KEY>" class="tc-tags tag-widget"></div>
 		<script type="text/javascript"> 
-			tkusers = new TagWidget('typekey'); 
-			tkusers.LIST_LABEL = ' '; 
-			tkusers.FORM_LABEL = ' '; 
-			tkusers.ADD_LABEL = '<MT_TRANS phrase="Add">';
-			tkusers.ALWAYS_SHOW_FORM = 1;
-			tkusers.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
-			tkusers.taglist.TAG_LINK_FORMAT = 'http://profile.typekey.com/';
-			<TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
-			tkusers.addTag('<TMPL_VAR NAME=TYPEKEY_USER>');
+			<TMPL_VAR NAME=KEY> = new TagWidget('<TMPL_VAR NAME=KEY>'); 
+			<TMPL_VAR NAME=KEY>.LIST_LABEL = ' '; 
+			<TMPL_VAR NAME=KEY>.FORM_LABEL = ' '; 
+			<TMPL_VAR NAME=KEY>.ADD_LABEL = '<MT_TRANS phrase="Add">';
+			<TMPL_VAR NAME=KEY>.ALWAYS_SHOW_FORM = 1;
+			<TMPL_VAR NAME=KEY>.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
+			<TMPL_LOOP NAME=USER_LOOP>
+			<TMPL_VAR NAME=KEY>.addTag('<TMPL_VAR NAME=USER>');
 			</TMPL_LOOP>
-			tkusers.render(); 
+			<TMPL_VAR NAME=KEY>.render(); 
 		</script>
-		<p><MT_TRANS phrase="Enter Typekey users here separated by"> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="commas"><TMPL_ELSE><MT_TRANS phrase="spaces"></TMPL_IF></p>
-    </div>
-</div>		
-</TMPL_IF>
-<TMPL_IF NAME=SHOW_LIVEJOURNAL>		
-<h4><label class="protect-header-label"><input id="livejournal_users-checkbox" type="checkbox" name="protection" onclick="toggleProtectPrefs(this,'livejournal_users_prefs'); return true" value="livejournal"<TMPL_IF NAME=LIVEJOURNAL_USER_LOOP> checked="checked"</TMPL_IF>> <MT_TRANS phrase="LiveJournal Protection"></label></h4>
-		
-<div id="livejournal_users_prefs" class="setting" style="display: <TMPL_IF NAME=LIVEJOURNAL_USER_LOOP>block<TMPL_ELSE>none</TMPL_IF>;">
-    <div class="label">
-        <label for="livejournal"><MT_TRANS phrase="Enter LiveJournal Users">:</label>
-    </div>
-    <div class="field">
-		<div id="livejournal" class="tc-tags tag-widget"></div>
-		<script type="text/javascript"> 
-			ljusers = new TagWidget('livejournal'); 
-			ljusers.LIST_LABEL = ' '; 
-			ljusers.FORM_LABEL = ' '; 
-			ljusers.ADD_LABEL = '<MT_TRANS phrase="Add">';
-			ljusers.ALWAYS_SHOW_FORM = 1;
-			ljusers.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
-			ljusers.taglist.TAG_LINK_FORMAT = 'http://www.livejournal.com/users/';
-			<TMPL_LOOP NAME=LIVEJOURNAL_USER_LOOP>
-			ljusers.addTag('<TMPL_VAR NAME=LIVEJOURNAL_USER>');
-			</TMPL_LOOP>
-			ljusers.render(); 
-		</script>
-		<p><MT_TRANS phrase="Enter LiveJournal users here separated by"> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="commas"><TMPL_ELSE><MT_TRANS phrase="spaces"></TMPL_IF></p>
-    </div>
-</div>		
-</TMPL_IF>
-<TMPL_IF NAME=SHOW_OPENID>		
-<h4><label class="protect-header-label"><input id="openid_users-checkbox" type="checkbox" name="protection" value="openid" onclick="toggleProtectPrefs(this,'openid_users_prefs'); return true"<TMPL_IF NAME=OPENID_USER_LOOP> checked="checked"</TMPL_IF>> <MT_TRANS phrase="OpenID Protection"></label></h4>
-		
-<div id="openid_users_prefs" class="setting" style="display: <TMPL_IF NAME=OPENID_USER_LOOP>block<TMPL_ELSE>none</TMPL_IF>;">
-    <div class="label">
-        <label for="openid_users"><MT_TRANS phrase="Enter OpenID Users">:</label>
-    </div>
-    <div class="field">
-		<div id="openid" class="tc-tags tag-widget"></div>
-		<script type="text/javascript"> 
-			oiusers = new TagWidget('openid'); 
-			oiusers.LIST_LABEL = ' '; 
-			oiusers.FORM_LABEL = ' '; 
-			oiusers.ADD_LABEL = '<MT_TRANS phrase="Add">';
-			oiusers.ALWAYS_SHOW_FORM = 1;
-			oiusers.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
-			oiusers.taglist.TAG_LINK_FORMAT = '#openid-tag-';
-			<TMPL_LOOP NAME=OPENID_USER_LOOP>
-			oiusers.addTag('<TMPL_VAR NAME=OPENID_USER>');
-			</TMPL_LOOP>			
-			oiusers.render(); 
-		</script>
-		<p><MT_TRANS phrase="Enter OpenID urls here separated by"> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="commas"><TMPL_ELSE><MT_TRANS phrase="spaces"></TMPL_IF></p>
+		</TMPL_IF>
+		<TMPL_IF NAME=FIELD_EXPLANATION><p><TMPL_VAR NAME=FIELD_EXPLANATION> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="(comma-delimited list)"><TMPL_ELSE><TMPL_IF NAME=AUTH_PREF_TAG_DELIM_SPACE><MT_TRANS phrase="(space-delimited list)"><TMPL_ELSE><MT_TRANS phrase="(delimited by '[_1]')" params="<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>"></TMPL_IF></TMPL_IF></p></TMPL_IF>
     </div>
 </div>
+
+
 </TMPL_IF>
+</TMPL_LOOP>
+
+
 
 <TMPL_IF NAME=ALLOW_DEFAULTS>
-<hr />
+
 <div id="default_prefs" class="setting" style="display: <TMPL_IF NAME=IS_PRIVATE>block<TMPL_ELSE>none</TMPL_IF>;">
 	<TMPL_IF NAME=IS_BLOG_OVERRIDE><div class="message"><MT_TRANS phrase="Privacy defaults have been set at the blog level"></div></TMPL_IF>
     <div class="label">

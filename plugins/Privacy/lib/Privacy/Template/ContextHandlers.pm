@@ -1,61 +1,40 @@
 package Privacy::Template::ContextHandlers;
 
-sub protect {
+sub private {
 	my ($type, $ctx, $args, $cond) = @_;
-	my $plugin = MT::Plugin::Privacy->instance;
+	my $privacy_frame = MT::Plugin::Privacy->instance;
 	my $blog_id = $ctx->stash('blog_id');
     my $builder = $ctx->stash ('builder');
     my $tokens = $ctx->stash ('tokens');
     defined (my $out = $builder->build ($ctx, $tokens, $cond))
       or return $ctx->error ($builder->errstr);
 
-	my $obj = $ctx->stash('protect_obj');
+	my $obj = $ctx->stash('private_obj');
 	if(!$obj) {
 		if($type eq 'category') {
 			$obj = $ctx->stash('category') || $ctx->stash('archive_category');
 		} else {
 			$obj = $ctx->stash($type);
 		}
-		$ctx->stash('protect_obj', $obj);
+		$ctx->stash('private_obj', $obj);
 	}
-	return $ctx->_no_protect_obj('MT'.$ctx->stash('tag'), $type)
+	return $ctx->_no__obj('MT'.$ctx->stash('tag'), $type)
 		if !$obj;
 		
-	my $protected = $ctx->stash('protected_obj');
-	if(!$protected) {
-		require Privacy::Object;
-		my $terms = { blog_id => $blog_id, object_id => $obj->id, object_datasource => $datasource };
-	    my @types = qw(typekey livejournal openid);
+	require Privacy::Object;
+	
+	my $protected = Privacy::Object->count({ blog_id => $blog_id, object_id => $obj->id, object_datasource => $obj->datasource });
 
-	    foreach my $type (@types) {
-				$terms->{type} = $type;
-	            my @users = Privacy::Object->load($terms);
-	            next unless @users;
-	            my @user_loop;
-	            push @user_loop, $_->credential for @users;
-	            $ctx->{__stash}{"${type}_users"} = \@user_loop;
-	    }
-	
-		$terms->{type} = 'password';
-		my $password = Privacy::Object->load($terms);
-		$ctx->{__stash}{password} = $password->credential
-			if $password;
-	
-		$ctx->stash('protected_obj', 1);
-	}
 	return $out if !$protected;
 	
-	my $protect_text = $ctx->stash('protect_text'.$type.$obj->id);
-	
-	if(!$protect_text) {
-		require MT::Template;
-		my $tmpl = MT::Template->load({ blog_id => $blog_id, type => 'privacy_login'});
-	    my %cond;
-	    $protect_text = $tmpl->build($ctx, \%cond);
-	    $protect_text = $tmpl->errstr unless defined $protect_text;	
-		$ctx->stash('protect_text'.$type.$obj->id, $protect_text);
-	}
-	# my $protect_text = $plugin->get_config_value('protect_text', 'blog:'.$blog_id);
+	require MT::Template;
+	my $tmpl = MT::Template->load({ blog_id => $blog_id, type => 'privacy_login'});
+    my %cond;
+    my $protect_text = $tmpl->build($ctx, \%cond);
+    $protect_text = $tmpl->errstr unless defined $protect_text;	
+	$ctx->stash('protect_text'.$type.$obj->id, $protect_text);
+
+	# my $protect_text = $privacy_frame->get_config_value('protect_text', 'blog:'.$blog_id);
 	# $tokens = $builder->compile($ctx, $protect_text)
 	#         or return $ctx->error($builder->errstr);
 	# defined(my $protect_text_out = $builder->build($ctx, $tokens))
@@ -70,63 +49,75 @@ sub protect {
 	return $text;
 }
 
-sub protect_obj_id {
+sub private_obj_id {
 	my ($ctx) = @_;
-	my $obj = $ctx->stash('protect_obj');
-	return $ctx->_no_protect_obj('MTPrivacyObjectID')
+	my $obj = $ctx->stash('private_obj');
+	return $ctx->_no_private_obj('MTPrivacyObjectID')
 		if !$obj;	
 	return $obj->id;
 }
 
-sub protect_obj_type {
+sub private_obj_type {
 	my ($ctx) = @_;	
-	my $obj = $ctx->stash('protect_obj');
-	return $ctx->_no_protect_obj('MTPrivacyObjectType')
+	my $obj = $ctx->stash('private_obj');
+	return $ctx->_no_private_obj('MTPrivacyObjectType')
 		if !$obj;	
 	return $obj->datasource;
 }
 
-sub is_password {
-	my ($ctx) = @_;
-	my $protected = $ctx->stash('protected_obj') or
-		return $ctx->_no_protected_obj('MTIfPasswordProtected');
-	my $password = $ctx->stash('password');	
-	return $password;		
+sub privacy_types {
+	my ($ctx, $args, $cond) = @_;
+	my $privacy_frame = MT::Plugin::Privacy->instance;
+	my $blog_id = $ctx->stash('blog_id');
+	my $res = '';
+	my %cond;
+    my $builder = $ctx->stash ('builder');
+    my $tokens = $ctx->stash ('tokens');
+	my $obj = $ctx->stash('private_obj');
+	return $ctx->_no_private_obj('MTPrivacyTypes')
+		if !$obj;	
+	
+	require Privacy::Object;	
+	foreach my $type (@{$privacy_frame->{privacy_types}}) {
+		my $count = Privacy::Object->count({ blog_id => $blog_id, object_id => $obj->id, object_datasource => $obj->datasource, type => $type->{key} });
+		next unless $count;
+		
+		$ctx->stash('privacy_type', $type);
+		
+        my $out = $builder->build($ctx, $tokens, %$cond);
+        return $ctx->error( $builder->errstr ) unless defined $out;		
+		$res .= $out;
+	}	
+	$res;
 }
 
-sub is_typekey {
-	my ($ctx) = @_;
-	my $protected = $ctx->stash('protected_obj') or
-		return $ctx->_no_protected_obj('MTIfPasswordProtected');
-	my $typekey_users = $ctx->stash('typekey_users');	
-	return scalar @$typekey_users;		
+sub privacy_type_name {
+	my ($ctx) = @_;	
+	my $type = $ctx->stash('privacy_type');
+	return $ctx->_no_private_obj('MTPrivacyTypeName')
+		if !$type;	
+		
+	return $type->{key};	
 }
 
-sub is_livejournal {
-	my ($ctx) = @_;
-	my $protected = $ctx->stash('protected_obj') or
-		return $ctx->_no_protected_obj('MTIfPasswordProtected');
-	my $livejournal_users = $ctx->stash('livejournal_users');	
-	return scalar @$livejournal_users;	
-}
-
-sub is_openid {
-	my ($ctx) = @_;
-	my $protected = $ctx->stash('protected_obj') or
-		return $ctx->_no_protected_obj('MTIfPasswordProtected');
-	my $openid_users = $ctx->stash('openid_users');	
-	return scalar @$openid_users;		
+sub privacy_type_text {
+	my ($ctx) = @_;	
+	my $type = $ctx->stash('privacy_type');
+	return $ctx->_no_private_obj('MTPrivacyTypeText')
+		if !$type;	
+		
+	return $type->{lexicon}->{PRIVACY_TYPE_TEXT};	
 }
 
 package MT::Template::Context;
 
-sub _no_protect_obj {
+sub _no__obj {
     return $_[0]->error(MT->translate(
         "You used an '[_1]' tag outside of the context of an [_2]",
         $_[1], $_[2]));	
 }
 
-sub _no_protected_obj {
+sub _no_private_obj {
     return $_[0]->error(MT->translate(
         "You used an '[_1]' tag outside of the context of a protected asset; " .
         "perhaps you mistakenly placed it outside of an 'MTPrivacy' container?",

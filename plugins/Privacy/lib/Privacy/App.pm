@@ -22,13 +22,13 @@ my $templates = [
 
 sub config {
     my $config = {};
-	my $plugin = MT::Plugin::Privacy->instance;
-    if ($plugin) {
+	my $privacy_frame = MT::Plugin::Privacy->instance;
+    if ($privacy_frame) {
         require MT::Request;
         my ($scope) = (@_);
         $config = MT::Request->instance->cache('protect_config_'.$scope);
         if (!$config) {
-            $config = $plugin->get_config_hash($scope);
+            $config = $privacy_frame->get_config_hash($scope);
             MT::Request->instance->cache('protect_config_'.$scope, $config);
         }
     }
@@ -36,7 +36,7 @@ sub config {
 }
 
 sub convert_data {
-	my $plugin = MT::Plugin::Privacy->instance;
+	my $privacy_frame = MT::Plugin::Privacy->instance;
 	
 	require Privacy::Protect;
 	require Privacy::Object;
@@ -89,16 +89,16 @@ sub convert_data {
 
 sub load_files {
 	my ($eh, $tmpls) = @_;
-	my $plugin = MT::Plugin::Privacy->instance;
+	my $privacy_frame = MT::Plugin::Privacy->instance;
 	local (*FIN, $/);
     $/ = undef;
     foreach my $tmpl (@$templates) {
-        my $file = File::Spec->catfile($plugin->{full_path}, 'tmpl', 'default_templates', dirify($tmpl->{name}).'.tmpl');
+        my $file = File::Spec->catfile($privacy_frame->{full_path}, 'tmpl', 'default_templates', dirify($tmpl->{name}).'.tmpl');
         if ((-e $file) && (-r $file)) {
             open FIN, "<$file"; my $data = <FIN>; close FIN;
             $tmpl->{text} = $data;
         } else {
-            die $plugin->translate("Couldn't find file '[_1]'", $file);
+            die $privacy_frame->translate("Couldn't find file '[_1]'", $file);
         }
 		if(@$tmpls) {
 			push @$tmpls, $tmpl;
@@ -111,14 +111,14 @@ sub load_files {
 		my $iter = MT::Blog->load_iter;		
 		while (my $blog = $iter->()) {
 		    for my $val (@$templates) {
-		        $val->{name} = $plugin->translate($val->{name});
-		        $val->{text} = $plugin->translate_templatized($val->{text});
+		        $val->{name} = $privacy_frame->translate($val->{name});
+		        $val->{text} = $privacy_frame->translate_templatized($val->{text});
 		        my $tmpl = MT::Template->new;
 		        $tmpl->set_values($val);
 		        $tmpl->build_dynamic(0);
 		        $tmpl->blog_id($blog->id);
 		        $tmpl->save or
-		            return $app->error($plugin->translate(
+		            return $app->error($privacy_frame->translate(
 		                "Populating blog with template '[_1]' failed: [_2]", $val->{name},
 		                $tmpl->errstr));
 		    }			
@@ -130,8 +130,8 @@ sub load_files {
 sub _edit_entry {
 	my($eh, $app, $tmpl) = @_;
 	my($old, $new);
-	my $plugin = MT::Plugin::Privacy->instance;
-	my $edit_tmpl_path = File::Spec->catdir($plugin->{full_path},'tmpl','protect.tmpl');
+	my $privacy_frame = MT::Plugin::Privacy->instance;
+	my $edit_tmpl_path = File::Spec->catdir($privacy_frame->{full_path},'tmpl','protect.tmpl');
 	
 	$old = qq{doAddCategory(this)};
 	$old = quotemeta($old);
@@ -180,7 +180,7 @@ sub _entry_prefs {
 	my ($old, $new);	
 	$old = qq{var customizable_fields = new Array('category'};	
 	$old = quotemeta($old);	
-	$new = qq{var customizable_fields = new Array('category','privacy',};
+	$new = qq{var customizable_fields = new Array('category','privacy'};
 	$$template =~ s/$old/$new/;	
 	
 	$old = qq{<TMPL_IF NAME=DISP_PREFS_SHOW_PING_URLS>custom_fields.push('ping-urls');</TMPL_IF>};
@@ -197,9 +197,9 @@ sub _entry_prefs {
 sub _edit_category {
 	my($eh, $app, $tmpl) = @_;
 	my($old, $new);
-	my $plugin = MT::Plugin::Privacy->instance;
-	my $edit_tmpl_path = File::Spec->catdir($plugin->{full_path},'tmpl','protect.tmpl');
-	my $recursive_stub = File::Spec->catdir($plugin->{full_path},'tmpl','recursive-stub.tmpl');
+	my $privacy_frame = MT::Plugin::Privacy->instance;
+	my $edit_tmpl_path = File::Spec->catdir($privacy_frame->{full_path},'tmpl','protect.tmpl');
+	my $recursive_stub = File::Spec->catdir($privacy_frame->{full_path},'tmpl','recursive-stub.tmpl');
 	$old = <<HTML;
 <p><label for="description"><MT_TRANS phrase="Description"></label> <a href="#" onclick="return openManual('categories', 'category_description')" class="help">?</a><br />
 <textarea name="description" id="description" rows="5" cols="72" class="wide"><TMPL_VAR NAME=DESCRIPTION ESCAPE=HTML></textarea></p>
@@ -227,7 +227,7 @@ HTML
 sub _edit_categories {
 	my($eh, $app, $tmpl) = @_;
 	my($old, $new);
-	my $plugin = MT::Plugin::Privacy->instance;
+	my $privacy_frame = MT::Plugin::Privacy->instance;
 
 	$old = qq{<TMPL_VAR NAME=CATEGORY_LABEL></a>};
 	$old = quotemeta($old);
@@ -238,7 +238,7 @@ sub _edit_categories {
 sub _list_entry {
 	my($eh, $app, $tmpl) = @_;
 	my($old, $new);
-	my $plugin = MT::Plugin::Privacy->instance;
+	my $privacy_frame = MT::Plugin::Privacy->instance;
 
 	$old = qq{<TMPL_VAR NAME=TITLE_LONG>};
 	$old = quotemeta($old);
@@ -254,8 +254,8 @@ sub _list_entry {
 sub _system_list_blog {
 	my($eh, $app, $tmpl) = @_;
 	my($old, $new);
-	my $plugin = MT::Plugin::Privacy->instance;
-	my $link = $app->base.$app->path.$plugin->envelope.'/privacy.cgi';
+	my $privacy_frame = MT::Plugin::Privacy->instance;
+	my $link = $app->base.$app->path.$privacy_frame->envelope.'/privacy.cgi';
 	
 	$old = qq{<TMPL_VAR NAME=NAME ESCAPE=HTML></a>};
 	$old = quotemeta($old);
@@ -286,7 +286,7 @@ sub _list_param {
 sub _param {
 	my($eh, $app, $param, $tmpl, $datasource) = @_;
 	my $q = $app->{query};
-	my $plugin = MT::Plugin::Privacy->instance;
+	my $privacy_frame = MT::Plugin::Privacy->instance;
 	my $blog_id = $q->param('blog_id') || 0;
 	my $obj_id = $q->param('id') || $blog_id;
 	my $auth_prefs = $app->user->entry_prefs;
@@ -322,21 +322,35 @@ sub _param {
 	}
 	
 	$param->{is_private} = 1;
-    my @types = qw(typekey livejournal openid);
-
-    foreach my $type (@types) {
-			$terms->{type} = $type;
+	my @auth_loop; 
+	
+    foreach my $type (@{$privacy_frame->{privacy_types}}) {
+		my $key = $type->{key};
+		$terms->{type} = $key;	
+	
+		my $row = $type;
+		$row->{show} = $config->{"show_$key"};
+		$row->{single} = ($type->{type} eq 'single') ? 1 : 0;	
+		foreach (keys (%{$type->{lexicon}})) {
+			$row->{$_} = $type->{lexicon}->{$_};
+		}		
+		if($type->{type} eq 'multiple') {
             my @users = Privacy::Object->load($terms);
-            next unless @users;
-            my @user_loop;
-            push @user_loop, { "${type}_user" => $_->credential } for @users;
-            $param->{"${type}_user_loop"} = \@user_loop;
+            if(@users) {
+	            my @user_loop;
+	            push @user_loop, { user => $_->credential } for @users;
+	            $row->{user_loop} = \@user_loop;
+				$row->{is_selected} = 1;
+			}
+		} else {
+			my $privacy = Privacy::Object->load($terms);
+			$row->{is_selected} = $row->{credential} = $privacy->credential
+				if $privacy;
+		}
+		push @auth_loop, $row;
     }
-
-	$terms->{type} = 'password';
-	my $password = Privacy::Object->load($terms);
-	$param->{password} = $password->credential
-		if $password;
+	
+	$param->{auth_loop} = \@auth_loop;
 	
 	my $category_loop = $param->{category_loop};
 	foreach my $cat (@$category_loop) {
@@ -346,20 +360,36 @@ sub _param {
 
 		my $row = { id => $cat->{category_id} };
 		
-		foreach my $type (@types) {
-			$cat_terms->{type} = $type;
-			my @users = Privacy::Object->load($cat_terms);			
-			next unless @users;
-            my @user_loop;
-            push @user_loop, $_->credential for @users;
-            $row->{"${type}_users"} = \@user_loop;
-		}
+	    foreach my $type (@{$privacy_frame->{privacy_types}}) {
+				my $key = $type->{key};
+				$cat_terms->{type} = $key;
+				if($type->{type} eq 'multiple') {
+		            my @users = Privacy::Object->load($cat_terms);
+		            next unless @users;
+		            my @user_loop;
+		            push @user_loop, $_->credential for @users;
+		            $row->{"${key}_users"} = \@user_loop;
+				} else {
+					my $privacy = Privacy::Object->load($cat_terms);
+					$row->{"$key"} = $privacy->credential
+						if $privacy;
+				}
+	    }		
 		
-		$cat_terms->{type} = 'password';
-		my $cat_password = Privacy::Object->load($cat_terms);
-		$row->{password} = $cat_password->credential
-			if $cat_password;
-		
+		# foreach my $type (@types) {
+		# 	$cat_terms->{type} = $type;
+		# 	my @users = Privacy::Object->load($cat_terms);			
+		# 	next unless @users;
+		#             my @user_loop;
+		#             push @user_loop, $_->credential for @users;
+		#             $row->{"${type}_users"} = \@user_loop;
+		# }
+		# 
+		# $cat_terms->{type} = 'password';
+		# my $cat_password = Privacy::Object->load($cat_terms);
+		# $row->{password} = $cat_password->credential
+		# 	if $cat_password;
+		# 
 		push @category_defaults, $row;		
 	}
 	
@@ -372,14 +402,23 @@ sub _param {
 	      	description => $group->description
 		};
 		
-		foreach my $type (@types) {
-			$cat_terms->{type} = $type;
-			my @users = Privacy::Object->load($cat_terms);			
-			next unless @users;
-            my @user_loop;
-            push @user_loop, $_->credential for @users;
-            $row->{"${type}_users"} = \@user_loop;
-		}
+		my $grp_terms = { blog_id => 0, object_id => $group->id, object_datasource => $group->datasource };
+		
+	    foreach my $type (@{$privacy_frame->{privacy_types}}) {
+			my $key = $type->{key};
+			$grp_terms->{type} = $key;
+			if($type->{type} eq 'multiple') {
+	            my @users = Privacy::Object->load($grp_terms);
+	            next unless @users;
+	            my @user_loop;
+	            push @user_loop, $_->credential for @users;
+	            $row->{"${key}_users"} = \@user_loop;
+			} else {
+				my $privacy = Privacy::Object->load($grp_terms);
+				$row->{"$key"} = $privacy->credential
+					if $privacy;
+			}
+	    }
 		
 		push @group_data, $row;		
 	} 
@@ -406,23 +445,24 @@ sub _param {
 	$param->{"is_$datasource"} = 1;
 	$param->{type} = $datasource;
 	
-	foreach my $field (keys (%$config)) {
-		next unless $field =~ m/show_/;
-		$param->{$field} = $config->{$field};
-	}
+	# foreach my $field (keys (%$config)) {
+	# 	next unless $field =~ m/show_/;
+	# 	$param->{$field} = $config->{$field};
+	# }
 	
 	
 	
 	(my $cgi_path = $app->config->AdminCGIPath || $app->config->CGIPath) =~ s|/$||;
-    my $plugin_page = ($cgi_path . '/' 
-                       . $plugin->envelope . '/privacy.cgi');
-	$param->{privacy_full_url} = $plugin_page;	
+    my $privacy_frame_page = ($cgi_path . '/' 
+                       . $privacy_frame->envelope . '/privacy.cgi');
+	$param->{privacy_full_url} = $privacy_frame_page;	
 }
 
 sub post_save {
 	my ($eh, $obj, $original) = @_;
 	my $app = MT->instance;
 	my $q = $app->{query};
+	my $privacy_frame = MT::Plugin::Privacy->instance;
 	my $blog_id = $q->param('blog_id') || 0;
 	my $new_asset = !$q->param('id');
 	
@@ -439,25 +479,24 @@ sub post_save {
 		object_datasource => $obj->datasource
 	};
 	
-	if(in_array('password', @protections)) {
+    foreach my $type (@{$privacy_frame->{privacy_types}}) {
 		my $prvt_obj = Privacy::Object->new;
 		$prvt_obj->set_values($defaults);
-		$prvt_obj->type('password');
-		$prvt_obj->credential($q->param('password'));
-		$prvt_obj->save or die $prvt_obj->errstr;
-	}
-	my @types = ('typekey', 'livejournal', 'openid');
-	foreach my $type (@types) {
-		if(in_array($type, @protections) || $q->param('_type') eq 'groups') {
-			foreach (split /,/, $q->param($type."_users")) {
-				my $prvt_obj = Privacy::Object->new;
-				$prvt_obj->set_values($defaults);
-				$prvt_obj->type($type);
-				$prvt_obj->credential($_);
-				$prvt_obj->save or die $prvt_obj->errstr;			
+		$prvt_obj->type($type->{key});		
+		if(in_array($type->{key}, @protections) || ($q->param('_type') eq 'groups' && $type->{type} ne 'single')) {
+			if($type->{type} eq 'single') {
+				$prvt_obj->credential($q->param($type->{key}));
+				$prvt_obj->save or die $prvt_obj->errstr;
+			} else {
+				foreach (split /,/, $q->param($type->{key}."_users")) {
+					$prvt_obj->id(0);
+					$prvt_obj->credential($_);
+					$prvt_obj->save or die $prvt_obj->errstr;			
+				}				
 			}
 		}
-	}
+    }	 
+		
 	if(ref($obj) eq 'MT::Category') {
 		require MT::PluginData;
 		my $blog_default = MT::PluginData->load({ plugin => 'Privacy', key => 'blog'.$blog_id });
@@ -487,8 +526,8 @@ sub post_save {
 
 sub _header {
 	my ($eh, $app, $tmpl) = @_;
-	my $plugin = MT::Plugin::Privacy->instance;
-	my $link = $app->base.$app->path.$plugin->envelope.'/privacy.cgi';
+	my $privacy_frame = MT::Plugin::Privacy->instance;
+	my $link = $app->base.$app->path.$privacy_frame->envelope.'/privacy.cgi';
 	my $old = q{<li><a<TMPL_IF NAME=NAV_AUTHORS> class="here"</TMPL_IF> id="nav-authors" title="<MT_TRANS phrase="List Authors">" href="<TMPL_VAR NAME=MT_URL>?__mode=list_authors"><MT_TRANS phrase="Authors"></a></li>};
 	$old = quotemeta($old);
 	my $new = <<HTML;

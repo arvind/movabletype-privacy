@@ -1,78 +1,21 @@
-<MTIgnore>
-#### <MT_TRANS phrase="Javascript to toggle the display of the various protection types">
-</MTIgnore>
-<script type="text/javascript">
-<!--
-function togglePrivacyTypes(type, id) {
-	var types = new Array('password', 'typekey', 'livejournal', 'openid');
-	for (var i = 0; i < types.length; i++) {
-		var el = document.getElementById(types[i] + '-' + id);
-		if(el) el.style.display = 'none';
-	}
-	var el = document.getElementById(type + '-' + id);
-	if(el) el.style.display = 'block';
-
-	var submit_button = document.getElementById('submit-' + id);
-	if(submit_button) {
-		submit_button.style.display = 'block';
-		submit_button.name = type;
-	}
-}
-//-->
-</script>
-<p><MT_TRANS phrase="This is a private"> <MTPrivateObjectType>. <MT_TRANS phrase="To view it, please choose one of the options below and follow the steps">.</p>
-<p>
-<MTIfPasswordProtected>
-<a href="#" onclick="togglePrivacyTypes('password', '<MTPrivateObjectID>');"><img src="<MTStaticWebPath>plugins/Privacy/images/button-password.gif" alt="<MT_TRANS phrase="Enter Password">" /></a>
-</MTIfPasswordProtected>
-
-<MTIfTypekeyProtected>
-<a href="#" onclick="togglePrivacyTypes('typekey', '<MTPrivateObjectID>');"><img src="<MTStaticWebPath>plugins/Privacy/images/button-typekey.gif" alt="<MT_TRANS phrase="Login via Typekey">" /></a>
-</MTIfTypekeyProtected>
-
-<MTIfLiveJournalProtected>
-<a href="#" onclick="togglePrivacyTypes('livejournal', '<MTPrivateObjectID>');"><img src="<MTStaticWebPath>plugins/Privacy/images/button-livejournal.gif" alt="<MT_TRANS phrase="Login via LiveJournal">" /></a>
-</MTIfLiveJournalProtected>
-
-<MTIfOpenIDProtected>
-<a href="#" onclick="togglePrivacyTypes('openid', '<MTPrivateObjectID>');"><img src="<MTStaticWebPath>plugins/Privacy/images/button-openid.gif" alt="<MT_TRANS phrase="Login via OpenID">" /></a>
-</MTIfOpenIDProtected>
-</p>
-
 <form action="<MTCGIPath>plugins/Privacy/signon.cgi" method="post" id="password-protect">
-<input type="hidden" name="__mode" value="verify" />
+<input type="hidden" name="__mode" value="signon" />
 <input type="hidden" name="blog_id" value="<MTBlogID>" />
 <input type="hidden" name="id" value="<MTPrivateObjectID>" />
-<input type="hidden" name="_type" value="<MTPrivateObjectType>" />
+<input type="hidden" name="datasource" value="<MTPrivateObjectType>" />
 
-<MTIfPasswordProtected>
-<div id="password-<MTPrivateObjectID>" style="display:none;">
-	<p><MT_TRANS phrase="Enter the password below to view this"> <MTPrivateObjectType>:</p>
-	<p><label><MT_TRANS phrase="Password">: <input type="text" name="password_text" value="" /></label></p>
-</div>
-</MTIfPasswordProtected>
-
-<MTIfTypekeyProtected>
-<div id="typekey-<MTPrivateObjectID>" style="display:none;">
-	<p><MT_TRANS phrase="Enter your Typekey username below to view this"> <MTPrivateObjectType>:</p>
-	<p><label><MT_TRANS phrase="Typekey Username (case sensitive)">: <input type="text" name="tk_user" value="" style="background: white url(<MTStaticWebPath>plugins/Privacy/images/input-typekey.gif) no-repeat; padding-left: 22px;" /></label></p>
-</div>
-</MTIfTypekeyProtected>
-
-<MTIfLiveJournalProtected>
-<div id="livejournal-<MTPrivateObjectID>" style="display:none;">
-	<p><MT_TRANS phrase="Enter your LiveJournal username below to view this"> <MTPrivateObjectType>:</p>
-	<p><label><MT_TRANS phrase="LiveJournal Username (case sensitive)">: <input type="text" name="lj_user" value="" style="background: white url(<MTStaticWebPath>plugins/Privacy/images/input-livejournal.gif) no-repeat; padding-left: 22px;" /></label></p>
-</div>
-</MTIfLiveJournalProtected>	
-
-<MTIfOpenIDProtected>
-<div id="openid-<MTPrivateObjectID>" style="display:none;">
-	<p><MT_TRANS phrase="Enter your OpenID URL below to view this"> <MTPrivateObjectType>:</p>
-	<p><label><MT_TRANS phrase="OpenID Username">: <input type="text" name="openid_url" value="" style="background: white url(<MTStaticWebPath>plugins/Privacy/images/input-openid.gif) no-repeat; padding-left: 22px;" /></label></p>
-</div>
-</MTIfOpenIDProtected>	
-
-<p><input type="submit" name="submit" value="<MT_TRANS phrase="Submit">" id="submit-<MTPrivateObjectID>" style="display:none;" /></p>
+<p><MT_TRANS phrase="This is a private"> <MTPrivateObjectType>. <MT_TRANS phrase="To view it, please follow the steps below">.</p>
+	
+<p>
+	<select name="auth">
+		<MTPrivacyTypes>
+			<option value="<MTPrivacyTypeName>"><MTPrivacyTypeText></option>
+		</MTPrivacyTypes>
+	</select>	
+	
+	<input type="text" name="credential" value="" />
+	
+	<input type="submit" name="submit" value="Login" />
+</p>
 
 </form>
