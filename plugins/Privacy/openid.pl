@@ -146,13 +146,13 @@ sub verify {
 		my @users = Privacy::Object->load({ type => $type, object_id => $obj->id, object_datasource => $obj->datasource, blog_id => ($obj->blog_id || $obj->id) });
 		
 		if(in_array($profile->{nickname}), @users) {
-			return $$allow = 1;
+			return $req->stash('privacy_allow', 1);
 		}
     } else {
 	       die "Error validating identity: " . $csr->errcode;
 	  }	
 	
-	return $$allow = 2;
+	return $req->stash('privacy_allow', 2);
 }
 
 sub in_array() {

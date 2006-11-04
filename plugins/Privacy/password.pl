@@ -48,7 +48,7 @@ sub init_app {
 
 sub verify {
 	my $plugin = shift;
-    my ($app, $allow) = @_;
+    my ($app) = @_;
 
 	require MT::Request;
 	my $req = MT::Request->instance;
@@ -57,9 +57,9 @@ sub verify {
 	require Privacy::Object;
 	my $password = Privacy::Object->load({ type => 'password', object_id => $obj->id, object_datasource => $obj->datasource, blog_id => ($obj->blog_id || $obj->id) });
 	
-	return $$allow = 1  if $app->param('credential') eq $password->credential;
+	return $req->stash('privacy_allow', 1)  if $app->param('credential') eq $password->credential;
 	
-	return $$allow = 2;
+	return $req->stash('privacy_allow', 2);
 }
 
 

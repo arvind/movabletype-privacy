@@ -92,14 +92,7 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		'PrivacyTypeName' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_type_name(@_);},
 		'PrivacyTypeText' =>  sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_type_text(@_);}
 	},
-    settings => new MT::PluginSettings([
-		['show_password', { Default => 1 }],
-		['show_third_party', { Default => 0 }],
-		['show_typekey', { Default => 0 }],
-		['show_livejournal', { Default => 0 }],
-		['show_openid', { Default => 0 }]
-    ]),
-	config_template => 'config.tmpl'
+	config_template => \&config_template
 }));
 
 # Allows external access to plugin object: MT::Plugin::Privacy->instance
@@ -130,19 +123,19 @@ sub init_request {
 
 # Blog settings default to system settings (hence blog settings override system)
 sub apply_default_settings {
-  my ($plugin, $data, $scope_id) = @_;
-  if ($scope_id eq 'system') {
-    return $plugin->SUPER::apply_default_settings($data, $scope_id);
-  } else {
-    my $sys;
-    for my $setting (@{$plugin->{'settings'}}) {
-      my $key = $setting->[0];
-      next if exists($data->{$key});
-        # don't load system settings unless we need to
-      $sys ||= $plugin->get_config_obj('system')->data;
-      $data->{$key} = $sys->{$key};
-    }
-  }
+	my ($plugin, $data, $scope_id) = @_;
+	if ($scope_id eq 'system') {
+	  return $plugin->SUPER::apply_default_settings($data, $scope_id);
+	} else {
+		my $sys;
+		for my $type (@{$plugin->{privacy_types}}) {
+		  my $key = "show_".$type->{key};
+		  next if exists($data->{$key});
+		    # don't load system settings unless we need to
+		  $sys ||= $plugin->get_config_obj('system')->data;
+		  $data->{$key} = $sys->{$key};
+		}
+	}
 }
 
 sub add_privacy_type {
@@ -162,6 +155,35 @@ sub add_privacy_type {
     $privacy_type->{orig_label} = $privacy_type->{label};
     $privacy_type->{plugin} = $MT::plugin_sig if $MT::plugin_sig && !$is_core;
     push @{$plugin->{privacy_types}}, $privacy_type;
+}
+
+sub config_template {
+    my $plugin = shift;
+    my ($param, $scope) = @_;
+	my @auth_loop;
+	foreach my $type (@{$plugin->{privacy_types}}) {
+		my $row = $type;
+		my $key = $type->{key};
+		$row->{show} = $plugin->get_config_value("show_$key", $scope);
+		$row->{single} = ($type->{type} eq 'single') ? 1 : 0;
+		push @auth_loop, $row;
+	}
+	$param->{auth_loop} = \@auth_loop;
+	return $plugin->load_tmpl('config.tmpl');
+}
+
+sub save_config {
+    my $plugin = shift;
+    my ($param, $scope) = @_;
+    my $pdata = $plugin->get_config_obj($scope);
+    $scope =~ s/:.*//;
+	my $data = $pdata->data() || {};
+	foreach my $type (@{$plugin->{privacy_types}}) {
+		my $key = "show_".$type->{key};
+		$data->{$key} = exists $param->{$key} ? $param->{$key} : undef;
+	}
+    $pdata->data($data);
+    $pdata->save() or die $pdata->errstr;
 }
 
 1;

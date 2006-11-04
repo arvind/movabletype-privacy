@@ -89,9 +89,9 @@ sub signon {
                           $auth_type)
         unless $auth;
 
-    my $allow;
- 	$auth->{signon_code}->($app, \$allow);
-
+    
+ 	$auth->{signon_code}->($app);
+	my $allow = $req->stash('privacy_allow');
 	# # die $allow;
 	if($allow == 1) {
 		## Now issue the cookie, we'll check the domains of this script and the bog
