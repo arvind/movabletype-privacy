@@ -1,6 +1,5 @@
 package Privacy::App;
 
-use Data::Dumper;
 use MT::Util qw( start_background_task dirify );
 
 my $templates = [

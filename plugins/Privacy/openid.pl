@@ -41,7 +41,9 @@ sub init_app {
 		lexicon => {
 			'FIELD_LABEL' => 'Typekey Users',
 			'FIELD_EXPLANATION' => 'Enter Typekey users here',
-			'PRIVACY_TYPE_TEXT' => 'Typekey Username'
+		},
+		verification_fields => {
+			'username' => 'text'
 		},
 		signon_code => sub { $plugin->verify(@_); }
     });
@@ -52,7 +54,9 @@ sub init_app {
 		lexicon => {
 			'FIELD_LABEL' => 'LiveJournal Users',
 			'FIELD_EXPLANATION' => 'Enter LiveJournal users here',
-			'PRIVACY_TYPE_TEXT' => 'LiveJournal Username'
+		},
+		verification_fields => {
+			'username' => 'text'
 		},
 		signon_code => sub { $plugin->verify(@_); }
     });
@@ -63,7 +67,9 @@ sub init_app {
 		lexicon => {
 			'FIELD_LABEL' => 'OpenID URLs',
 			'FIELD_EXPLANATION' => 'Enter OpenID URLs here',
-			'PRIVACY_TYPE_TEXT' => 'OpenID URL'
+		},
+		verification_fields => {
+			'url' => 'text'
 		},
 		signon_code => sub { $plugin->verify(@_); }
     });
@@ -120,9 +126,9 @@ sub verify {
 	  args  => $app->{query},
 	  consumer_secret => 'HELLO HAPPY SECRET SECRET',
 	);	
-	
+	my $user = $q->param('url') || $q->param('username');
 	if(!$q->param('openid.mode')) {
-	    my $claimed_identity = $csr->claimed_identity($URL{$type}.$q->param('credential'))
+	    my $claimed_identity = $csr->claimed_identity($URL{$type}.$user)
 	        or return $app->error("Could not discover claimed identity: ". $csr->err);		
 	
 		my $qs = '?';

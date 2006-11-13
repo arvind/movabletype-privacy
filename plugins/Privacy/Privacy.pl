@@ -9,7 +9,6 @@ use MT 3.3;   # requires MT 3.2 or later
 use base 'MT::Plugin';
 our $VERSION = '2.0';
 our $SCHEMA_VERSION = '2.1';
-use Data::Dumper;
 
 my $plugin;
 MT->add_plugin($plugin = __PACKAGE__->new({
@@ -84,13 +83,15 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		'PrivateBlog' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::private('blog', @_);},
 		'PrivateEntry' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::private('entry', @_);},		
 		'PrivateCategory' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::private('category', @_);},		
-		'PrivacyTypes' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_types(@_);}			
+		'PrivacyTypes' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_types(@_);},			
+		'PrivacyTypeFields' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_type_fields(@_);}					
 	},
 	template_tags => {
 		'PrivateObjectID' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::private_obj_id(@_);},
 		'PrivateObjectType' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::private_obj_type(@_);},
 		'PrivacyTypeName' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_type_name(@_);},
-		'PrivacyTypeText' =>  sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_type_text(@_);}
+		'PrivacyTypeFieldName' =>  sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_type_field_name(@_);},
+		'PrivacyTypeFieldType' =>  sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_type_field_type(@_);},		
 	},
 	config_template => \&config_template
 }));

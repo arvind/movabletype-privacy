@@ -40,7 +40,9 @@ sub init_app {
 		type => "single", 
 		lexicon => {
 			'FIELD_LABEL' => 'Password',
-			'PRIVACY_TYPE_TEXT' => 'Password'
+		},
+		verification_fields => {
+			'password' => 'password'
 		},
 		signon_code => sub { $plugin->verify(@_); }
     });
@@ -56,8 +58,8 @@ sub verify {
 	
 	require Privacy::Object;
 	my $password = Privacy::Object->load({ type => 'password', object_id => $obj->id, object_datasource => $obj->datasource, blog_id => ($obj->blog_id || $obj->id) });
-	
-	return $req->stash('privacy_allow', 1)  if $app->param('credential') eq $password->credential;
+
+	return $req->stash('privacy_allow', 1)  if $app->param('password') eq $password->credential;
 	
 	return $req->stash('privacy_allow', 2);
 }

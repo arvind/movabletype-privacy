@@ -100,13 +100,42 @@ sub privacy_type_name {
 	return $type->{key};	
 }
 
-sub privacy_type_text {
-	my ($ctx) = @_;	
-	my $type = $ctx->stash('privacy_type');
-	return $ctx->_no_private_obj('MTPrivacyTypeText')
+sub privacy_type_fields {
+	my ($ctx, $args, $cond) = @_;
+	my $type = $ctx->stash('privacy_type');	
+	my $res = '';
+	my %cond;
+    my $builder = $ctx->stash ('builder');
+    my $tokens = $ctx->stash ('tokens');
+	return $ctx->_no_private_obj('MTPrivacyTypeFields')
 		if !$type;	
 		
-	return $type->{lexicon}->{PRIVACY_TYPE_TEXT};	
+	foreach (keys (%{$type->{verification_fields}})) {
+		$ctx->stash('privacy_type_field_name', $_);
+		$ctx->stash('privacy_type_field_type', $type->{verification_fields}->{$_});
+        my $out = $builder->build($ctx, $tokens, %$cond);
+        return $ctx->error( $builder->errstr ) unless defined $out;		
+		$res .= $out;
+	}	
+	$res;	
+}
+
+sub privacy_type_field_name {
+	my ($ctx) = @_;	
+	my $name = $ctx->stash('privacy_type_field_name');
+	return $ctx->_no_private_obj('MTPrivacyTypeFieldName')
+		if !$name;	
+		
+	return $name;	
+}
+
+sub privacy_type_field_type {
+	my ($ctx) = @_;	
+	my $type = $ctx->stash('privacy_type_field_type');
+	return $ctx->_no_private_obj('MTPrivacyTypeFieldName')
+		if !$type;	
+		
+	return $type;	
 }
 
 package MT::Template::Context;
