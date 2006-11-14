@@ -50,31 +50,31 @@
 	width:172px;	
 }
 
-#typekey-tag-str input, #typekey-tag-str {
-	background: white url(images/input-typekey.gif) no-repeat; 
-	padding-left: 22px;
+input.tag-str {
 	border:1px solid #999;
 	padding-bottom:2px;
 	padding-top:2px;
 	width:150px;
+}
+
+#typekey-tag-str input, #typekey-tag-str {
+	background: white url(images/input-typekey.gif) no-repeat; 
+	padding-left: 22px;
 }
 
 #openid-tag-str input, #openid-tag-str {
 	background: white url(images/input-openid.gif) no-repeat; 
 	padding-left: 22px;
-	border:1px solid #999;
-	padding-bottom:2px;
-	padding-top:2px;
-	width:150px;
 }
 
 #livejournal-tag-str input, #livejournal-tag-str {
 	background: white url(images/input-livejournal.gif) no-repeat; 
 	padding-left: 22px;
-	border:1px solid #999;
-	padding-bottom:2px;
-	padding-top:2px;
-	width:150px;
+}
+
+#livejournal-tag-str input, #ldap-tag-str {
+	background: white url(../../images/nav_icons/color/authors.gif) no-repeat; 
+	padding-left: 22px;
 }
 
 fieldset {
