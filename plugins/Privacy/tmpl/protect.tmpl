@@ -106,7 +106,6 @@ function group(id) {
 <script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/js/dom.js"></script>
 <script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/js/event.js"></script>
 <script type="text/javascript" src="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/js/tag-widget.js"></script>
-<TMPL_IF NAME=SHOW_THIRD_PARTY>
 <TMPL_IF NAME=PROTECTION_GROUPS_LOOP>
 <div id="protection_groups">
 <h4><MT_TRANS phrase="Protection Groups"></h4>
@@ -117,7 +116,7 @@ function group(id) {
 </ul>
 </div>	
 </TMPL_IF>
-</TMPL_IF>
+
 <fieldset>
 <input type="hidden" name="do_recursive" value="0" id="do_recursive" />
 <input type="hidden" name="protect_beacon" value="1" id="protect_beacon" />

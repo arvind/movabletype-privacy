@@ -374,53 +374,57 @@ sub _param {
 						if $privacy;
 				}
 	    }		
-		
-		# foreach my $type (@types) {
-		# 	$cat_terms->{type} = $type;
-		# 	my @users = Privacy::Object->load($cat_terms);			
-		# 	next unless @users;
-		#             my @user_loop;
-		#             push @user_loop, $_->credential for @users;
-		#             $row->{"${type}_users"} = \@user_loop;
-		# }
-		# 
-		# $cat_terms->{type} = 'password';
-		# my $cat_password = Privacy::Object->load($cat_terms);
-		# $row->{password} = $cat_password->credential
-		# 	if $cat_password;
-		# 
 		push @category_defaults, $row;		
 	}
 	
-	require Privacy::Groups;
-	my $iter = Privacy::Groups->load_iter(undef, { 'sort' => 'label', direction => 'ascend'});
-	while (my $group = $iter->()) {
-		my $row = { 
-		  	id => $group->id,
-	      	label => $group->label,
-	      	description => $group->description
-		};
-		
-		my $grp_terms = { blog_id => 0, object_id => $group->id, object_datasource => $group->datasource };
-		
-	    foreach my $type (@{$privacy_frame->{privacy_types}}) {
-			my $key = $type->{key};
-			$grp_terms->{type} = $key;
-			if($type->{type} eq 'multiple') {
-	            my @users = Privacy::Object->load($grp_terms);
-	            next unless @users;
-	            my @user_loop;
-	            push @user_loop, $_->credential for @users;
-	            $row->{"${key}_users"} = \@user_loop;
-			} else {
-				my $privacy = Privacy::Object->load($grp_terms);
-				$row->{"$key"} = $privacy->credential
-					if $privacy;
+	if(MT->product_code eq 'MTE') {
+		require MT::Group;
+		my $iter = MT::Group->load_iter;
+		while (my $group = $iter->()) {
+			my $row = { 
+			  	id => $group->id,
+		      	label => $group->display_name,
+		      	description => $group->description
+			};
+			my $users_iter = $group->user_iter({ type => MT::Author::AUTHOR() });
+			my @user_loop;
+			while (my $user = $users_iter->()) {
+				push @user_loop, $user->name;
 			}
-	    }
+			$row->{"ldap_users"} = \@user_loop;
+			push @group_data, $row;	
+		}
+	} else {
+		require Privacy::Groups;
+		my $iter = Privacy::Groups->load_iter(undef, { 'sort' => 'label', direction => 'ascend'});
+		while (my $group = $iter->()) {
+			my $row = { 
+			  	id => $group->id,
+		      	label => $group->label,
+		      	description => $group->description
+			};
 		
-		push @group_data, $row;		
-	} 
+			my $grp_terms = { blog_id => 0, object_id => $group->id, object_datasource => $group->datasource };
+		
+		    foreach my $type (@{$privacy_frame->{privacy_types}}) {
+				my $key = $type->{key};
+				$grp_terms->{type} = $key;
+				if($type->{type} eq 'multiple') {
+		            my @users = Privacy::Object->load($grp_terms);
+		            next unless @users;
+		            my @user_loop;
+		            push @user_loop, $_->credential for @users;
+		            $row->{"${key}_users"} = \@user_loop;
+				} else {
+					my $privacy = Privacy::Object->load($grp_terms);
+					$row->{"$key"} = $privacy->credential
+						if $privacy;
+				}
+		    }
+		
+			push @group_data, $row;		
+		} 
+	}
 	require JSON;
 	$param->{protection_groups} = JSON::objToJson(\@group_data);
 	$param->{protection_groups_loop} = \@group_data;
