@@ -156,8 +156,7 @@ sub _edit_entry {
 HTML
 	$old = quotemeta($old);
 	$new = <<HTML;
-<TMPL_IF NAME=DISP_PREFS_SHOW_PRIVACY>
-<div class="field" id="protect">
+<div class="field" id="protect"<TMPL_UNLESS NAME=DISP_PREFS_SHOW_PRIVACY> style="display:none;"</TMPL_UNLESS>>
 <div class="field-header">
 <label for="text_more"><MT_TRANS phrase="Privacy Settings"></label>
 </div>
@@ -167,9 +166,7 @@ HTML
 
 </div>
 </div>
-<TMPL_ELSE>
-<input type="hidden" name="protect_beacon" value="2" id="protect_beacon" />
-</TMPL_IF>
+
 HTML
 	$$tmpl =~ s/($old)/$1\n$new\n/;
 }

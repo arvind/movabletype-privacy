@@ -1,7 +1,6 @@
 <link rel="stylesheet" href="<TMPL_VAR NAME=STATIC_URI>plugins/Privacy/styles.css" type="text/css" />
 <script type="text/javascript">
 <!--
-var tkusers, ljusers, oiusers;
 <TMPL_IF NAME=PROTECTION_GROUPS>var groupsJSON = <TMPL_VAR NAME=PROTECTION_GROUPS>;</TMPL_IF>
 <TMPL_IF NAME=CATEGORY_DEFAULTS>var categoryDefaultsJSON = <TMPL_VAR NAME=CATEGORY_DEFAULTS>;</TMPL_IF>
 
@@ -138,7 +137,7 @@ function group(id) {
 		<input type="hidden" name="<TMPL_VAR NAME=KEY>_users" value="" id="<TMPL_VAR NAME=KEY>_users" />
 		<div id="<TMPL_VAR NAME=KEY>" class="tc-tags tag-widget"></div>
 		<script type="text/javascript"> 
-			<TMPL_VAR NAME=KEY> = new TagWidget('<TMPL_VAR NAME=KEY>'); 
+			var <TMPL_VAR NAME=KEY> = new TagWidget('<TMPL_VAR NAME=KEY>'); 
 			<TMPL_VAR NAME=KEY>.LIST_LABEL = ' '; 
 			<TMPL_VAR NAME=KEY>.FORM_LABEL = ' '; 
 			<TMPL_VAR NAME=KEY>.ADD_LABEL = '<MT_TRANS phrase="Add">';

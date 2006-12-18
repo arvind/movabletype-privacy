@@ -107,7 +107,7 @@ sub _get_profile_data {
 
 sub verify {
 	my $plugin = shift;
-	my ($app, $allow) = @_;
+	my ($app) = @_;
 	my $q = $app->param;
 	my $type = $q->param('auth');
 	
@@ -146,7 +146,7 @@ sub verify {
     if(my $setup_url = $csr->user_setup_url( post_grant => 'return' )) {
         return $app->redirect($setup_url);
     } elsif(my $vident = $csr->verified_identity) {
-		my $profile = $plugin->_get_profile_data($vident, $obj->blog_id);
+		my $profile = $plugin->_get_profile_data($vident, ($obj->blog_id || $obj->id));
 		
 		require Privacy::Object;
 		my @users = Privacy::Object->load({ type => $type, object_id => $obj->id, object_datasource => $obj->datasource, blog_id => ($obj->blog_id || $obj->id) });
