@@ -23,23 +23,15 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 	object_classes  => [ 'Privacy::Groups', 'Privacy::Object' ],
 	upgrade_functions => {
         'convert_data' => {
-            version_limit => 2.0,
+            version_limit => 2.1,
             code => sub { require Privacy::App; Privacy::App::convert_data(@_); },
         },
 		'load_files' => {
-			version_limit => 2.0, 
+			version_limit => 2.1, 
 			code => sub { require Privacy::App; Privacy::App::load_files(@_); },
 		}
     },
 	l10n_class 	    => 'Privacy::L10N',
-	app_methods => {
-		'MT::App::CMS' => {
-			'privacy_test' => sub {
-				my $app = shift;
-				die Dumper($plugin);
-			}
-		}
-	},
     app_action_links => {
         'MT::App::CMS' => {
             'blog' => {

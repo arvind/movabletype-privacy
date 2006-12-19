@@ -40,35 +40,40 @@ sub convert_data {
 	require Privacy::Protect;
 	require Privacy::Object;
 	require Privacy::Groups;
-	my $objs_iter = Privacy::Protect->load_iter();
-	while (my $orig_obj = $objs_iter->()) {
-		my $defaults = {
-			blog_id => $orig_obj->blog_id,
-			object_id => $orig_obj->entry_id,
-			object_datasource => 'entry',
-			type => lc($orig_obj->type)
-		};
-		if(!$orig_obj->entry_id) {
-			$defaults->{object_datasource} = 'blog';
-			$defaults->{object_id} = $orig_obj->blog_id;
-		}
-		if($orig_obj->type eq 'Password') {
-			my $obj = Privacy::Object->new;
-			$obj->set_values($defaults);
-			$obj->credential($orig_obj->data);
-			$obj->save or die $obj->errstr;
-		} else {
-			my $users = $orig_obj->data;
-			foreach (@$users) {
+	
+	my $driver = MT::Object->driver;
+    my $db_defs = $driver->column_defs('Privacy::Protect');
+    
+	if(defined $db_defs) {
+		my $objs_iter = Privacy::Protect->load_iter();
+		while (my $orig_obj = $objs_iter->()) {
+			my $defaults = {
+				blog_id => $orig_obj->blog_id,
+				object_id => $orig_obj->entry_id,
+				object_datasource => 'entry',
+				type => lc($orig_obj->type)
+			};
+			if(!$orig_obj->entry_id) {
+				$defaults->{object_datasource} = 'blog';
+				$defaults->{object_id} = $orig_obj->blog_id;
+			}
+			if($orig_obj->type eq 'Password') {
 				my $obj = Privacy::Object->new;
 				$obj->set_values($defaults);
-				$obj->credential($_);
-				$obj->save or die $obj->errstr;				
+				$obj->credential($orig_obj->data);
+				$obj->save or die $obj->errstr;
+			} else {
+				my $users = $orig_obj->data;
+				foreach (@$users) {
+					my $obj = Privacy::Object->new;
+					$obj->set_values($defaults);
+					$obj->credential($_);
+					$obj->save or die $obj->errstr;				
+				}
 			}
+			$orig_obj->remove or die $orig_obj->errstr;
 		}
-		$orig_obj->remove or die $orig_obj->errstr;
 	}
-	
 	my $groups_iter = Privacy::Groups->load_iter();
 	while (my $group = $groups_iter->()) {
 		my $defaults = {
@@ -91,39 +96,34 @@ sub load_files {
 	my $privacy_frame = MT::Plugin::Privacy->instance;
 	local (*FIN, $/);
     $/ = undef;
-    foreach my $tmpl (@$templates) {
-        my $file = File::Spec->catfile($privacy_frame->{full_path}, 'tmpl', 'default_templates', dirify($tmpl->{name}).'.tmpl');
+    foreach my $template (@$templates) {
+        my $file = File::Spec->catfile($privacy_frame->{full_path}, 'tmpl', 'default_templates', dirify($template->{name}).'.tmpl');
         if ((-e $file) && (-r $file)) {
             open FIN, "<$file"; my $data = <FIN>; close FIN;
-            $tmpl->{text} = $data;
+            $template->{text} = $data;
         } else {
             die $privacy_frame->translate("Couldn't find file '[_1]'", $file);
         }
-		if(@$tmpls) {
-			push @$tmpls, $tmpl;
-		}
-    }
-	
-	if(!@$tmpls) {
-		require MT::Blog;
-		require MT::Template;
-		my $iter = MT::Blog->load_iter;		
-		while (my $blog = $iter->()) {
-		    for my $val (@$templates) {
-		        $val->{name} = $privacy_frame->translate($val->{name});
-		        $val->{text} = $privacy_frame->translate_templatized($val->{text});
+		if(@$templates) {
+			push @$templates, $template;
+		} else {
+	        $template->{name} = $privacy_frame->translate($template->{name});
+	        $template->{text} = $privacy_frame->translate_templatized($template->{text});
+			require MT::Blog;
+			require MT::Template;
+			my $iter = MT::Blog->load_iter;		
+			while (my $blog = $iter->()) {			
 		        my $tmpl = MT::Template->new;
-		        $tmpl->set_values($val);
+		        $tmpl->set_values($template);
 		        $tmpl->build_dynamic(0);
 		        $tmpl->blog_id($blog->id);
 		        $tmpl->save or
 		            return $app->error($privacy_frame->translate(
-		                "Populating blog with template '[_1]' failed: [_2]", $val->{name},
+		                "Populating blog with template '[_1]' failed: [_2]", $template->{name},
 		                $tmpl->errstr));
-		    }			
+			}			
 		}
-	}
-		
+    }
 }
 
 sub _edit_entry {
