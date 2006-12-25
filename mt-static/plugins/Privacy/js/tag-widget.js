@@ -277,7 +277,7 @@ function TagWidget( baseId ) {
     }
     YAHOO.util.Dom.get(this.baseId + '-add-tag').style.display = 'block';
     YAHOO.util.Dom.get(this.baseId + '-add-button').style.display = 'none';
-/*    YAHOO.util.Dom.get(this.baseId + '-tag-str').focus();*/
+    YAHOO.util.Dom.get(this.baseId + '-tag-str').focus();
     return false;
   }
 
