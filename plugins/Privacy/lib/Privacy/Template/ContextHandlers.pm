@@ -9,15 +9,9 @@ sub private {
     defined (my $out = $builder->build ($ctx, $tokens, $cond))
       or return $ctx->error ($builder->errstr);
 
-	my $obj = $ctx->stash('private_obj');
-	if(!$obj) {
-		if($type eq 'category') {
-			$obj = $ctx->stash('category') || $ctx->stash('archive_category');
-		} else {
-			$obj = $ctx->stash($type);
-		}
-		$ctx->stash('private_obj', $obj);
-	}
+	my $obj = ($type eq 'category') ? $ctx->stash('category') || $ctx->stash('archive_category') : $ctx->stash($type);
+	$ctx->stash('private_obj', $obj);
+
 	return $ctx->_no__obj('MT'.$ctx->stash('tag'), $type)
 		if !$obj;
 		
@@ -26,7 +20,7 @@ sub private {
 	my $protected = Privacy::Object->count({ blog_id => $blog_id, object_id => $obj->id, object_datasource => $obj->datasource });
 
 	return $out if !$protected;
-	
+
 	require MT::Template;
 	my $tmpl = MT::Template->load({ blog_id => $blog_id, type => 'privacy_login'});
     my %cond;
@@ -39,13 +33,22 @@ sub private {
 	#         or return $ctx->error($builder->errstr);
 	# defined(my $protect_text_out = $builder->build($ctx, $tokens))
 	#     	or die $builder->errstr;
-	my $text = "<?php\n";
-	$text .= 'if($_COOKIE[\''.$type.$obj->id.'\']) { ?>'."\n";
-	$text .= $out;
-	$text .= "\n<?php } else { ?>\n";
-	$text .= $protect_text;
-	$text .= "\n<?php } ?>";
+	my $use_php = $privacy_frame->get_config_hash('blog:'.$blog_id)->{use_php};
+	my $text; 
 	
+	if($use_php) {
+		$text = "<?php\n";
+		$text .= 'if($_COOKIE[\''.$type.$obj->id.'\']) { ?>'."\n";
+		$text .= $out;
+		$text .= "\n<?php } else { ?>\n";
+		$text .= $protect_text;
+		$text .= "\n<?php } ?>";				
+	} else {
+		my $app = MT->instance;
+		my $cookies = $app->{cookies};
+		my $COOKIE_NAME = $type.$obj->id;
+		$text = $cookies->{$COOKIE_NAME} ? $out : $protect_text;
+	}
 	return $text;
 }
 

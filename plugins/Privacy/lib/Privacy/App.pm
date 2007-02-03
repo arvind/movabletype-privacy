@@ -152,7 +152,6 @@ sub _edit_entry {
 <!--[if lte IE 6.5]></div><![endif]-->
 </div>
 </TMPL_IF>
-
 HTML
 	$old = quotemeta($old);
 	$new = <<HTML;

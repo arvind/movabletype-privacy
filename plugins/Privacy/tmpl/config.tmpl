@@ -6,6 +6,14 @@
 		<li><input type="checkbox" name="show_<TMPL_VAR NAME=KEY>" id="show_<TMPL_VAR NAME=KEY>" value="1" <TMPL_IF NAME=SHOW>checked="checked"</TMPL_IF> /> <TMPL_VAR NAME=LABEL></li>
 	</TMPL_LOOP>
 </ul>
-<p><MT_TRANS phrase="Choose the types of privacy you would like to use">.
+<p><MT_TRANS phrase="Choose the types of privacy you would like to use">.</p>
+</div>
+</div>
+
+<div class="setting">
+<div class="label"><label for="use_php"><MT_TRANS phrase="Use PHP:"></label></div>
+<div class="field">
+<p><input type="checkbox" name="use_php" value="1" id="use_php"<TMPL_IF NAME=USE_PHP> checked="checked"</TMPL_IF> /> </p>
+<p>By default, Privacy uses PHP to check whether a reader has properly authenticated to read an asset. PHP is the <strong>recommended</strong> way of checking authentication. Unchecking this box will require you to use <code>mt-view.cgi</code> to use Privacy</p>
 </div>
 </div>

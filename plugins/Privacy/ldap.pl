@@ -56,7 +56,8 @@ sub verify {
 	my $plugin = shift;
 	my ($app, $allow) = @_;
 	my $q = $app->param;
-
+	my $blog_id = $q->param('blog_id');
+	
 	require MT::Request;
 	my $req = MT::Request->instance;
 	my $obj = $req->stash('private_obj');	
@@ -64,7 +65,7 @@ sub verify {
 	require MT::Auth;
 	if(my $valid_auth = MT::Auth->is_valid_password($q->param('username'), $q->param('password'))) {
 		require Privacy::Object;
-		my @users = Privacy::Object->load({ type => 'ldap', object_id => $obj->id, object_datasource => $obj->datasource, blog_id => ($obj->blog_id || $obj->id) });
+		my @users = Privacy::Object->load({ type => 'ldap', object_id => $obj->id, object_datasource => $obj->datasource, blog_id => $blog_id });
 		
 		if(in_array($q->param('username')), @users) {
 			return $req->stash('privacy_allow', 1);

@@ -110,6 +110,7 @@ sub verify {
 	my ($app) = @_;
 	my $q = $app->param;
 	my $type = $q->param('auth');
+	my $blog_id = $q->param('blog_id');
 	
 	require MT::Request;
 	my $req = MT::Request->instance;
@@ -146,10 +147,10 @@ sub verify {
     if(my $setup_url = $csr->user_setup_url( post_grant => 'return' )) {
         return $app->redirect($setup_url);
     } elsif(my $vident = $csr->verified_identity) {
-		my $profile = $plugin->_get_profile_data($vident, ($obj->blog_id || $obj->id));
+		my $profile = $plugin->_get_profile_data($vident, $blog_id);
 		
 		require Privacy::Object;
-		my @users = Privacy::Object->load({ type => $type, object_id => $obj->id, object_datasource => $obj->datasource, blog_id => ($obj->blog_id || $obj->id) });
+		my @users = Privacy::Object->load({ type => $type, object_id => $obj->id, object_datasource => $obj->datasource, blog_id => $blog_id });
 		
 		if(in_array($profile->{nickname}), @users) {
 			return $req->stash('privacy_allow', 1);

@@ -51,13 +51,14 @@ sub init_app {
 sub verify {
 	my $plugin = shift;
     my ($app) = @_;
+	my $blog_id = $app->param('blog_id');
 
 	require MT::Request;
 	my $req = MT::Request->instance;
 	my $obj = $req->stash('private_obj');
 	
 	require Privacy::Object;
-	my $password = Privacy::Object->load({ type => 'password', object_id => $obj->id, object_datasource => $obj->datasource, blog_id => ($obj->blog_id || $obj->id) });
+	my $password = Privacy::Object->load({ type => 'password', object_id => $obj->id, object_datasource => $obj->datasource, blog_id => $blog_id });
 
 	return $req->stash('privacy_allow', 1)  if $app->param('password') eq $password->credential;
 	

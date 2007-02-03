@@ -27,7 +27,7 @@ MT->add_plugin($plugin = __PACKAGE__->new({
             code => sub { require Privacy::App; Privacy::App::convert_data(@_); },
         },
 		'load_files' => {
-			version_limit => 2.1, 
+			version_limit => $SCHEMA_VERSION, 
 			code => sub { require Privacy::App; Privacy::App::load_files(@_); },
 		}
     },
@@ -85,6 +85,9 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		'PrivacyTypeFieldName' =>  sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_type_field_name(@_);},
 		'PrivacyTypeFieldType' =>  sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_type_field_type(@_);},		
 	},
+	settings => new MT::PluginSettings([
+	            ['use_php', { Default => 1 }]
+	]),
 	config_template => \&config_template
 }));
 
@@ -175,6 +178,10 @@ sub save_config {
 		my $key = "show_".$type->{key};
 		$data->{$key} = exists $param->{$key} ? $param->{$key} : undef;
 	}
+	my @vars = $plugin->config_vars($scope);
+    foreach (@vars) {
+        $data->{$_} = exists $param->{$_} ? $param->{$_} : undef;
+    }
     $pdata->data($data);
     $pdata->save() or die $pdata->errstr;
 }
