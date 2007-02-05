@@ -315,27 +315,30 @@ sub _param {
 	
     foreach my $type (@{$privacy_frame->{privacy_types}}) {
 		my $key = $type->{key};
-		$terms->{type} = $key;	
 	
 		my $row = $type;
 		$row->{show} = $config->{"show_$key"};
 		$row->{single} = ($type->{type} eq 'single') ? 1 : 0;	
 		foreach (keys (%{$type->{lexicon}})) {
 			$row->{$_} = $type->{lexicon}->{$_};
-		}		
-		if($type->{type} eq 'multiple') {
-            my @users = Privacy::Object->load($terms);
-            if(@users) {
-	            my @user_loop;
-	            push @user_loop, { user => $_->credential } for @users;
-	            $row->{user_loop} = \@user_loop;
-				$row->{is_selected} = 1;
-			}
-		} else {
-			my $privacy = Privacy::Object->load($terms);
-			$row->{is_selected} = $row->{credential} = $privacy->credential
-				if $privacy;
 		}
+		if($terms) {
+			$terms->{type} = $key;
+			
+			if($type->{type} eq 'multiple') {
+	            my @users = Privacy::Object->load($terms);
+	            if(@users) {
+		            my @user_loop;
+		            push @user_loop, { user => $_->credential } for @users;
+		            $row->{user_loop} = \@user_loop;
+					$row->{is_selected} = 1;
+				}
+			} else {
+				my $privacy = Privacy::Object->load($terms);
+				$row->{is_selected} = $row->{credential} = $privacy->credential
+					if $privacy;
+			}
+		}		
 		push @auth_loop, $row;
     }
 	

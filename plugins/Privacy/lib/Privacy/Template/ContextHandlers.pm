@@ -27,13 +27,14 @@ sub private {
     my %cond;
     my $protect_text = $tmpl->build($ctx, \%cond);
     $protect_text = $tmpl->errstr unless defined $protect_text;	
-	$ctx->stash('protect_text'.$type.$obj->id, $protect_text);
+	# $ctx->stash('protect_text'.$type.$obj->id, $protect_text);
 
 	# my $protect_text = $privacy_frame->get_config_value('protect_text', 'blog:'.$blog_id);
 	# $tokens = $builder->compile($ctx, $protect_text)
 	#         or return $ctx->error($builder->errstr);
 	# defined(my $protect_text_out = $builder->build($ctx, $tokens))
 	#     	or die $builder->errstr;
+	
 	my $use_php = $privacy_frame->get_config_hash('blog:'.$blog_id)->{use_php};
 	my $text; 
 	
@@ -74,7 +75,7 @@ sub private_obj_type {
 sub privacy_types {
 	my $privacy_frame = shift;
 	my ($ctx, $args, $cond) = @_;
-	my $privacy_frame = MT::Plugin::Privacy->instance;
+
 	my $blog_id = $ctx->stash('blog_id');
 	my $res = '';
 	my %cond;

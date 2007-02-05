@@ -36,14 +36,14 @@ sub init_app {
     $plugin->SUPER::init_app(@_);
     my ($app) = @_;
 	my $privacy = MT::Plugin::Privacy->instance;
-	if(MT->produce_code eq 'MTE') {
+	if(MT->product_code eq 'MTE') {
 		$privacy->add_privacy_type({
 			key => "ldap",
 			label => "Authors and LDAP",
 			type => "multiple", 
 			lexicon => {
-				'FIELD_LABEL' => 'MT authors and LDAP users',
-				'FIELD_EXPLANATION' => 'Enter MT authors and LDAP users here',
+				'FIELD_LABEL' => 'MT authors or LDAP users',
+				'FIELD_EXPLANATION' => 'Enter MT authors or LDAP users here',
 			},
 			verification_fields => {
 				'username' => 'text',

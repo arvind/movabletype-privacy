@@ -41,7 +41,7 @@ sub build_page {
     my $app = shift;
     my $q = $app->{query};
     my($page, $param) = @_;
-	my $plugin = MT::Plugin::Privacy->instance;
+	my $plugin = $app->plugin();
 	(my $cgi_path = $app->config->AdminCGIPath || $app->config->CGIPath) =~ s|/$||;
     $param->{plugin_name} =  "Protect";
     $param->{blog_id} = $q->param('blog_id');
@@ -114,6 +114,7 @@ sub groups {
 
 sub save {
     my $app = shift;
+	my $privacy_frame = MT::Plugin::Privacy->instance;
     my $q = $app->{query};
     my $blog_id = $q->param('blog_id'); 
     my $type = $q->param('_type');
@@ -122,7 +123,7 @@ sub save {
 	if($type eq 'blog') {
 		my $blog = MT::Blog->load($blog_id);
 		require Privacy::App;
-		Privacy::App::post_save($app, $blog);
+		Privacy::App::post_save($privacy_frame, $app, $blog);
     } elsif($type eq 'groups') {
 		require Privacy::Groups;
  		my $group = Privacy::Groups->load($id);
@@ -136,7 +137,7 @@ sub save {
 			die $group->errstr;
 		$app->add_return_arg(id => $group->id);
 		require Privacy::App;
-		Privacy::App::post_save($app, $group);			
+		Privacy::App::post_save($privacy_frame, $app, $group);			
     }
     $app->add_return_arg(saved => 1);
     $app->call_return;
