@@ -26,7 +26,7 @@ TC.attachLoadEvent( init );
 <li class="yah"><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=groups"><MT_TRANS phrase="Privacy Groups"></a></li>
 <li class="special">
 <img src="<TMPL_VAR NAME=STATIC_URI>images/status_icons/create.gif" alt="<MT_TRANS phrase="Create New Entry">" width="9" height="9" />
-<a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&amp;_type=groups"><MT_TRANS phrase="Create New Group"></a>
+<a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&amp;_type=group"><MT_TRANS phrase="Create New Group"></a>
 </li>
 </ul>
 </div>
@@ -56,9 +56,9 @@ TC.attachLoadEvent( init );
 
     <tr class="<TMPL_IF NAME=ENTRY_ODD>odd<TMPL_ELSE>even</TMPL_IF>">
     <td class="cb"><input type="checkbox" name="id" value="<TMPL_VAR NAME=ID>" class="select" /></td>
-    <td><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&amp;_type=groups&amp;id=<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=LABEL></a></td>
+    <td><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&amp;_type=group&amp;id=<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=LABEL></a></td>
     <td><TMPL_VAR NAME=DESCRIPTION></td>  
-    <td><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&amp;_type=groups&amp;id=<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=MEMBER_COUNT> <MT_TRANS phrase="members"></a></td>                          
+    <td><a href="<TMPL_VAR NAME=SCRIPT_URL>?__mode=edit&amp;_type=group&amp;id=<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=MEMBER_COUNT> <MT_TRANS phrase="members"></a></td>                          
     </tr>
 </TMPL_LOOP>
 </tbody>

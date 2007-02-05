@@ -39,8 +39,8 @@ sub init_app {
 		label => "Password",
 		type => "single", 
 		lexicon => {
-			'FIELD_LABEL' => 'Password',
-		},
+			'FIELD_LABEL' => 'Password'
+ 		},
 		verification_fields => {
 			'password' => 'password'
 		},

@@ -15,12 +15,12 @@ function toggleProtectPrefs (c, div) {
 function submitForm(f, mode) {
     if (f.elements["__mode"] && mode)
         f.elements["__mode"].value = mode;
-	tkusers.onAddSubmit('click');
-	ljusers.onAddSubmit('click');
-	oiusers.onAddSubmit('click');
-	f.elements["typekey_users"].value = tkusers.taglist.tags;
-	f.elements["livejournal_users"].value = ljusers.taglist.tags;
-	f.elements["openid_users"].value = oiusers.taglist.tags; 
+	<TMPL_LOOP NAME=AUTH_LOOP>
+	<TMPL_IF NAME=SHOW><TMPL_UNLESS NAME=SINGLE>
+	<TMPL_VAR NAME=KEY>.onAddSubmit('click');
+	f.elements["<TMPL_VAR NAME=KEY>_users"].value = <TMPL_VAR NAME=KEY>.taglist.tags;
+	</TMPL_UNLESS></TMPL_IF>
+	</TMPL_LOOP>
     f.submit();
 }
 
@@ -48,9 +48,7 @@ function submitForm(f, mode) {
 <input type="hidden" name="return_args" value="<TMPL_VAR NAME=RETURN_ARGS ESCAPE=HTML>" />
 <input type="hidden" name="magic_token" value="<TMPL_VAR NAME=MAGIC_TOKEN>" />
 <input type="hidden" name="protect_beacon" value="1" id="protect_beacon" />
-<input type="hidden" name="typekey_users" value="" id="typekey_users" />
-<input type="hidden" name="livejournal_users" value="" id="livejournal_users" />
-<input type="hidden" name="openid_users" value="" id="openid_users" />
+
 
 <div class="setting">
     <div class="label">
@@ -70,73 +68,38 @@ function submitForm(f, mode) {
     </div>
 </div>
 
-<div id="typekey_prefs" class="setting">
+<TMPL_LOOP NAME=AUTH_LOOP>
+<TMPL_IF NAME=SHOW>
+<TMPL_UNLESS NAME=SINGLE>
+
+<div id="<TMPL_VAR NAME=KEY>_prefs" class="setting">
+	<TMPL_IF NAME=FIELD_LABEL>
     <div class="label">
-        <label for="typekey"><MT_TRANS phrase="Enter Typekey Users">:</label>
+        <label for="password"><TMPL_VAR NAME=FIELD_LABEL>:</label>
     </div>
+	</TMPL_IF>
     <div class="field">
-		<div id="typekey" class="tc-tags tag-widget"></div>
+		<input type="hidden" name="<TMPL_VAR NAME=KEY>_users" value="" id="<TMPL_VAR NAME=KEY>_users" />
+		<div id="<TMPL_VAR NAME=KEY>" class="tc-tags tag-widget"></div>
 		<script type="text/javascript"> 
-			tkusers = new TagWidget('typekey'); 
-			tkusers.LIST_LABEL = ' '; 
-			tkusers.FORM_LABEL = ' '; 
-			tkusers.ADD_LABEL = '<MT_TRANS phrase="Add">';
-			tkusers.ALWAYS_SHOW_FORM = 1;
-			tkusers.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
-			tkusers.taglist.TAG_LINK_FORMAT = 'http://profile.typekey.com/';
-			<TMPL_LOOP NAME=TYPEKEY_USER_LOOP>
-			tkusers.addTag('<TMPL_VAR NAME=TYPEKEY_USER>');
+			var <TMPL_VAR NAME=KEY> = new TagWidget('<TMPL_VAR NAME=KEY>'); 
+			<TMPL_VAR NAME=KEY>.LIST_LABEL = ' '; 
+			<TMPL_VAR NAME=KEY>.FORM_LABEL = ' '; 
+			<TMPL_VAR NAME=KEY>.ADD_LABEL = '<MT_TRANS phrase="Add">';
+			<TMPL_VAR NAME=KEY>.ALWAYS_SHOW_FORM = 1;
+			<TMPL_VAR NAME=KEY>.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
+			<TMPL_LOOP NAME=USER_LOOP>
+			<TMPL_VAR NAME=KEY>.addTag('<TMPL_VAR NAME=USER>');
 			</TMPL_LOOP>
-			tkusers.render(); 
+			<TMPL_VAR NAME=KEY>.render(); 
 		</script>
-		<p><MT_TRANS phrase="Enter Typekey users here separated by"> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="commas"><TMPL_ELSE><MT_TRANS phrase="spaces"></TMPL_IF></p>
-    </div>
-</div>		
-		
-<div id="livejournal_prefs" class="setting">
-    <div class="label">
-        <label for="livejournal"><MT_TRANS phrase="Enter LiveJournal Users">:</label>
-    </div>
-    <div class="field">
-		<div id="livejournal" class="tc-tags tag-widget"></div>
-		<script type="text/javascript"> 
-			ljusers = new TagWidget('livejournal'); 
-			ljusers.LIST_LABEL = ' '; 
-			ljusers.FORM_LABEL = ' '; 
-			ljusers.ADD_LABEL = '<MT_TRANS phrase="Add">';
-			ljusers.ALWAYS_SHOW_FORM = 1;
-			ljusers.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
-			ljusers.taglist.TAG_LINK_FORMAT = 'http://www.livejournal.com/users/';
-			<TMPL_LOOP NAME=LIVEJOURNAL_USER_LOOP>
-			ljusers.addTag('<TMPL_VAR NAME=LIVEJOURNAL_USER>');
-			</TMPL_LOOP>
-			ljusers.render(); 
-		</script>
-		<p><MT_TRANS phrase="Enter LiveJournal users here separated by"> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="commas"><TMPL_ELSE><MT_TRANS phrase="spaces"></TMPL_IF></p>
-    </div>
-</div>		
-		
-<div id="openid_prefs" class="setting">
-    <div class="label">
-        <label for="openid"><MT_TRANS phrase="Enter OpenID Users">:</label>
-    </div>
-    <div class="field">
-		<div id="openid" class="tc-tags tag-widget"></div>
-		<script type="text/javascript"> 
-			oiusers = new TagWidget('openid'); 
-			oiusers.LIST_LABEL = ' '; 
-			oiusers.FORM_LABEL = ' '; 
-			oiusers.ADD_LABEL = '<MT_TRANS phrase="Add">';
-			oiusers.ALWAYS_SHOW_FORM = 1;
-			oiusers.TAG_DELIMITTER = '<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>';
-			<TMPL_LOOP NAME=OPENID_USER_LOOP>
-			oiusers.addTag('<TMPL_VAR NAME=OPENID_USER>');
-			</TMPL_LOOP>			
-			oiusers.render(); 
-		</script>
-		<p><MT_TRANS phrase="Enter OpenID urls here separated by"> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="commas"><TMPL_ELSE><MT_TRANS phrase="spaces"></TMPL_IF></p>
+		<TMPL_IF NAME=FIELD_EXPLANATION><p><TMPL_VAR NAME=FIELD_EXPLANATION><TMPL_UNLESS NAME=SINGLE> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="(comma-delimited list)"><TMPL_ELSE><TMPL_IF NAME=AUTH_PREF_TAG_DELIM_SPACE><MT_TRANS phrase="(space-delimited list)"><TMPL_ELSE><MT_TRANS phrase="(delimited by '[_1]')" params="<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>"></TMPL_IF></TMPL_IF></TMPL_UNLESS></p></TMPL_IF>
     </div>
 </div>
+
+</TMPL_UNLESS>
+</TMPL_IF>
+</TMPL_LOOP>
 
 <input type="submit" value="<MT_TRANS phrase="Save">" onclick="submitForm(this.form);"/>
 <input accesskey="x" onclick="doRemoveItems(this.form, '<MT_TRANS phrase="group">', '<MT_TRANS phrase="groups">', false, { 'return_args': '__mode=groups' }); return true" type="button" value="<MT_TRANS phrase="Delete">" title="<MT_TRANS phrase="Delete this group (x)">" />

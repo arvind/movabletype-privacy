@@ -62,30 +62,27 @@ sub build_page {
 sub edit {
     my $app = shift;
     my $q = $app->{query};
-    my ($param, $tmpl, $entry, @typekey_data,@openid_data, $datasource, $group);
+    my ($param);
     my $blog_id = $q->param('blog_id');
-    my $blog = MT::Blog->load($blog_id);
     my $id = $q->param('id');
-    my $type = $q->param('_type') || $q->param('from');
-	if($type eq 'blog' || $type eq 'blog_home'){
-		$tmpl = 'protect_blog.tmpl';
-		$app->add_breadcrumb($app->plugin->translate('Protect'));
-	} elsif($type eq 'groups') {
-		require Privacy::Groups;
-		if($id && ($group = Privacy::Groups->load($id))) {
+    my $type = $q->param('_type') || 'blog';
+
+	if($type eq 'blog') {
+		$app->add_breadcrumb($app->plugin->translate('Privacy Settings'));
+	} elsif($type eq 'group') {
+		require Privacy::Groups;		
+		if($id && (my $group = Privacy::Groups->load($id))) {
 	          $param->{id} = $group->id;
 	          $param->{label} = $group->label;
 	          $param->{description} = $group->description;
 		}
-		$param->{nav_groups} = 1;
-	    $tmpl = 'edit_group.tmpl';                
-	    $app->add_breadcrumb($app->plugin->translate("Privacy Groups"),$app->uri(mode => 'groups'));
-	    $app->add_breadcrumb($app->plugin->translate("Add New Group"))	if !$group;
-	    $app->add_breadcrumb($group->label)	if $group;        
+		$param->{nav_groups} = 1;         
+	    $app->add_breadcrumb($app->plugin->translate("Privacy Groups"), $app->uri(mode => 'groups'));
+		$app->add_breadcrumb($id ? $param->{label} : $app->plugin->translate("New Group"));
 	}
 	$param->{saved} = $q->param('saved');
 	$param->{return_args} ||= $app->make_return_args;
-    $app->build_page($tmpl, $param);
+    $app->build_page("edit_${type}.tmpl", $param);
 }
 
 sub groups {

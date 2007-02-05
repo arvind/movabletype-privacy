@@ -149,7 +149,7 @@ function group(id) {
 			<TMPL_VAR NAME=KEY>.render(); 
 		</script>
 		</TMPL_IF>
-		<TMPL_IF NAME=FIELD_EXPLANATION><p><TMPL_VAR NAME=FIELD_EXPLANATION> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="(comma-delimited list)"><TMPL_ELSE><TMPL_IF NAME=AUTH_PREF_TAG_DELIM_SPACE><MT_TRANS phrase="(space-delimited list)"><TMPL_ELSE><MT_TRANS phrase="(delimited by '[_1]')" params="<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>"></TMPL_IF></TMPL_IF></p></TMPL_IF>
+		<TMPL_IF NAME=FIELD_EXPLANATION><p><TMPL_VAR NAME=FIELD_EXPLANATION><TMPL_UNLESS NAME=SINGLE> <TMPL_IF NAME=AUTH_PREF_TAG_DELIM_COMMA><MT_TRANS phrase="(comma-delimited list)"><TMPL_ELSE><TMPL_IF NAME=AUTH_PREF_TAG_DELIM_SPACE><MT_TRANS phrase="(space-delimited list)"><TMPL_ELSE><MT_TRANS phrase="(delimited by '[_1]')" params="<TMPL_VAR NAME=AUTH_PREF_TAG_DELIM>"></TMPL_IF></TMPL_IF></TMPL_UNLESS></p></TMPL_IF>
     </div>
 </div>
 

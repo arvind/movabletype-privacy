@@ -285,11 +285,7 @@ sub _param {
 	my $blog_id = $q->param('blog_id') || 0;
 	my $obj_id = $q->param('id') || $blog_id;
 	my $auth_prefs = $app->user->entry_prefs;
-	my $config = config('blog:'.$blog_id);
-	
-	if($q->param('_type') eq 'groups') {
-		$config = config('system');
-	}
+	my $config = config($blog_id ? 'blog:'.$blog_id : 'system');
 	
 	my ($terms, @group_data, @category_defaults, $blog_default);
     if (my $delim = chr($auth_prefs->{tag_delim})) {
@@ -513,6 +509,7 @@ sub post_save {
 	}
 		
 	if(ref($obj) ne 'MT::Entry') {
+		require MT::PluginData;
 		my $default = MT::PluginData->get_by_key({ plugin => 'Privacy', key => $obj->datasource.$obj->id });
 
 		$default->data({
