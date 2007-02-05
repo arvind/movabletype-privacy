@@ -15,7 +15,7 @@ my $plugin;
 MT->add_plugin($plugin = __PACKAGE__->new({
 	name            => "Author and LDAP Authentication",
 	version         => $VERSION,
-	description     => "<MT_TRANS phrase=\"Allows you to make assets private using MTAuthor or LDAP Authentication\">",
+	description     => "<MT_TRANS phrase=\"Allows you to make assets private using MTAuthor or LDAP Authentication. Available for only Movable Type Enterprise. \">",
 	author_name     => "Arvind Satyanarayan",
 	author_link     => "http://www.movalog.com/",
 	plugin_link     => "http://plugins.movalog.com/privacy/",
@@ -36,20 +36,22 @@ sub init_app {
     $plugin->SUPER::init_app(@_);
     my ($app) = @_;
 	my $privacy = MT::Plugin::Privacy->instance;
-	$privacy->add_privacy_type({
-		key => "ldap",
-		label => "Authors and LDAP",
-		type => "multiple", 
-		lexicon => {
-			'FIELD_LABEL' => 'MT authors and LDAP users',
-			'FIELD_EXPLANATION' => 'Enter MT authors and LDAP users here',
-		},
-		verification_fields => {
-			'username' => 'text',
-			'password' => 'password'
-		},
-		signon_code => sub { $plugin->verify(@_); }
-    });
+	if(MT->produce_code eq 'MTE') {
+		$privacy->add_privacy_type({
+			key => "ldap",
+			label => "Authors and LDAP",
+			type => "multiple", 
+			lexicon => {
+				'FIELD_LABEL' => 'MT authors and LDAP users',
+				'FIELD_EXPLANATION' => 'Enter MT authors and LDAP users here',
+			},
+			verification_fields => {
+				'username' => 'text',
+				'password' => 'password'
+			},
+			signon_code => sub { $plugin->verify(@_); }
+	    });		
+	}
 }
 
 sub verify {

@@ -1,8 +1,9 @@
 package Privacy::Template::ContextHandlers;
 
 sub private {
+	my $privacy_frame = shift;
 	my ($type, $ctx, $args, $cond) = @_;
-	my $privacy_frame = MT::Plugin::Privacy->instance;
+
 	my $blog_id = $ctx->stash('blog_id');
     my $builder = $ctx->stash ('builder');
     my $tokens = $ctx->stash ('tokens');
@@ -53,6 +54,7 @@ sub private {
 }
 
 sub private_obj_id {
+	my $privacy_frame = shift;
 	my ($ctx) = @_;
 	my $obj = $ctx->stash('private_obj');
 	return $ctx->_no_private_obj('MTPrivacyObjectID')
@@ -61,6 +63,7 @@ sub private_obj_id {
 }
 
 sub private_obj_type {
+	my $privacy_frame = shift;
 	my ($ctx) = @_;	
 	my $obj = $ctx->stash('private_obj');
 	return $ctx->_no_private_obj('MTPrivacyObjectType')
@@ -69,6 +72,7 @@ sub private_obj_type {
 }
 
 sub privacy_types {
+	my $privacy_frame = shift;
 	my ($ctx, $args, $cond) = @_;
 	my $privacy_frame = MT::Plugin::Privacy->instance;
 	my $blog_id = $ctx->stash('blog_id');
@@ -95,6 +99,7 @@ sub privacy_types {
 }
 
 sub privacy_type_name {
+	my $privacy_frame = shift;
 	my ($ctx) = @_;	
 	my $type = $ctx->stash('privacy_type');
 	return $ctx->_no_private_obj('MTPrivacyTypeName')
@@ -104,6 +109,7 @@ sub privacy_type_name {
 }
 
 sub privacy_type_fields {
+	my $privacy_frame = shift;
 	my ($ctx, $args, $cond) = @_;
 	my $type = $ctx->stash('privacy_type');	
 	my $res = '';
@@ -124,6 +130,7 @@ sub privacy_type_fields {
 }
 
 sub privacy_type_field_name {
+	my $privacy_frame = shift;
 	my ($ctx) = @_;	
 	my $name = $ctx->stash('privacy_type_field_name');
 	return $ctx->_no_private_obj('MTPrivacyTypeFieldName')
@@ -133,6 +140,7 @@ sub privacy_type_field_name {
 }
 
 sub privacy_type_field_type {
+	my $privacy_frame = shift;
 	my ($ctx) = @_;	
 	my $type = $ctx->stash('privacy_type_field_type');
 	return $ctx->_no_private_obj('MTPrivacyTypeFieldName')

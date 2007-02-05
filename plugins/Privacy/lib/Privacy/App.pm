@@ -35,7 +35,7 @@ sub config {
 }
 
 sub convert_data {
-	my $privacy_frame = MT::Plugin::Privacy->instance;
+	my $privacy_frame = shift;
 	
 	require Privacy::Protect;
 	require Privacy::Object;
@@ -92,8 +92,8 @@ sub convert_data {
 }
 
 sub load_files {
-	my ($eh, $tmpls) = @_;
-	my $privacy_frame = MT::Plugin::Privacy->instance;
+	my ($privacy_frame, $eh, $tmpls) = @_;
+
 	local (*FIN, $/);
     $/ = undef;
     foreach my $template (@$templates) {
@@ -127,9 +127,9 @@ sub load_files {
 }
 
 sub _edit_entry {
-	my($eh, $app, $tmpl) = @_;
+	my($privacy_frame, $eh, $app, $tmpl) = @_;
 	my($old, $new);
-	my $privacy_frame = MT::Plugin::Privacy->instance;
+
 	my $edit_tmpl_path = File::Spec->catdir($privacy_frame->{full_path},'tmpl','protect.tmpl');
 	
 	$old = qq{doAddCategory(this)};
@@ -190,9 +190,9 @@ sub _entry_prefs {
 }
 
 sub _edit_category {
-	my($eh, $app, $tmpl) = @_;
+	my($privacy_frame, $eh, $app, $tmpl) = @_;
 	my($old, $new);
-	my $privacy_frame = MT::Plugin::Privacy->instance;
+
 	my $edit_tmpl_path = File::Spec->catdir($privacy_frame->{full_path},'tmpl','protect.tmpl');
 	my $recursive_stub = File::Spec->catdir($privacy_frame->{full_path},'tmpl','recursive-stub.tmpl');
 	$old = <<HTML;
@@ -220,9 +220,8 @@ HTML
 }
 
 sub _edit_categories {
-	my($eh, $app, $tmpl) = @_;
+	my($privacy_frame, $eh, $app, $tmpl) = @_;
 	my($old, $new);
-	my $privacy_frame = MT::Plugin::Privacy->instance;
 
 	$old = qq{<TMPL_VAR NAME=CATEGORY_LABEL></a>};
 	$old = quotemeta($old);
@@ -231,9 +230,8 @@ sub _edit_categories {
 }
 
 sub _list_entry {
-	my($eh, $app, $tmpl) = @_;
+	my($privacy_frame, $eh, $app, $tmpl) = @_;
 	my($old, $new);
-	my $privacy_frame = MT::Plugin::Privacy->instance;
 
 	$old = qq{<TMPL_VAR NAME=TITLE_LONG>};
 	$old = quotemeta($old);
@@ -247,9 +245,9 @@ sub _list_entry {
 }
 
 sub _system_list_blog {
-	my($eh, $app, $tmpl) = @_;
+	my($privacy_frame, $eh, $app, $tmpl) = @_;
 	my($old, $new);
-	my $privacy_frame = MT::Plugin::Privacy->instance;
+
 	my $link = $app->base.$app->path.$privacy_frame->envelope.'/privacy.cgi';
 	
 	$old = qq{<TMPL_VAR NAME=NAME ESCAPE=HTML></a>};
@@ -259,7 +257,7 @@ sub _system_list_blog {
 }
 
 sub _list_param {
-	my($eh, $app, $param, $tmpl, $type) = @_;
+	my($privacy_frame, $eh, $app, $param, $tmpl, $type) = @_;
 	my $objs;
 	if($type eq 'entry') {
 		$objs = $param->{entry_table}[0]{object_loop};
@@ -279,9 +277,9 @@ sub _list_param {
 }
 
 sub _param {
-	my($eh, $app, $param, $tmpl, $datasource) = @_;
+	my($privacy_frame, $eh, $app, $param, $tmpl, $datasource) = @_;
 	my $q = $app->{query};
-	my $privacy_frame = MT::Plugin::Privacy->instance;
+
 	my $blog_id = $q->param('blog_id') || 0;
 	my $obj_id = $q->param('id') || $blog_id;
 	my $auth_prefs = $app->user->entry_prefs;
@@ -454,10 +452,10 @@ sub _param {
 }
 
 sub post_save {
-	my ($eh, $obj, $original) = @_;
+	my ($privacy_frame, $eh, $obj, $original) = @_;
 	my $app = MT->instance;
 	my $q = $app->{query};
-	my $privacy_frame = MT::Plugin::Privacy->instance;
+
 	my $blog_id = $q->param('blog_id') || 0;
 	my $new_asset = !$q->param('id');
 	
@@ -521,8 +519,8 @@ sub post_save {
 }
 
 sub _header {
-	my ($eh, $app, $tmpl) = @_;
-	my $privacy_frame = MT::Plugin::Privacy->instance;
+	my ($privacy_frame, $eh, $app, $tmpl) = @_;
+
 	my $link = $app->base.$app->path.$privacy_frame->envelope.'/privacy.cgi';
 	my $old = q{<li><a<TMPL_IF NAME=NAV_AUTHORS> class="here"</TMPL_IF> id="nav-authors" title="<MT_TRANS phrase="List Authors">" href="<TMPL_VAR NAME=MT_URL>?__mode=list_authors"><MT_TRANS phrase="Authors"></a></li>};
 	$old = quotemeta($old);

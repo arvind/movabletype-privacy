@@ -7,7 +7,7 @@ use 5.006;    # requires Perl 5.6.x
 use MT 3.3;   # requires MT 3.2 or later
 
 use base 'MT::Plugin';
-our $VERSION = '2.0';
+our $VERSION = '2.0b4';
 our $SCHEMA_VERSION = '2.1';
 
 my $plugin;
@@ -24,11 +24,11 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 	upgrade_functions => {
         'convert_data' => {
             version_limit => 2.1,
-            code => sub { require Privacy::App; Privacy::App::convert_data(@_); },
+            code => sub { runner('app', 'convert_data', @_);  },
         },
 		'load_files' => {
 			version_limit => $SCHEMA_VERSION, 
-			code => sub { require Privacy::App; Privacy::App::load_files(@_); },
+			code => sub { runner('app', 'load_files', @_); },
 		}
     },
 	l10n_class 	    => 'Privacy::L10N',
@@ -53,37 +53,37 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 		}
 	},
 	callbacks => {
-		'MT::App::CMS::AppTemplateSource.edit_entry' => sub { require Privacy::App; Privacy::App::_edit_entry(@_); },
-		'MT::App::CMS::AppTemplateParam.edit_entry'  => sub { require Privacy::App; Privacy::App::_param(@_, 'entry'); },
-		'MT::App::CMS::AppTemplateSource.entry_prefs' => sub { require Privacy::App; Privacy::App::_entry_prefs(@_); },
-		'MT::Entry::post_save' => sub { require Privacy::App; Privacy::App::post_save(@_); },
-		'MT::App::CMS::AppTemplateSource.edit_category' => sub { require Privacy::App; Privacy::App::_edit_category(@_); },
-		'MT::App::CMS::AppTemplateParam.edit_category' => sub { require Privacy::App; Privacy::App::_param(@_, 'category'); },
-		'MT::Category::post_save' => sub { require Privacy::App; Privacy::App::post_save(@_); },
-		'MT::App::CMS::AppTemplateSource.entry_table' => sub { require Privacy::App; Privacy::App::_list_entry(@_); },
-		'MT::App::CMS::AppTemplateParam.list_entry' => sub { require Privacy::App; Privacy::App::_list_param(@_, 'entry'); },
-		'MT::App::CMS::AppTemplateSource.edit_categories' => sub { require Privacy::App; Privacy::App::_edit_categories(@_); },
-		'MT::App::CMS::AppTemplateParam.edit_categories' => sub { require Privacy::App; Privacy::App::_list_param(@_, 'category'); },		
-		'MT::App::CMS::AppTemplateSource.system_list_blog' => sub { require Privacy::App; Privacy::App::_system_list_blog(@_); },
-		'MT::App::CMS::AppTemplateParam.system_list_blog' => sub { require Privacy::App; Privacy::App::_list_param(@_, 'blog'); },
-		'Privacy::App::CMS::AppTemplateParam.edit_blog' => sub { require Privacy::App; Privacy::App::_param(@_, 'blog'); },
-		'Privacy::App::CMS::AppTemplateParam.edit_group' => sub { require Privacy::App; Privacy::App::_param(@_, 'protect_groups'); },		
-		'*::AppTemplateSource'  => sub { require Privacy::App; Privacy::App::_header(@_); },
-		'DefaultTemplateFilter'  => sub { require Privacy::App; Privacy::App::load_files(@_); }
+		'MT::App::CMS::AppTemplateSource.edit_entry' => sub { runner('app', '_edit_entry', @_); },
+		'MT::App::CMS::AppTemplateParam.edit_entry'  => sub { runner('app', '_param', @_, 'entry'); },
+		'MT::App::CMS::AppTemplateSource.entry_prefs' => sub { runner('app', '_entry_prefs', @_); },
+		'MT::Entry::post_save' => sub { runner('app', 'post_save', @_); },
+		'MT::App::CMS::AppTemplateSource.edit_category' => sub { runner('app', '_edit_category', @_); },
+		'MT::App::CMS::AppTemplateParam.edit_category' => sub { runner('app', '_param', @_, 'category'); },
+		'MT::Category::post_save' => sub { runner('app', 'post_save', @_); },
+		'MT::App::CMS::AppTemplateSource.entry_table' => sub { runner('app', '_list_entry', @_); },
+		'MT::App::CMS::AppTemplateParam.list_entry' => sub { runner('app', '_list_param', @_, 'entry'); },
+		'MT::App::CMS::AppTemplateSource.edit_categories' => sub { runner('app', '_edit_categories', @_); },
+		'MT::App::CMS::AppTemplateParam.edit_categories' => sub { runner('app', '_list_param', @_, 'category'); },		
+		'MT::App::CMS::AppTemplateSource.system_list_blog' => sub { runner('app', '_system_list_blog', @_); },
+		'MT::App::CMS::AppTemplateParam.system_list_blog' => sub { runner('app', '_list_param', @_, 'blog'); },
+		'Privacy::App::CMS::AppTemplateParam.edit_blog' => sub { runner('app', '_param', @_, 'blog'); },
+		'Privacy::App::CMS::AppTemplateParam.edit_group' => sub { runner('app', '_param', @_, 'protect_groups'); },		
+		'*::AppTemplateSource'  => sub { runner('app', '_header', @_); },
+		'DefaultTemplateFilter'  => sub { runner('app', 'load_files', @_); }
 	},
 	container_tags => {
-		'PrivateBlog' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::private('blog', @_);},
-		'PrivateEntry' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::private('entry', @_);},		
-		'PrivateCategory' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::private('category', @_);},		
-		'PrivacyTypes' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_types(@_);},			
-		'PrivacyTypeFields' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_type_fields(@_);}					
+		'PrivateBlog' => sub { runner('template', 'private', 'blog', @_);},
+		'PrivateEntry' => sub { runner('template', 'private', 'entry', @_);},		
+		'PrivateCategory' => sub { runner('template', 'private', 'category', @_);},		
+		'PrivacyTypes' => sub { runner('template', 'privacy_types', @_);},			
+		'PrivacyTypeFields' => sub { runner('template', 'privacy_type_fields', @_);}					
 	},
 	template_tags => {
-		'PrivateObjectID' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::private_obj_id(@_);},
-		'PrivateObjectType' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::private_obj_type(@_);},
-		'PrivacyTypeName' => sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_type_name(@_);},
-		'PrivacyTypeFieldName' =>  sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_type_field_name(@_);},
-		'PrivacyTypeFieldType' =>  sub { require Privacy::Template::ContextHandlers; Privacy::Template::ContextHandlers::privacy_type_field_type(@_);},		
+		'PrivateObjectID' => sub { runner('template', 'private_obj_id', @_);},
+		'PrivateObjectType' => sub { runner('template', 'private_obj_type', @_);},
+		'PrivacyTypeName' => sub { runner('template', 'privacy_type_name', @_);},
+		'PrivacyTypeFieldName' =>  sub { runner('template', 'privacy_type_field_name', @_);},
+		'PrivacyTypeFieldType' =>  sub { runner('template', 'privacy_type_field_type', @_);},		
 	},
 	settings => new MT::PluginSettings([
 	            ['use_php', { Default => 1 }]
@@ -184,6 +184,21 @@ sub save_config {
     }
     $pdata->data($data);
     $pdata->save() or die $pdata->errstr;
+}
+
+sub runner {
+    my $class = shift;
+	my $method = shift;
+	if($class eq 'app') {
+		$class = 'Privacy::App';
+	} elsif($class eq 'template') {
+		$class = 'Privacy::Template::ContextHandlers';
+	}
+    eval "require $class;";
+    if ($@) { die $@; $@ = undef; return 1; }
+    my $method_ref = $class->can($method);
+    return $method_ref->($plugin, @_) if $method_ref;
+    die $plugin->translate("Failed to find [_1]::[_2]", $class, $method);
 }
 
 1;
