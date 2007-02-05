@@ -156,7 +156,7 @@ function TagList( baseId ) {
     li.appendChild(div);
     var a1 = document.createElement('a');
     a1.innerHTML = str;
-    a1.href = this.TAG_LINK_FORMAT + str;
+    a1.href = '#';
     a1.id = this.baseId + '-lnk-tag-'+str;
     a1.className = 'lnk-tag';
     //var dellnk = document.createElement('a');
