@@ -104,8 +104,8 @@ sub load_files {
         } else {
             die $privacy_frame->translate("Couldn't find file '[_1]'", $file);
         }
-		if(@$templates) {
-			push @$templates, $template;
+		if(@$tmpls) {
+			push @$tmpls, $template;
 		} else {
 	        $template->{name} = $privacy_frame->translate($template->{name});
 	        $template->{text} = $privacy_frame->translate_templatized($template->{text});
@@ -113,7 +113,7 @@ sub load_files {
 			require MT::Template;
 			my $iter = MT::Blog->load_iter;		
 			while (my $blog = $iter->()) {			
-		        my $tmpl = MT::Template->new;
+		        my $tmpl = MT::Template->get_by_key({ name => $template->{name}, type => $template->{type} });
 		        $tmpl->set_values($template);
 		        $tmpl->build_dynamic(0);
 		        $tmpl->blog_id($blog->id);
