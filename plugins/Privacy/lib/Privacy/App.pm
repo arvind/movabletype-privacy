@@ -113,7 +113,7 @@ sub load_files {
 			require MT::Template;
 			my $iter = MT::Blog->load_iter;		
 			while (my $blog = $iter->()) {			
-		        my $tmpl = MT::Template->get_by_key({ name => $template->{name}, type => $template->{type} });
+		        my $tmpl = MT::Template->get_by_key({ name => $template->{name}, type => $template->{type}, blog_id => $blog->id });
 		        $tmpl->set_values($template);
 		        $tmpl->build_dynamic(0);
 		        $tmpl->blog_id($blog->id);
