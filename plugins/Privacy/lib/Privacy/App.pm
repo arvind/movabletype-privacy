@@ -171,9 +171,12 @@ HTML
 }
 
 sub _entry_prefs {
-	my ($cb, $app, $template) = @_;
+	my ($privacy_frame, $cb, $app, $template) = @_;
 	my ($old, $new);	
-	$old = qq{var customizable_fields = new Array('category'};	
+		
+	my $new_line = (MT->product_code eq 'MTE') ? "\n" : "";
+	
+	$old = qq{var customizable_fields = new${new_line}Array('category'};	
 	$old = quotemeta($old);	
 	$new = qq{var customizable_fields = new Array('category','privacy'};
 	$$template =~ s/$old/$new/;	
