@@ -4,7 +4,7 @@
 	$db =& $mt->db;
 	$config = $db->fetch_plugin_config('Privacy');
 	if($_REQUEST['rand'] == $config['rand'])  {
-		setcookie($_REQUEST['obj_type'].$_REQUEST['id'], 1, '', '/');
+		setcookie($_REQUEST['datasource'].$_REQUEST['id'], 1, 0, '/');
 	}
 	
 	$config['rand'] = md5(time().mt_rand());	
