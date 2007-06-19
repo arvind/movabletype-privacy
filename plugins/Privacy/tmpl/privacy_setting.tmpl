@@ -1,0 +1,32 @@
+<script type="text/javascript">
+<!--
+	function changePrivacy(f) {
+		if(f.value == 1) {
+			document.getElementById('edit-privacy').style.display = 'block';
+			<mt:unless name="id">openPrivacyEditor();</mt:unless>
+		}
+		else
+			document.getElementById('edit-privacy').style.display = 'none';
+	}
+	
+	function openPrivacyEditor() {		
+		return openDialog(false, 'edit_privacy', 'blog_id=<mt:var name="blog_id">&amp;_type=<mt:var name="object_type">&amp;id=<mt:var name="id">');
+	}
+//-->
+</script>
+
+<mtapp:setting
+    id="privacy"
+    label="Privacy">
+
+	<mt:loop name="auth_loop">
+   	<input type="hidden" name="privacy_<mt:var name="key">" value="<mt:var name="credentials" escape="html">" id="privacy_<mt:var name="key">">
+	</mt:loop>
+	
+	<select name="privacy" id="privacy" class="full-width" onchange="changePrivacy(this);">
+		<option value="0"><__trans phrase="Public"></option>
+		<option value="1"<mt:if name="is_private"> selected="selected"</mt:if>><__trans phrase="Private"></option>
+	</select>		
+	<a href="javascript:void(0);" id="edit-privacy" style="font-size:11px; margin-top:7px;<mt:unless name="is_private">display:none;</mt:unless>" class="hint" onclick="openPrivacyEditor();"><__trans phrase="Edit Privacy Settings"></a>
+
+</mtapp:setting>

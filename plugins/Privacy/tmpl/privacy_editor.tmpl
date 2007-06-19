@@ -1,0 +1,93 @@
+<mt:setvar name="screen_type" value="dialog-screen dialog-4">
+<mt:setvarblock name="content_header">
+	<mt:setvar name="page_title" value="<__trans phrase="Edit Privacy">">
+</mt:setvarblock>
+<mt:include name="dialog/header.tmpl">
+
+<script type="text/javascript">
+<!--
+	function togglePrivacy(p) {
+		if(p.checked == true)
+			show(p.name + '-container');
+		else
+			hide(p.name + '-container');
+	}
+	
+	function revealPassword() {
+		alert('<__trans phrase="The password is:"> ' + document.getElementById('Password').value);
+	}
+	
+	function save() {
+		var d = top.document;
+		
+		<mt:loop name="auth_loop">
+			if(document.getElementById('privacy_<mt:var name="key">').checked == true) 
+				d.getElementById('privacy_<mt:var name="key">').value = document.getElementById('<mt:var name="key">').value;
+		</mt:loop>
+		
+		closeDialog();
+	}
+	
+	function init() {
+		var d = top.document;
+		var value;
+		
+		<mt:loop name="auth_loop">
+			value = ""; // Clear the value from the previous auth
+			value = d.getElementById('privacy_<mt:var name="key">').value;
+			if(value) {
+				document.getElementById('privacy_<mt:var name="key">').checked = true;
+				show('privacy_<mt:var name="key">-container');
+				document.getElementById('<mt:var name="key">').value = value;
+			}
+		</mt:loop>
+	}
+	
+	TC.attachLoadEvent( init );
+//-->
+</script>
+	
+	<mt:setvarblock name="privacy_types_hint"><__trans phrase="Please select the ways in which users can sign in to view this [_1]" params="<mt:var name="object_type">"></mt:setvarblock>
+	<mtapp:setting
+	id="privacy_types"
+	label="Enable Privacy"
+	hint="$privacy_types_hint"
+	show_hint="1">
+	
+	<mt:loop name="auth_loop">
+		<p><label><input type="checkbox" name="privacy_<mt:var name="key">" value="1" id="privacy_<mt:var name="key">" onclick="togglePrivacy(this);" /> <mt:var name="label"></label></p>
+	</mt:loop>
+	</mtapp:setting>
+	
+	<mt:loop name="auth_loop">
+		<mt:if name="key" eq="Password">
+			<mt:setvar name="hint" value="Please enter a password here">
+		<mt:else>
+			<mt:if name="key" eq="Group">
+				<mt:setvar name="hint" value="Please enter group names here separated by commas (e.g. <code>melody, nelson</code>)">
+			<mt:else>
+				<mt:setvar name="hint" value="Please enter usernames here separated by commas (e.g. <code>melody, nelson</code>)">
+			</mt:if>
+		</mt:if>
+		<div id="privacy_<mt:var name="key">-container" style="display:none;">
+			<mtapp:setting
+			id="$key"
+			label="$label"
+			hint="$hint"
+			show_hint="1">
+			<mt:if name="key" eq="Password">
+				<p><input type="password" name="<mt:var name="key">" value="" id="<mt:var name="key">" class="full-width" /></p>
+				<p class="hint"><a href="#" onclick="revealPassword();"><__trans phrase="Reveal Password"></a></p>
+			<mt:else>
+				<textarea name="<mt:var name="key">" id="<mt:var name="key">" rows="3" cols="72" class="full-width"></textarea>
+			</mt:if>
+			</mtapp:setting>
+		</div>
+	</mt:loop>
+	
+	<div class="actions-bar">
+		<input onclick="closeDialog()" type="button" value="<__trans phrase="Close">" />
+	    <input name="save" type="button" value="<__trans phrase="Save">" accesskey="s" title="<__trans phrase="Save privacy settings (s)">" onclick="save();" />
+	</div>
+	
+<mt:include name="dialog/footer.tmpl">
