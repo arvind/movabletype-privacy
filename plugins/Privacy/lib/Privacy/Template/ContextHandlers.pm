@@ -10,9 +10,13 @@ sub _hdlr_app_privacy {
 	
 	$args->{blog_id} = $ctx->var('blog_id');
 	$args->{object_type} = $ctx->var('object_type');
+	$args->{object_id} = $ctx->var('id');
 	$args->{require_credentials} = 1;
-	my @auth_loop = auth_loop($args);
+	$args->{is_private} = 1;
 	
+	my (@auth_loop) = auth_loop($args);
+
+	$ctx->var('is_private', pop @auth_loop);
 	$ctx->var('auth_loop', \@auth_loop);
 
 	my $privacy_tmpl = $args->{tmpl} || File::Spec->catdir($plugin->path,'tmpl','privacy_setting.tmpl');

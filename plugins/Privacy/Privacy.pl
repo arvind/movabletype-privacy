@@ -42,10 +42,11 @@ sub init_registry {
 					'edit_privacy' => sub { runner('edit_privacy', 'Privacy::App::CMS', @_); }
 				}
 			}
+		},
+		callbacks => {
+			'MT::Entry::post_insert' => \&post_insert,
+			'cms_post_save.entry' => sub { runner('cms_post_save', 'Privacy::App::CMS', @_); }
 		}
-		# callbacks => {
-		# 	'MT::Entry::post_insert' => sub { MT->log('Hello'); }
-		# }
 	};
 	
 	# No need to add Privacy::Group if MT::Group exists
@@ -65,3 +66,22 @@ sub runner {
     return $method_ref->($plugin, @_) if $method_ref;
     die $plugin->translate("Failed to find [_1]::[_2]", $class, $method);
 }
+
+# This populates the default privacy settings. It is only triggered for *new* objects
+sub post_insert {
+	my ($cb, $obj, $orig) = @_;
+	
+	require Privacy::Object;
+	my $iter = Privacy::Object->load_iter({ blog_id => $obj->blog_id, object_id => $obj->blog_id, object_datasource => 'blog' });
+	while (my $p = $iter->()) {
+		my $privacy = $p->clone;
+		$privacy->set_values({
+			id => 0,
+			object_id => $obj->id,
+			object_datasource => $obj->datasource
+		});
+		$privacy->save or die $privacy->errstr;
+	}
+}
+
+1;

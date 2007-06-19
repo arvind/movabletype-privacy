@@ -14,17 +14,18 @@
 	}
 	
 	function revealPassword() {
-		alert('<__trans phrase="The password is:"> ' + document.getElementById('Password').value);
+		alert('<__trans phrase="The password is:"> ' + getByID('Password').value);
 	}
 	
 	function save() {
 		var d = top.document;
 		
 		<mt:loop name="auth_loop">
-			if(document.getElementById('privacy_<mt:var name="key">').checked == true) 
-				d.getElementById('privacy_<mt:var name="key">').value = document.getElementById('<mt:var name="key">').value;
+			if(getByID('privacy_<mt:var name="key">').checked == true) 
+				d.getElementById('privacy_<mt:var name="key">').value = getByID('<mt:var name="key">').value;
 		</mt:loop>
 		
+		d.getElementById('saved-privacy-container').style.display = 'block';
 		closeDialog();
 	}
 	
@@ -36,9 +37,9 @@
 			value = ""; // Clear the value from the previous auth
 			value = d.getElementById('privacy_<mt:var name="key">').value;
 			if(value) {
-				document.getElementById('privacy_<mt:var name="key">').checked = true;
+				getByID('privacy_<mt:var name="key">').checked = true;
 				show('privacy_<mt:var name="key">-container');
-				document.getElementById('<mt:var name="key">').value = value;
+				getByID('<mt:var name="key">').value = value;
 			}
 		</mt:loop>
 	}

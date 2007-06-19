@@ -2,23 +2,33 @@
 <!--
 	function changePrivacy(f) {
 		if(f.value == 1) {
-			document.getElementById('edit-privacy').style.display = 'block';
+			getByID('edit-privacy').style.display = 'block';
 			<mt:unless name="id">openPrivacyEditor();</mt:unless>
 		}
 		else
-			document.getElementById('edit-privacy').style.display = 'none';
+			getByID('edit-privacy').style.display = 'none';
 	}
 	
 	function openPrivacyEditor() {		
+		getByID('saved-privacy-container').style.display = 'none';
+		getByID('privacy_manual').value = 1;
+		
 		return openDialog(false, 'edit_privacy', 'blog_id=<mt:var name="blog_id">&amp;_type=<mt:var name="object_type">&amp;id=<mt:var name="id">');
 	}
 //-->
 </script>
 
+<div id="saved-privacy-container" style="display:none;">
+<mtapp:statusmsg
+    id="saved-privacy"
+    class="success">
+    <__trans phrase="Your privacy settings have been saved.">
+</mtapp:statusmsg></div>
+
 <mtapp:setting
     id="privacy"
     label="Privacy">
-
+	<input type="hidden" name="privacy_manual" value="0" id="privacy_manual" />
 	<mt:loop name="auth_loop">
    	<input type="hidden" name="privacy_<mt:var name="key">" value="<mt:var name="credentials" escape="html">" id="privacy_<mt:var name="key">">
 	</mt:loop>

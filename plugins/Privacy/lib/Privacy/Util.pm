@@ -24,12 +24,14 @@ sub auth_loop {
 	# Manually add Password and Group authenticators - these are only used by Privacy
 	# P.S. Group defaults to Privacy::Group if MT::Group is not available
 	unshift @auths, ('Password', 'Group');
+	my $is_private;
 	
 	foreach my $key (@auths) {
 		my $auth = $ca_reg->{$key};
 		
 		$param->{key} = $key;
 		my @credentials = get_credentials($param);
+		$is_private = 1 if scalar @credentials > 0;
 		
 		push @auth_loop, {
 			label => $auth ? $auth->{label} : $key,
@@ -37,8 +39,8 @@ sub auth_loop {
 			credentials => join ", ", @credentials
 		};
 	}
-	
-	return @auth_loop;
+
+	return $param->{is_private} ? (@auth_loop, $is_private) : @auth_loop;
 }
 
 sub get_credentials {
