@@ -18,6 +18,25 @@ sub _hdlr_app_privacy {
 
 	$ctx->var('is_private', pop @auth_loop);
 	$ctx->var('auth_loop', \@auth_loop);
+	
+	if($ctx->var('object_type') eq 'entry') {
+		require Privacy::Object;
+		# Populate category privacy defaults
+		my $cat_tree = $ctx->var('category_tree');
+		my @category_defaults;
+		foreach my $cat (@$cat_tree) {
+			my $id = $cat->{id};
+			my $privacy = { id => $id };
+			my $iter = Privacy::Object->load_iter({ object_id => $id, object_datasource => 'category' });
+			while (my $cred = $iter->()) {
+				my $key = $cred->type;
+				$privacy->{$key} ||= [];
+				push @{$privacy->{$key}}, $cred->credential;
+			}
+			push @category_defaults, $privacy;
+		}	
+		$ctx->var('category_defaults', \@category_defaults);	
+	}
 
 	my $privacy_tmpl = $args->{tmpl} || File::Spec->catdir($plugin->path,'tmpl','privacy_setting.tmpl');
 

@@ -1,5 +1,6 @@
 <script type="text/javascript">
 <!--
+	<mt:if name="category_defaults">var categoryPrivacyJSON = <mt:var name="category_defaults" to_json="1">;</mt:if>
 	function changePrivacy(f) {
 		if(f.value == 1) {
 			getByID('edit-privacy').style.display = 'block';
@@ -15,6 +16,63 @@
 		
 		return openDialog(false, 'edit_privacy', 'blog_id=<mt:var name="blog_id">&amp;_type=<mt:var name="object_type">&amp;id=<mt:var name="id">');
 	}
+	
+	
+	// FIXME: If a user adds a category and then removes it, corresponding privacy NOT removed
+	function addCatPrivacy() {
+		var categoryIDs = document.getElementById('category-ids').value.split(', ');
+		if (!categoryIDs)
+			return;
+			
+		var authTypes = new Array(<mt:loop name="auth_loop">'<mt:var name="key">'<mt:unless name="__last__">, </mt:unless></mt:loop>);
+		
+		for (var i = 0; i < categoryIDs.length; i++) {
+			var category;
+			
+			// Find the current category's privacy object
+			for (var j = 0; j < categoryPrivacyJSON.length; j++) {
+				if(categoryPrivacyJSON[j].id == categoryIDs[i])
+					category = categoryPrivacyJSON[j]; break;
+			}
+			
+			if(!category)
+				continue;
+			
+			// Loop through the various authenticators and add them to the appropriate field
+			for (var k = 0; k < authTypes.length; k++) {
+				var auth = authTypes[k];
+				var cur = document.getElementById('privacy_' + auth).value;
+				var cPrivacy = category[auth];
+				
+				if(!cPrivacy)
+					continue;
+									
+				if(auth == 'Password') {
+					if(!cur)
+						document.getElementById('privacy_' + auth).value = cPrivacy;
+				} else {
+					var currLoop;				
+					if(cur)
+						currLoop = cur.split(', ');
+					else
+						currLoop = new Array();
+
+					// Good lord, so many loops I'm now using l! Loop through credentials
+					// for this authenticator and see if it already exists. If not, add it
+					for (var l = 0; l < cPrivacy.length; l++) {
+						if(cur.match(cPrivacy[l]))
+							continue;
+
+						currLoop[currLoop.length] = cPrivacy[l];
+					}
+
+					document.getElementById('privacy_' + auth).value = currLoop.join(', ');					
+				}
+			}		
+		}
+		
+	}
+	
 //-->
 </script>
 

@@ -61,7 +61,7 @@ sub get_credentials {
 		blog_id => $blog_id,
 		object_id => $blog_id,
 		object_datasource => 'blog',
-		type => $key
+		$key ? ( type => $key ) : ()
 	};
 	
 	if($id) {
