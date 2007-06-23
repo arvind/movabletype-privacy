@@ -34,7 +34,7 @@ sub login {
 	my @auth_loop;
     my $ca_reg = $app->registry("commenter_authenticators");
     my @auths = split ',', $blog->commenter_authenticators;
-	
+	unshift @auths, 'Password';
 	# Since we're using commenter_authenticators, we need to hack a way to transport
 	# this information for Privacy
 	$q->param('static', "${object_type}::${object_id}"); 
@@ -75,7 +75,7 @@ sub handle_sign_in {
     my $app = shift;
     my $q   = $app->param;
 
-    my ($result, $has_credential);
+    my ($result, $credential);
     if ( $q->param('logout') ) {
         my ( $s, $commenter ) = $app->_get_commenter_session();
         if ($commenter) {
@@ -95,24 +95,28 @@ sub handle_sign_in {
         $result = 1;
     }
     else {
-        my $authenticator = MT->commenter_authenticator( $q->param('key') );
-        my $auth_class    = $authenticator->{class};
-        eval "require $auth_class;";
-        if ( my $e = $@ ) {
-            return $app->handle_error( $e, 403 );
-        }
-        $result = $auth_class->handle_sign_in($app);
+		if($q->param('key') eq 'Password') {
+			$credential = $q->param('password');
+		} else {
+	        my $authenticator = MT->commenter_authenticator( $q->param('key') );
+	        my $auth_class    = $authenticator->{class};
+	        eval "require $auth_class;";
+	        if ( my $e = $@ ) {
+	            return $app->handle_error( $e, 403 );
+	        }
+	        $result = $auth_class->handle_sign_in($app);
 
-		return $app->handle_error(
-	        $app->errstr() || $app->translate(
-	            "The sign-in attempt was not successful; please try again."),
-	        403
-	    ) unless $result;
-	
-		require Privacy::Auth;
-	
-		$has_credential = $auth_class->handle_privacy($app, $result);
-		$app->handle_privacy($result, $has_credential);
+			return $app->handle_error(
+		        $app->errstr() || $app->translate(
+		            "The sign-in attempt was not successful; please try again."),
+		        403
+		    ) unless $result;
+
+			require Privacy::Auth;
+
+			$credential = $auth_class->get_credential($app, $result);			
+		}
+		$app->handle_privacy($result, $credential);
     }
 
     # $app->redirect_to_target;
@@ -120,8 +124,8 @@ sub handle_sign_in {
 
 sub handle_privacy {
 	my $app = shift;
-	my ($cmntr, $has_credential) = @_;
-	my $key = $app->param('key') || 'TypeKey';
+	my ($cmntr, $credential) = @_;
+	my $key = $app->param('key');
 	my $blog_id = $app->param('blog_id');
 	my ($object_type, $object_id) = split '::', $app->param('static');
 	require MT::Blog;
@@ -135,6 +139,7 @@ sub handle_privacy {
 	my $class = MT->model($object_type);
 	my $obj = $class->load($object_id);
 	local $ctx->{__stash}{private_obj} = $obj;
+	local $ctx->{__stash}{$object_type} = $obj;
 	
 	my $redirect = $blog->site_url;
 	if($object_type eq 'entry') {
@@ -149,6 +154,29 @@ sub handle_privacy {
 		    $arch = $arch . MT::Util::archive_file_for(undef, $blog, 'Category', $obj);
 		    $arch = MT::Util::strip_index($arch, $blog);	
 			$redirect = $arch;
+		}
+	}
+	
+	my $key = $app->param('key');
+
+	require Privacy::Object;
+	my $has_credential = Privacy::Object->count({ blog_id => $blog_id, type => $key, object_datasource => $object_type, 
+											object_id => $object_id, credential => $credential });
+	
+	# If the user hasn't been explicitly added, perhaps they're in a group?
+	if(!$has_credential && $key ne 'Password') {
+		if(MT->registry('object_types', 'privacy_group')) {
+			require Privacy::Group;
+			my @groups = Privacy::Object->load({ blog_id => $blog_id, type => 'Group', object_datasource => $object_type,
+													object_id => $object_id });
+			foreach my $name (@groups) {
+				my $group = Privacy::Group->load({ name => $name });
+				next if !$group;
+				
+				$has_credential = Privacy::Object->count({ blog_id => $blog_id, type => $key, object_datasource => 'privacy_group', 
+														object_id => $object_id, credential => $credential });			
+				last if $has_credential;	
+			}			
 		}
 	}
 

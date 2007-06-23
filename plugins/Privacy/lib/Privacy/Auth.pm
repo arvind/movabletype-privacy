@@ -10,7 +10,7 @@ use strict;
 package MT::Auth::OpenID;
 use strict;
 
-sub handle_privacy {
+sub get_credential {
 	my $class = shift;
 	my ($app, $cmntr) = @_;
 	my $credential = $cmntr->url;
@@ -18,16 +18,8 @@ sub handle_privacy {
 		my $expr = $class->url_for_userid('(.*)');
 		($credential) = $cmntr->url =~ m/$expr/;
 	}
-	
-	my $key = $app->param('key');
-	my $blog_id = $app->param('blog_id');
-	my ($object_type, $object_id) = split '::', $app->param('static');
-
-	require Privacy::Object;
-	my $count = Privacy::Object->count({ blog_id => $blog_id, type => $key, object_datasource => $object_type, 
-											object_id => $object_id, credential => $credential });
-											
-	return $count;	
+			
+	return $credential;	
 }
 
 package MT::Auth::Typekey;
@@ -36,17 +28,8 @@ use strict;
 sub handle_privacy {
 	my $class = shift;
 	my ($app, $cmntr) = @_;
-	
-	my $key = $app->param('key') || 'TypeKey';
-	my $blog_id = $app->param('blog_id');
-	my ($object_type, $object_id) = split '::', $app->param('static');
-	my $credential = $cmntr->name;
-	
-	require Privacy::Object;
-	my $count = Privacy::Object->count({ blog_id => $blog_id, type => $key, object_datasource => $object_type, 
-											object_id => $object_id, credential => $credential });
-											
-	return $count;	
+
+	return $cmntr->name;	
 	
 }
 
