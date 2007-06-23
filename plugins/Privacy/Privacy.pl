@@ -14,16 +14,39 @@ my $plugin;
 MT->add_plugin($plugin = __PACKAGE__->new({
 	name            => "Privacy",
 	version         => $VERSION,
-	description     => "<MT_TRANS phrase=\"Make entries, category and blogs private using passwords or third party authentication\">",
+	description     => "<__trans phrase=\"Make entries, category and blogs private using passwords or third party authentication\">",
 	author_name     => "Arvind Satyanarayan",
 	author_link     => "http://www.movalog.com/",
 	plugin_link     => "http://plugins.movalog.com/privacy/",
 	doc_link        => "http://plugins.movalog.com/privacy/manual",
 	schema_version  => $SCHEMA_VERSION,
+	settings => new MT::PluginSettings([
+	            ['use_php', { Default => 1 }],
+				['signin', { Default => q{This is a private <MTPrivateObjectType>. Please <a href="<MTPrivacySignInLink>">sign in</a>}}],
+				['signout', { Default => q{Thanks for signing in (<a href="<MTPrivacySignOutLink>">sign out</a>)} }],
+				['no_perms', { Default => q{Sorry, you do not have the permission to view this <MTPrivateObjectType>. Please contact the author for more information}}]
+	]),
+	config_template => 'config.tmpl'
 }));
 
 # Allows external access to plugin object: MT::Plugin::Privacy->instance
 sub instance { $plugin; }
+
+sub apply_default_settings {
+	my ($plugin, $data, $scope_id) = @_;
+	if ($scope_id eq 'system') {
+		return $plugin->SUPER::apply_default_settings($data, $scope_id);
+	} else {
+		my $sys;
+		for my $setting (@{$plugin->{'settings'}}) {
+			my $key = $setting->[0];
+			next if exists($data->{$key});
+			# don't load system settings unless we need to
+			$sys ||= $plugin->get_config_obj('system')->data;
+			$data->{$key} = $sys->{$key};
+		}
+	}
+}
 
 sub init_registry {
 	my $plugin = shift;
@@ -32,8 +55,16 @@ sub init_registry {
 			'privacy_object' => 'Privacy::Object'
 		}, 
 		tags => {
+			block => {
+				'PrivateBlog' => sub { runner('_hdlr_private', 'Privacy::Template::ContextHandlers', @_); },
+				'PrivateEntry' => sub { runner('_hdlr_private', 'Privacy::Template::ContextHandlers', @_); },
+				'PrivateCategory' => sub { runner('_hdlr_private', 'Privacy::Template::ContextHandlers', @_); }
+			},
 			function => {
-				'App:Privacy' => sub { runner('_hdlr_app_privacy', 'Privacy::Template::ContextHandlers', @_); }
+				'App:Privacy' => sub { runner('_hdlr_app_privacy', 'Privacy::Template::ContextHandlers', @_); },
+				'PrivateObjectType' => sub { runner('_hdlr_private_object_type', 'Privacy::Template::ContextHandlers', @_); },
+				'PrivacySignInLink' => sub { runner('_hdlr_privacy_signin_link', 'Privacy::Template::ContextHandlers', @_); },
+				'PrivacySignOutLink' => sub { runner('_hdlr_privacy_signout_link', 'Privacy::Template::ContextHandlers', @_); },
 			}
 		},
 		applications => {

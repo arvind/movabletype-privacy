@@ -45,5 +45,93 @@ sub _hdlr_app_privacy {
 EOT
 }
 
+sub _hdlr_private {
+	my ($plugin, $ctx, $args, $cond) = @_;
+	my ($obj_type) = lc($ctx->stash('tag'))  =~ m/private(.*)/;
+	my $blog_id = $ctx->stash('blog_id');
+	
+    my $builder = $ctx->stash('builder');
+    my $tokens = $ctx->stash('tokens');
+    defined (my $contents = $builder->build ($ctx, $tokens, $cond))
+      or return $ctx->error ($builder->errstr);
+
+	# Get the actual object that has been protected
+	my $obj = ($obj_type eq 'category') ? $ctx->stash('category') || $ctx->stash('archive_category') : $ctx->stash($obj_type);
+	local $ctx->{__stash}{private_obj} = $obj;
+	
+	return _no_private_obj($ctx, $ctx->stash('tag'))
+		if !$obj;
+		
+	require Privacy::Object;
+	my $protected = Privacy::Object->count({ blog_id => $blog_id, 
+												object_id => $obj->id, object_datasource => $obj->datasource });
+	
+	# Return the contents of the block tag if the object hasn't been protected											
+	return $contents if !$protected;
+	
+	my (%status, $out);
+	foreach my $key (qw( signin signout )) {
+		my $text = $plugin->get_config_value($key, "blog:$blog_id");
+		my $text_tokens = $builder->compile($ctx, $text)
+		        or return $ctx->error($builder->errstr);
+		defined($status{$key} = $builder->build($ctx, $text_tokens))
+		    	or die $builder->errstr;
+	}
+	
+	my $use_php = $plugin->get_config_value('use_php', "blog:$blog_id");
+	my $obj_id = $obj->id;
+	my $signin = $status{signin};
+	my $signout = $status{signout};
+	if($use_php) {
+		$out = <<OUT;
+<?php if(\$_COOKIE['$obj_type$obj_id']) { ?>
+	$signin
+	$contents
+<?php } else { ?>
+	$signin
+<?php } ?>
+OUT
+	} else {
+		my $app = MT->instance;
+		my $cookies = $app->{cookies};
+		my $COOKIE_NAME = $obj_type.$obj_id;
+		$out = $cookies->{$COOKIE_NAME} ? "$signout\n$contents" : $signin;
+	}	
+	return $out;
+}
+
+sub _hdlr_private_object_type {
+	my $obj = $_[1]->stash('private_obj')
+		or return _no_private_obj($ctx, $_[1]->stash('tag'));
+	my $class = MT->model($obj->datasource);
+	return lc($class->class_label);
+}
+
+sub _hdlr_privacy_signin_link {
+	my ($plugin, $ctx, $args) = @_;
+	my $cfg = $ctx->{config};
+    my $path = $ctx->_hdlr_cgi_path;
+    my $comment_script = $cfg->CommentScript;
+	my $blog_id = $ctx->stash('blog_id');
+	my $obj = $_[1]->stash('private_obj')
+		or return _no_private_obj($ctx, $ctx->stash('tag'));
+		
+	return sprintf "%s%s?__mode=login_privacy&amp;blog_id=%d&amp;object_type=%s&amp;object_id=%d", $path, $comment_script, $blog_id, $obj->datasource, $obj->id;		
+}
+
+sub _hdlr_privacy_signout_link {
+	my ($plugin, $ctx, $args, $cond) = @_;
+	$args->{static} = 1;
+	return $ctx->_hdlr_remote_sign_out_link($args);
+}
+
+sub _no_private_obj {
+	my $tag = $_[1];
+    $tag = 'MT' . $tag unless $tag =~ m/^MT/i;
+    return $_[0]->error(MT->translate(
+        "You used an '[_1]' tag outside of the context of a private object; " .
+        "perhaps you mistakenly placed it outside of an 'MTPrivate' container?",
+        $tag));
+}
 
 1;

@@ -1,0 +1,31 @@
+<mtapp:setting
+    id="privacy_signin"
+    label="Sign In"
+	hint="<__trans phrase="Used to prompt a reader to sign in on a private entry, category or blog">"
+	show_hint="1">
+	<textarea name="signin" id="privacy_signin" row="2" cols="72" class="full-width"><mt:var name="signin" escape="html"></textarea>
+</mtapp:setting>
+
+<mtapp:setting
+    id="privacy_signout"
+    label="Sign Out"
+	hint="<__trans phrase="After a reader has signed in, this will be displayed above the now visible content allowing them to sign out">"
+	show_hint="1">
+	<textarea name="signout" id="privacy_signout" row="2" cols="72" class="full-width"><mt:var name="signout" escape="html"></textarea>
+</mtapp:setting>
+
+<mtapp:setting
+    id="privacy_no_perms"
+    label="No Permission"
+	hint="<__trans phrase="Displayed in an error message if a signed in user has not been explicitly allowed">"
+	show_hint="1">
+	<textarea name="no_perms" id="privacy_no_perms" row="2" cols="72" class="full-width"><mt:var name="no_perms" escape="html"></textarea>
+</mtapp:setting>
+
+<mtapp:setting
+    id="privacy_use_php"
+    label="PHP Privacy"
+	hint="<__trans phrase="By default, PHP is used to detect whether a reader has signed in or not. As a result, your pages must have a .php extension. If you uncheck this box, you will need to publish your blog via the mt-view.cgi script.">"
+	show_hint="1">
+	<input type="checkbox" name="use_php" value="1" id="use_php"<mt:if name="use_php"> checked="checked"</mt:if> />
+</mtapp:setting>
