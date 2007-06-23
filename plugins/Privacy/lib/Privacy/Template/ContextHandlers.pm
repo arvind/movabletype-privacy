@@ -52,7 +52,7 @@ sub _hdlr_private {
 	
     my $builder = $ctx->stash('builder');
     my $tokens = $ctx->stash('tokens');
-    defined (my $contents = $builder->build ($ctx, $tokens, $cond))
+    defined (my $contents = $builder->build($ctx, $tokens, $cond))
       or return $ctx->error ($builder->errstr);
 
 	# Get the actual object that has been protected
@@ -69,23 +69,16 @@ sub _hdlr_private {
 	# Return the contents of the block tag if the object hasn't been protected											
 	return $contents if !$protected;
 	
-	my (%status, $out);
-	foreach my $key (qw( signin signout )) {
-		my $text = $plugin->get_config_value($key, "blog:$blog_id");
-		my $text_tokens = $builder->compile($ctx, $text)
-		        or return $ctx->error($builder->errstr);
-		defined($status{$key} = $builder->build($ctx, $text_tokens))
-		    	or die $builder->errstr;
-	}
-	
+	my $signin = $ctx->build($plugin->get_config_value('signin', "blog:$blog_id"), undef);
+	my $signout = $ctx->build($plugin->get_config_value('signout', "blog:$blog_id"), undef);
 	my $use_php = $plugin->get_config_value('use_php', "blog:$blog_id");
 	my $obj_id = $obj->id;
-	my $signin = $status{signin};
-	my $signout = $status{signout};
+	
+	my $out;
 	if($use_php) {
 		$out = <<OUT;
 <?php if(\$_COOKIE['$obj_type$obj_id']) { ?>
-	$signin
+	$signout
 	$contents
 <?php } else { ?>
 	$signin
@@ -102,7 +95,7 @@ OUT
 
 sub _hdlr_private_object_type {
 	my $obj = $_[1]->stash('private_obj')
-		or return _no_private_obj($ctx, $_[1]->stash('tag'));
+		or return _no_private_obj($_[1], $_[1]->stash('tag'));
 	my $class = MT->model($obj->datasource);
 	return lc($class->class_label);
 }
@@ -111,12 +104,12 @@ sub _hdlr_privacy_signin_link {
 	my ($plugin, $ctx, $args) = @_;
 	my $cfg = $ctx->{config};
     my $path = $ctx->_hdlr_cgi_path;
-    my $comment_script = $cfg->CommentScript;
+	my $script = 'plugins/Privacy/mt-privacy.cgi';
 	my $blog_id = $ctx->stash('blog_id');
 	my $obj = $_[1]->stash('private_obj')
 		or return _no_private_obj($ctx, $ctx->stash('tag'));
 		
-	return sprintf "%s%s?__mode=login_privacy&amp;blog_id=%d&amp;object_type=%s&amp;object_id=%d", $path, $comment_script, $blog_id, $obj->datasource, $obj->id;		
+	return sprintf "%s%s?__mode=login&amp;blog_id=%d&amp;object_type=%s&amp;object_id=%d", $path, $script, $blog_id, $obj->datasource, $obj->id;		
 }
 
 sub _hdlr_privacy_signout_link {
