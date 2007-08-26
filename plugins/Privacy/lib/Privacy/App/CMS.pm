@@ -26,7 +26,7 @@ sub cms_post_save {
 	my $blog_id = $q->param('blog_id');
 	
 	 # If the user *had* manually changed the privacy, this would be set
-	return if !$q->param('privacy_manual');
+	return 1 if !$q->param('privacy_manual');
 	
 	# Lets start fresh
 	require Privacy::Object;
@@ -54,6 +54,7 @@ sub cms_post_save {
 			}
         }
     }
+	1;
 }
 
 # Transformer Callbacks
@@ -86,7 +87,6 @@ sub edit_entry_param {
 
 # This adds an onclick to the OK link of the category selector
 # which adds any category privacy settings
-
 sub edit_entry_src {
 	my $plugin = shift;
 	my ($cb, $app, $tmpl) = @_;
@@ -95,6 +95,22 @@ sub edit_entry_src {
 	$old = quotemeta($old);
 	my $new = q{class="add-category-ok-link" onclick="addCatPrivacy();"};
 	$$tmpl =~ s/$old/$new/;
+}
+
+sub edit_category_param {
+	my $plugin = shift;
+	my ($cb, $app, $param, $tmpl) = @_;
+	
+	# Add privacy setting after basename
+	&add_privacy_setting($plugin, $cb, $app, $param, $tmpl, 'description', 'insertAfter');	
+}
+
+sub cfg_prefs_param {
+	my $plugin = shift;
+	my ($cb, $app, $param, $tmpl) = @_;
+	
+	# Add privacy setting after basename
+	&add_privacy_setting($plugin, $cb, $app, $param, $tmpl, 'server_offset', 'insertBefore');	
 }
 
 1;

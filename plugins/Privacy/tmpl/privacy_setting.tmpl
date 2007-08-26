@@ -4,7 +4,7 @@
 	function changePrivacy(f) {
 		if(f.value == 1) {
 			getByID('edit-privacy').style.display = 'block';
-			<mt:unless name="id">openPrivacyEditor();</mt:unless>
+			<mt:unless name="is_private">openPrivacyEditor();</mt:unless>
 		}
 		else
 			getByID('edit-privacy').style.display = 'none';

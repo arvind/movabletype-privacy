@@ -77,8 +77,12 @@ sub init_registry {
 		callbacks => {
 			'MT::Entry::post_insert' => \&post_insert,
 			'cms_post_save.entry' => sub { runner('cms_post_save', 'Privacy::App::CMS', @_); },
+			'cms_post_save.category' => sub { runner('cms_post_save', 'Privacy::App::CMS', @_); },
+			'cms_post_save.blog' => sub { runner('cms_post_save', 'Privacy::App::CMS', @_); },
 			'MT::App::CMS::template_source.edit_entry' => sub { runner('edit_entry_src', 'Privacy::App::CMS', @_); },
-			'MT::App::CMS::template_param.edit_entry' => sub { runner('edit_entry_param', 'Privacy::App::CMS', @_); }
+			'MT::App::CMS::template_param.edit_entry' => sub { runner('edit_entry_param', 'Privacy::App::CMS', @_); },
+			'MT::App::CMS::template_param.edit_category' => sub { runner('edit_category_param', 'Privacy::App::CMS', @_); },
+			'MT::App::CMS::template_param.cfg_prefs'  => sub { runner('cfg_prefs_param', 'Privacy::App::CMS', @_); }
 		}
 	};
 	
@@ -115,6 +119,7 @@ sub post_insert {
 		});
 		$privacy->save or die $privacy->errstr;
 	}
+	1;
 }
 
 1;
