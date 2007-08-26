@@ -14,6 +14,7 @@ sub init {
     $app->SUPER::init(@_) or return;
     $app->add_methods(
        login            => \&login,
+	   do_login			=> \&do_login,
        handle_sign_in   => \&handle_sign_in
     );
     $app->{plugin_template_path} = File::Spec->catdir('plugins','Privacy','tmpl');
@@ -47,7 +48,7 @@ sub login {
 	foreach my $key (@auths) {
 		my $count = Privacy::Object->count({ blog_id => $blog_id, type => $key, object_id => $object_id,
 												object_datasource => $object_type });
-		next if !$count;
+		# next if !$count;
 		
 		if ( $key eq 'MovableType' ) {
             $param->{enabled_MovableType} = 1;
@@ -55,7 +56,9 @@ sub login {
             require MT::Auth;
             $param->{can_recover_password} = MT::Auth->can_recover_password;
             next;
-        }
+        } elsif($key eq 'Password') {
+			$param->{enabled_Password} = 1;
+		}
         my $auth = $ca_reg->{$key};
         next unless $auth;
 		push @auth_loop,
@@ -69,6 +72,101 @@ sub login {
 
 	return $app->build_page($app->plugin->load_tmpl('login.tmpl'), $param);
 }
+
+# This is for MT logins. Mostly copied from MT::App::Comments but added handle_privacy routine
+sub do_login {
+    my $app     = shift;
+    my $q       = $app->param;
+    my $name    = $q->param('username');
+    my $blog_id = $q->param('blog_id');
+    my $blog    = MT::Blog->load($blog_id);
+    my $auths   = $blog->commenter_authenticators;
+    if ( $auths !~ /MovableType/ ) {
+        $app->log(
+            {
+                message => $app->translate(
+'Invalid commenter login attempt from [_1] to blog [_2](ID: [_3]) which does not allow Movable Type native authentication.',
+                    $name, $blog->name, $blog_id
+                ),
+                level    => MT::Log::WARNING(),
+                category => 'login_commenter',
+            }
+        );
+        return $app->login( error => $app->translate('Invalid login.') );
+    }
+
+    require MT::Auth;
+    my $ctx = MT::Auth->fetch_credentials( { app => $app } );
+    $ctx->{blog_id} = $blog_id;
+    my $result = MT::Auth->validate_credentials($ctx);
+    my $message;
+    if (   ( MT::Auth::NEW_LOGIN() == $result )
+        || ( MT::Auth::NEW_USER() == $result )
+        || ( MT::Auth::SUCCESS() == $result ) )
+    {
+        my $commenter = $app->user;
+        if ( $q->param('external_auth') && !$commenter ) {
+            $app->param( 'name', $name );
+            if ( MT::Auth::NEW_USER() == $result ) {
+                $commenter =
+                  $app->_create_commenter_assign_role( $q->param('blog_id') );
+                return $app->login( error => $app->translate('Invalid login') )
+                  unless $commenter;
+            }
+            elsif ( MT::Auth::NEW_LOGIN() == $result ) {
+                my $registration = $app->config->CommenterRegistration;
+                unless ( $registration && $registration->{Allow} && $blog->allow_commenter_regist ) {
+                    return $app->login( error => $app->translate('Successfully authenticated but signing up is not allowed.  Please contact system administrator.') )
+                      unless $commenter;
+                }
+                else {
+                    return $app->signup( error => $app->translate('You need to sign up first.') )
+                      unless $commenter;
+                }
+            }
+        }
+        MT::Auth->new_login( $app, $commenter );
+        if ( $app->_check_commenter_author( $commenter, $blog_id ) ) {
+            $app->_make_commenter_session( $app->make_magic_token,
+                $commenter->email, $commenter->name,
+                ($commenter->nickname || 'User#' . $commenter->id),
+                $commenter->id, undef, $ctx->{permanent} ? '+10y' : 0 );
+            #$app->start_session( $commenter, $ctx->{permanent} ? 1 : 0 );
+            # return $app->redirect_to_target;
+
+			return $app->handle_privacy($commenter, $commenter->name);
+        }
+        $message =
+          $app->translate( "Login failed: permission denied for user '[_1]'",
+            $name );
+    }
+    elsif ( MT::Auth::INVALID_PASSWORD() == $result ) {
+        $message =
+          $app->translate( "Login failed: password was wrong for user '[_1]'",
+            $name );
+    }
+    elsif ( MT::Auth::INACTIVE() == $result ) {
+        $message =
+          $app->translate( "Failed login attempt by disabled user '[_1]'",
+            $name );
+    }
+    else {
+        $message =
+          $app->translate( "Failed login attempt by unknown user '[_1]'",
+            $name );
+    }
+    $app->log(
+        {
+            message  => $message,
+            level    => MT::Log::WARNING(),
+            category => 'login_commenter',
+        }
+    );
+    $ctx->{app} ||= $app;
+    MT::Auth->invalidate_credentials($ctx);
+    return $app->login( error => $app->translate('Invalid login.') );
+}
+
 
 # This actually handles a UI-level sign-in or sign-out request.
 sub handle_sign_in {
@@ -116,7 +214,7 @@ sub handle_sign_in {
 
 			$credential = $auth_class->get_credential($app, $result);			
 		}
-		$app->handle_privacy($result, $credential);
+		return $app->handle_privacy($result, $credential);
     }
 
     # $app->redirect_to_target;
@@ -165,18 +263,26 @@ sub handle_privacy {
 	
 	# If the user hasn't been explicitly added, perhaps they're in a group?
 	if(!$has_credential && $key ne 'Password') {
-		if(MT->registry('object_types', 'privacy_group')) {
-			require Privacy::Group;
-			my @groups = Privacy::Object->load({ blog_id => $blog_id, type => 'Group', object_datasource => $object_type,
-													object_id => $object_id });
-			foreach my $name (@groups) {
-				my $group = Privacy::Group->load({ name => $name->credential });
-				next if !$group;
-				
-				$has_credential = Privacy::Object->count({ blog_id => $blog_id, type => $key, object_datasource => 'privacy_group', 
-														object_id => $group->id, credential => $credential });			
-				last if $has_credential;	
-			}			
+		my $mt_group = $app->registry('object_types', 'group') ? 1 : 0;
+		my $group_key = $mt_group ? 'group' : 'privacy_group';
+		my $group_class = $app->model($group_key);
+		
+		my @groups = Privacy::Object->load({ blog_id => $blog_id, type => 'Group', object_datasource => $object_type,
+												object_id => $object_id });
+		require MT::Association;
+		require Privacy::Group;
+		
+		foreach my $gname (@groups) {
+			my $group = $group_class->load({ name => $gname->credential });
+			next if !$group;
+			
+			if($mt_group) {
+				$has_credential = MT::Association->count({ author_id => $cmntr->id, group_id => $group->id, type => MT::Association::USER_GROUP() });
+			} else {				
+				$has_credential = Privacy::Object->count({ blog_id => $blog_id, type => $key, object_datasource => 'privacy_group', object_id => $group->id, credential => $credential });							
+			}
+			
+			last if $has_credential;
 		}
 	}
 

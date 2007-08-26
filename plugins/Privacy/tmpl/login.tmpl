@@ -3,7 +3,7 @@
     <script type="text/javascript">
     <!--
     function signinToggle(choice) {
-        var auths = new Array(<mt:if name="enabled_MovableType">'mt',</mt:if><mt:loop name="auth_loop">'<mt:var name="name">'<mt:unless name="__last__">,</mt:unless></mt:loop>);
+        var auths = new Array(<mt:if name="enabled_MovableType">'mt',</mt:if><mt:if name="enabled_Password">'password',</mt:if><mt:loop name="auth_loop">'<mt:var name="name">'<mt:unless name="__last__">,</mt:unless></mt:loop>);
 
         for (var i = 0; i < auths.length; i++) {
             var signinObject = getByID('signin_with_' + auths[i]);
@@ -47,6 +47,10 @@
         <li id="signin_option_<mt:var name="name">"<mt:if name="name" eq="$default_signin"> class="choice_on"<mt:else> class="choice_off"</mt:if>><div class="signin_logo"><img src="<$mt:var name="static_uri"$>images/comment/signin_<mt:var name="name">.png" width="36" height="26"></div><div class="auth_name"><a href="javascript:void(0)" onclick="signinToggle('<mt:var name="name">');"><mt:var name="name"></a></div></li>
         </mt:loop>
 
+        <mt:if name="enabled_Password">
+        <li id="signin_option_password"<mt:if name="default_signin" eq="Password"> class="choice_on"</mt:if>><div class="signin_logo"><img src="<$mt:var name="static_uri"$>plugins/Privacy/images/signin_password.png" width="36" height="26"></div><div class="auth_name"><a href="javascript:void(0)" onclick="signinToggle('password');"><__trans phrase="Password"></a></div></li>
+        </mt:if>
+
         </ul>
     </div>
 </mt:if>
@@ -70,39 +74,74 @@
 
 <div class="signin">
 
-<mt:if name="enabled_MovableType">
-<div id="signin_with_mt"<mt:unless name="enabled_MovableType"> style="display: none"</mt:unless>>
-<form method="post" action="<mt:var name="script_url">">
-<input type="hidden" name="__mode" value="do_login" />
-<input type="hidden" name="blog_id" value="<mt:var name="blog_id">" />
-<input type="hidden" name="entry_id" value="<mt:var name="entry_id">" />
-<input type="hidden" name="static" value="<mt:var name="static" escape="html">" />
+	<mt:if name="enabled_MovableType">
+	<div id="signin_with_mt"<mt:unless name="default_signin" eq="MovableType"> style="display: none"</mt:unless>>
+	<form method="post" action="<mt:var name="script_url">">
+	    <input type="hidden" name="__mode" value="do_login" />
+	    <input type="hidden" name="blog_id" value="<mt:var name="blog_id">" />
+	    <input type="hidden" name="entry_id" value="<mt:var name="entry_id">" />
+	    <input type="hidden" name="static" value="<mt:var name="static" escape="html">" />
+		<input type="hidden" name="key" value="MovableType" />
+	    <mt:unless name="auth_mode_mt"><input type="hidden" name="external_auth" value="1" /></mt:unless>
+	    <mtapp:setting
+	        id="username"
+	        label="<__trans phrase="Username">">
+	        <input name="username" id="username" />
+	    </mtapp:setting>
+	    <mtapp:setting
+	        id="password"
+	        label="<__trans phrase="Password">">
+	        <input type="password" name="password" id="password" />
+	    </mtapp:setting>
+	    <mt:if name="can_recover_password">
+	    <div class="right"><a href="<mt:var name="mt_url">?__mode=start_recover"><__trans phrase="Forgot your password?"></a></div>
+	    </mt:if>
+	    <p><label><__trans phrase="Remember me?"></label> <input type="checkbox" name="remember" value="1" accesskey="r" /></p>
+	    <div class="actions-bar actions-bar-login">
+	        <div class="actions-bar-inner pkg actions">
+	            <button
+	                type="submit"
+	                class="primary-button"
+	                ><__trans phrase="Sign in"></button>
+	        </div>
+	    </div>
+	    <mt:if name="registration_allowed">
+	    <div class="right"><__trans phrase="Not a member?&nbsp;&nbsp;<a href="[_1]">Sign Up</a>!" params="<mt:var name="script_url">?__mode=signup&amp;blog_id=<mt:var name="blog_id">&amp;entry_id=<mt:var name="entry_id">&amp;static=<mt:var name="static" escape="url">"></div>
+	    </mt:if>
+	</form>
 
-<mtapp:setting
-    id="username"
-    label="<__trans phrase="Username">">
-    <input name="username" id="username" />
-</mtapp:setting>
+	</div>
+	</mt:if>
+	
+	<mt:if name="enabled_Password">
+	<div id="signin_with_password"<mt:unless name="default_signin" eq="Password"> style="display: none"</mt:unless>>
+	<form method="post" action="<mt:var name="script_url">">
+	    <input type="hidden" name="__mode" value="handle_sign_in" />
+	    <input type="hidden" name="blog_id" value="<mt:var name="blog_id">" />
+	    <input type="hidden" name="entry_id" value="<mt:var name="entry_id">" />
+	    <input type="hidden" name="static" value="<mt:var name="static" escape="html">" />
+		<input type="hidden" name="key" value="Password" />
 
-<mtapp:setting
-    id="password"
-    label="<__trans phrase="Password">">
-    <input type="password" name="password" id="password" />
-</mtapp:setting>
+	    <mtapp:setting
+	        id="password"
+	        label="<__trans phrase="Password">">
+	        <input type="password" name="password" id="password" />
+	    </mtapp:setting>
+	
+	    <div class="actions-bar actions-bar-login">
+	        <div class="actions-bar-inner pkg actions">
+	            <button
+	                type="submit"
+	                class="primary-button"
+	                ><__trans phrase="Sign in"></button>
+	        </div>
+	    </div>
 
-<p><label><__trans phrase="Remember me?"> <input type="checkbox" name="remember" value="1" accesskey="r" /></label></p>
+	</form>
 
-<div class="pkg">
-<p class="left"><input type="submit" name="submit" value="<__trans phrase="Sign In">" /></p>
+	</div>
+	</mt:if>
 
-<mt:if name="can_recover_password"><p class="right"><a href="<mt:var name="mt_url">?__mode=start_recover"><__trans phrase="Forgot your password?"></a></p></mt:if>
-</div>
-
-</form>
-
-<mt:if name="registration_allowed"><p>Not a member?&nbsp;&nbsp;<a href="<mt:var name="script_url">?__mode=signup&amp;blog_id=<mt:var name="blog_id">&amp;entry_id=<mt:var name="entry_id">&amp;static=<mt:var name="static" escape="url">">Sign Up</a>!</p></mt:if>
-</div>
-</mt:if>
 <mt:if name="auth_loop">
 
 <dl>

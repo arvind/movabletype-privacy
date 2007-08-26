@@ -47,7 +47,7 @@ EOT
 
 sub _hdlr_private {
 	my ($plugin, $ctx, $args, $cond) = @_;
-	my ($obj_type) = lc($ctx->stash('tag'))  =~ m/private(.*)/;
+	my ($obj_type) = lc($ctx->stash('tag')) =~ m/private(.*)/;
 	my $blog_id = $ctx->stash('blog_id');
 	
     my $builder = $ctx->stash('builder');

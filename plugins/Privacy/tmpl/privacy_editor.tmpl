@@ -1,3 +1,9 @@
+<mt:setvarblock name="html_head" append="1">
+	<style type="text/css">
+	.dialog-4 #container, .dialog-4 #content { overflow: visible; }
+	.dialog-4 .actions-bar { position: static;}
+	</style>
+</mt:setvarblock>
 <mt:setvar name="screen_type" value="dialog-screen dialog-4">
 <mt:setvarblock name="content_header">
 	<mt:setvar name="page_title" value="<__trans phrase="Edit Privacy">">
@@ -51,7 +57,7 @@
 	<mt:setvarblock name="privacy_types_hint"><__trans phrase="Please select the authenticators users can use to sign in to view this [_1]" params="<mt:var name="object_type">"></mt:setvarblock>
 	<mtapp:setting
 	id="privacy_types"
-	label="Privacy Authenticators"
+	label="Authenticators"
 	hint="$privacy_types_hint"
 	show_hint="1">
 	
