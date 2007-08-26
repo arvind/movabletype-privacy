@@ -8,9 +8,9 @@ use Privacy::Util qw( auth_loop );
 sub _hdlr_app_privacy {
 	my ($plugin, $ctx, $args, $cond) = @_;
 	
-	$args->{blog_id} = $ctx->var('blog_id');
-	$args->{object_type} = $ctx->var('object_type');
-	$args->{object_id} = $ctx->var('id');
+	$args->{blog_id} ||= $ctx->var('blog_id');
+	$args->{object_type} ||= $ctx->var('object_type');
+	$args->{object_id} ||= $ctx->var('id');
 	$args->{require_credentials} = 1;
 	$args->{is_private} = 1;
 	

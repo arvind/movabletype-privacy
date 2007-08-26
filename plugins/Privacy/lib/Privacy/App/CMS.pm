@@ -56,4 +56,45 @@ sub cms_post_save {
     }
 }
 
+# Transformer Callbacks
+
+## First a general routine that includes app:privacy before/after a node or ID'd field
+sub add_privacy_setting {
+	my $plugin = shift;
+	my ($cb, $app, $param, $tmpl, $marker, $where) = @_;
+	
+
+	# Where should include the DOM method to insert privacy_setting relative to the marker
+	$where ||= 'insertAfter';
+	
+	# Marker can contain either a node or an ID of a node
+	unless(ref $marker eq 'MT::Template::Node') {
+		$marker = $tmpl->getElementById($marker);
+	}
+	
+	my $appprivacy = $tmpl->createElement('app:privacy');
+	$tmpl->$where($appprivacy, $marker);	
+}
+
+sub edit_entry_param {
+	my $plugin = shift;
+	my ($cb, $app, $param, $tmpl) = @_;
+	
+	# Add privacy setting after basename
+	&add_privacy_setting($plugin, $cb, $app, $param, $tmpl, 'status', 'insertAfter');
+}
+
+# This adds an onclick to the OK link of the category selector
+# which adds any category privacy settings
+
+sub edit_entry_src {
+	my $plugin = shift;
+	my ($cb, $app, $tmpl) = @_;
+	
+	my $old = q{class="add-category-ok-link"};
+	$old = quotemeta($old);
+	my $new = q{class="add-category-ok-link" onclick="addCatPrivacy();"};
+	$$tmpl =~ s/$old/$new/;
+}
+
 1;

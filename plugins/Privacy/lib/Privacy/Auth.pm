@@ -25,7 +25,7 @@ sub get_credential {
 package MT::Auth::Typekey;
 use strict;
 
-sub handle_privacy {
+sub get_credential {
 	my $class = shift;
 	my ($app, $cmntr) = @_;
 

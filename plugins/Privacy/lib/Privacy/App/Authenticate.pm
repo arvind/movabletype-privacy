@@ -131,6 +131,7 @@ sub handle_privacy {
 	require MT::Blog;
 	my $blog = MT::Blog->load($blog_id);
 	
+	# Populate $ctx to use template tags and build no_perms message later on
 	require MT::Template::Context;
 	my $ctx = MT::Template::Context->new;
 	local $ctx->{__stash}{blog_id} = $blog_id;
@@ -141,6 +142,7 @@ sub handle_privacy {
 	local $ctx->{__stash}{private_obj} = $obj;
 	local $ctx->{__stash}{$object_type} = $obj;
 	
+	# $redirect is where the user will return to after a successful authentication
 	my $redirect = $blog->site_url;
 	if($object_type eq 'entry') {
 		$redirect = $obj->permalink;
@@ -156,8 +158,6 @@ sub handle_privacy {
 			$redirect = $arch;
 		}
 	}
-	
-	my $key = $app->param('key');
 
 	require Privacy::Object;
 	my $has_credential = Privacy::Object->count({ blog_id => $blog_id, type => $key, object_datasource => $object_type, 
@@ -170,11 +170,11 @@ sub handle_privacy {
 			my @groups = Privacy::Object->load({ blog_id => $blog_id, type => 'Group', object_datasource => $object_type,
 													object_id => $object_id });
 			foreach my $name (@groups) {
-				my $group = Privacy::Group->load({ name => $name });
+				my $group = Privacy::Group->load({ name => $name->credential });
 				next if !$group;
 				
 				$has_credential = Privacy::Object->count({ blog_id => $blog_id, type => $key, object_datasource => 'privacy_group', 
-														object_id => $object_id, credential => $credential });			
+														object_id => $group->id, credential => $credential });			
 				last if $has_credential;	
 			}			
 		}

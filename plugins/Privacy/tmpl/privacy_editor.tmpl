@@ -6,11 +6,11 @@
 
 <script type="text/javascript">
 <!--
-	function togglePrivacy(p) {
-		if(p.checked == true)
-			show(p.name + '-container');
+	function togglePrivacy(check, key) {
+		if(check.checked == true)
+			show(key + '-container');
 		else
-			hide(p.name + '-container');
+			hide(key + '-container');
 	}
 	
 	function revealPassword() {
@@ -21,8 +21,8 @@
 		var d = top.document;
 		
 		<mt:loop name="auth_loop">
-			if(getByID('privacy_<mt:var name="key">').checked == true) 
-				d.getElementById('privacy_<mt:var name="key">').value = getByID('<mt:var name="key">').value;
+			if(getByID('<mt:var name="key">_checkbox').checked == true) 
+				d.getElementById('privacy_<mt:var name="key">').value = getByID('<mt:var name="key">_setting').value;
 		</mt:loop>
 		
 		d.getElementById('saved-privacy-container').style.display = 'block';
@@ -37,9 +37,9 @@
 			value = ""; // Clear the value from the previous auth
 			value = d.getElementById('privacy_<mt:var name="key">').value;
 			if(value) {
-				getByID('privacy_<mt:var name="key">').checked = true;
-				show('privacy_<mt:var name="key">-container');
-				getByID('<mt:var name="key">').value = value;
+				getByID('<mt:var name="key">_checkbox').checked = true;
+				show('<mt:var name="key">-container');
+				getByID('<mt:var name="key">_setting').value = value;
 			}
 		</mt:loop>
 	}
@@ -48,15 +48,15 @@
 //-->
 </script>
 	
-	<mt:setvarblock name="privacy_types_hint"><__trans phrase="Please select the ways in which users can sign in to view this [_1]" params="<mt:var name="object_type">"></mt:setvarblock>
+	<mt:setvarblock name="privacy_types_hint"><__trans phrase="Please select the authenticators users can use to sign in to view this [_1]" params="<mt:var name="object_type">"></mt:setvarblock>
 	<mtapp:setting
 	id="privacy_types"
-	label="Enable Privacy"
+	label="Privacy Authenticators"
 	hint="$privacy_types_hint"
 	show_hint="1">
 	
 	<mt:loop name="auth_loop">
-		<p><label><input type="checkbox" name="privacy_<mt:var name="key">" value="1" id="privacy_<mt:var name="key">" onclick="togglePrivacy(this);" /> <mt:var name="label"></label></p>
+		<p><label><input type="checkbox" name="<mt:var name="key">_checkbox" value="1" id="<mt:var name="key">_checkbox" onclick="togglePrivacy(this, '<mt:var name="key">');" /> <mt:var name="label"></label></p>
 	</mt:loop>
 	</mtapp:setting>
 	
@@ -70,25 +70,40 @@
 				<mt:setvar name="hint" value="Please enter usernames here separated by commas (e.g. <code>melody, nelson</code>)">
 			</mt:if>
 		</mt:if>
-		<div id="privacy_<mt:var name="key">-container" style="display:none;">
+		<div id="<mt:var name="key">-container" style="display:none;">
 			<mtapp:setting
 			id="$key"
 			label="$label"
 			hint="$hint"
 			show_hint="1">
 			<mt:if name="key" eq="Password">
-				<p><input type="password" name="<mt:var name="key">" value="" id="<mt:var name="key">" class="full-width" /></p>
+				<div class="textarea-wrapper">
+					<input type="password" name="<mt:var name="key">_setting" value="" id="<mt:var name="key">_setting" class="full-width" />
+				</div>
 				<p class="hint"><a href="#" onclick="revealPassword();"><__trans phrase="Reveal Password"></a></p>
 			<mt:else>
-				<textarea name="<mt:var name="key">" id="<mt:var name="key">" rows="3" cols="72" class="full-width"></textarea>
+				<textarea name="<mt:var name="key">_setting" id="<mt:var name="key">_setting" rows="3" cols="72" class="full-width"></textarea>
 			</mt:if>
 			</mtapp:setting>
 		</div>
 	</mt:loop>
 	
 	<div class="actions-bar">
-		<input onclick="closeDialog()" type="button" value="<__trans phrase="Close">" />
-	    <input name="save" type="button" value="<__trans phrase="Save">" accesskey="s" title="<__trans phrase="Save privacy settings (s)">" onclick="save();" />
+	    <div class="actions-bar-inner pkg actions">
+			<button
+	            type="submit"
+	            accesskey="s"
+	            title="<__trans phrase="Save Changes (s)">"
+	            class="primary-button close"
+	            ><__trans phrase="Save Changes"></button>
+	        <button
+	            onclick="closeDialog(); return false"
+	            type="submit"
+	            accesskey="x"
+	            class="cancel"
+	            title="<__trans phrase="Cancel (x)">"
+	            ><__trans phrase="Cancel"></button>
+		</div>
 	</div>
 	
 <mt:include name="dialog/footer.tmpl">

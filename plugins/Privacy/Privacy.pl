@@ -76,7 +76,9 @@ sub init_registry {
 		},
 		callbacks => {
 			'MT::Entry::post_insert' => \&post_insert,
-			'cms_post_save.entry' => sub { runner('cms_post_save', 'Privacy::App::CMS', @_); }
+			'cms_post_save.entry' => sub { runner('cms_post_save', 'Privacy::App::CMS', @_); },
+			'MT::App::CMS::template_source.edit_entry' => sub { runner('edit_entry_src', 'Privacy::App::CMS', @_); },
+			'MT::App::CMS::template_param.edit_entry' => sub { runner('edit_entry_param', 'Privacy::App::CMS', @_); }
 		}
 	};
 	
