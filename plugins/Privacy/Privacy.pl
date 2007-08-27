@@ -23,8 +23,8 @@ MT->add_plugin($plugin = __PACKAGE__->new({
 	settings => new MT::PluginSettings([
 	            ['use_php', { Default => 1 }],
 				['signin', { Default => q{This is a private <MTPrivateObjectType>. Please <a href="<MTPrivacySignInLink>">sign in</a>}}],
-				['signout', { Default => q{Thanks for signing in (<a href="<MTPrivacySignOutLink>">sign out</a>)} }],
-				['no_perms', { Default => q{Sorry, you do not have the permission to view this <MTPrivateObjectType>. Please contact the author for more information}}]
+				['signout', { Default => q{Thank you for signing in (<a href="<MTPrivacySignOutLink>">sign out</a>)} }],
+				['no_perms', { Default => q{Sorry, you do not have permission to view this <MTPrivateObjectType>. Please contact the author for more information}}]
 	]),
 	config_template => 'config.tmpl'
 }));
@@ -83,6 +83,33 @@ sub init_registry {
 			'MT::App::CMS::template_param.edit_entry' => sub { runner('edit_entry_param', 'Privacy::App::CMS', @_); },
 			'MT::App::CMS::template_param.edit_category' => sub { runner('edit_category_param', 'Privacy::App::CMS', @_); },
 			'MT::App::CMS::template_param.cfg_prefs'  => sub { runner('cfg_prefs_param', 'Privacy::App::CMS', @_); }
+		},
+		default_templates => {
+			index => {
+				privacy_bootstrapper => {
+					label => 'Privacy Bootstrapper',
+					outfile => 'privacy.php',
+					rebuild_me => 1,
+					text => q{<?php
+	include('<$MTCGIServerPath$>/php/mt.php');
+	$mt = new MT(<$MTBlogID$>, '<$MTConfigFile$>');
+	$db =& $mt->db;
+	$config = $db->fetch_plugin_config('Privacy');
+	if($_REQUEST['rand'] == $config['rand'])  {
+		setcookie($_REQUEST['obj_type'].$_REQUEST['id'], 1, '', '/');
+	}
+
+	$config['rand'] = md5(time().mt_rand());	
+
+	require_once("MTSerialize.php");
+    $serializer = new MTSerialize();
+	$data = $db->escape($serializer->serialize($config));	
+
+	$db->query("update mt_plugindata set plugindata_data = '$data' where plugindata_plugin = 'Privacy' and plugindata_key = 'configuration'");
+	header('Location: '. $_REQUEST['redirect']);
+?>}
+				}
+			}
 		}
 	};
 	
