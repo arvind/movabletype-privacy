@@ -82,7 +82,14 @@ sub init_registry {
 			'MT::App::CMS::template_source.edit_entry' => sub { runner('edit_entry_src', 'Privacy::App::CMS', @_); },
 			'MT::App::CMS::template_param.edit_entry' => sub { runner('edit_entry_param', 'Privacy::App::CMS', @_); },
 			'MT::App::CMS::template_param.edit_category' => sub { runner('edit_category_param', 'Privacy::App::CMS', @_); },
-			'MT::App::CMS::template_param.cfg_prefs'  => sub { runner('cfg_prefs_param', 'Privacy::App::CMS', @_); }
+			'MT::App::CMS::template_param.cfg_prefs'  => sub { runner('cfg_prefs_param', 'Privacy::App::CMS', @_); },
+			'MT::App::CMS::template_param.list_entry' => sub { runner('list_objects_param', 'Privacy::App::CMS', @_); },
+			'MT::App::CMS::template_source.entry_table' =>  sub { runner('list_objects_src', 'Privacy::App::CMS', @_); },
+			'MT::App::CMS::template_param.list_category' => sub { runner('list_objects_param', 'Privacy::App::CMS', @_); },
+			'MT::App::CMS::template_source.list_category' =>  sub { runner('list_objects_src', 'Privacy::App::CMS', @_); },
+			'MT::App::CMS::template_param.list_blog' => sub { runner('list_objects_param', 'Privacy::App::CMS', @_); },
+			'MT::App::CMS::template_source.blog_table' =>  sub { runner('list_objects_src', 'Privacy::App::CMS', @_); },
+			# 'MT::App::CMS::template_source.users_content_nav' => sub { runner('users_content_nav_src', 'Privacy::App::CMS', @_); }
 		},
 		default_templates => {
 			index => {

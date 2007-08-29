@@ -113,4 +113,58 @@ sub cfg_prefs_param {
 	&add_privacy_setting($plugin, $cb, $app, $param, $tmpl, 'server_offset', 'insertBefore');	
 }
 
+sub users_content_nav_src {
+	my $plugin = shift;
+	my ($cb, $app, $tmpl) = @_;
+	
+	# return 1 unless $app->registry('object_types', 'privacy_group');
+	
+	my $old = qq{<a href="<mt:var name="SCRIPT_URL">?__mode=list_authors"><__trans phrase="Users"></a></li>};
+	$old = quotemeta($old);
+	my $new = qq{<li><a href="<mt:var name="script_url">?__mode=list_privacy_groups"><__trans phrase="Privacy Groups"></a></li>};
+	$$tmpl =~ s/($old)/$1\n$new/gi;
+}
+
+sub list_objects_param {
+	my $plugin = shift;
+	my ($cb, $app, $param, $tmpl) = @_;
+	
+	require Privacy::Object;
+	my $object_loop = $param->{object_loop};
+	foreach my $obj (@$object_loop) {
+		$obj->{id} ||= $app->mode =~ /cat/ ? $obj->{category_id} : undef;
+		$obj->{is_private} = Privacy::Object->count({ object_id => $obj->{id}, object_datasource => $param->{object_type} });
+	}
+}
+
+sub list_objects_src {
+	my $plugin = shift;
+	my ($cb, $app, $tmpl) = @_;
+	my ($old, $new);
+	
+	$old = q{<input type="checkbox" name="id-head" value="all" class="select" /></th>};
+	$old = quotemeta($old);
+	$new = <<HTML;
+<mt:unless name="object_type" eq="entry"><mt:setvar name="show_privacy" value="1"></mt:unless>	
+<mt:unless name="is_power_edit"><mt:setvar name="show_privacy" value="1"></mt:unless>
+
+<mt:if name="show_privacy"><th class="privacy si"><img src="<mt:var name="static_uri">plugins/Privacy/images/privacy-header.gif" alt="<__trans phrase="Privacy Status">" title="<__trans phrase="Privacy Status">" width="9" height="9" /></th></mt:if>	
+HTML
+
+	$$tmpl =~ s/($old)/$1\n$new/;
+	
+	if($app->mode =~ /entry/) {
+		$old = q{<td class="status si<mt:if name="status_draft"> status-draft</mt:if><mt:if name="status_publish"> status-publish</mt:if><mt:if name="status_future"> status-future</mt:if>">};
+	} elsif($app->mode =~ /cat/) {		
+		$old = q{<td class="move-col" id="move-col-<mt:var name="category_id">">};
+	} elsif($app->mode =~ /blog/) {
+		$old = q{<td><a href="?__mode=dashboard&amp;blog_id=<mt:var name="id">"><mt:var name="name" escape="html"></a></td>};
+	}
+	$old = quotemeta($old);
+	
+	$new = q{<mt:if name="show_privacy"><td class="si"><img src="<mt:var name="static_uri">plugins/Privacy/images/privacy-<mt:if name="is_private">enabled<mt:else>disabled.gif</mt:if>"/></td></mt:if>};
+	$$tmpl =~ s/($old)/$new\n$1/g;
+	
+}
+
 1;
