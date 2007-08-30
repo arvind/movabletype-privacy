@@ -153,7 +153,7 @@ HTML
 
 	$$tmpl =~ s/($old)/$1\n$new/;
 	
-	if($app->mode =~ /entry/) {
+	if($app->mode =~ /entry/ || $app->mode =~ /page/) {
 		$old = q{<td class="status si<mt:if name="status_draft"> status-draft</mt:if><mt:if name="status_publish"> status-publish</mt:if><mt:if name="status_future"> status-future</mt:if>">};
 	} elsif($app->mode =~ /cat/) {		
 		$old = q{<td class="move-col" id="move-col-<mt:var name="category_id">">};
